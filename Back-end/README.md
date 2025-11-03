@@ -1,6 +1,95 @@
-# OfficeQueueManagement Back-end
+# Participium Backend
 
-## This is the README for the Back-end of the Office Queue Management
+Backend API for the Participium project.
+
+## Getting Started
+
+### Important Documentation
+
+please check config/database.ts for pre-defined database promises
+- 🔧 **[src/config/database.ts](./src/config/database.ts)** - 
+
+please read readme file at ./db/README.md for better understanding of db initalization
+
+
+### Installation
+
+```bash
+npm install
+```
+
+### Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+NODE_ENV=development
+PORT=3000
+CORS_ORIGIN=*
+DB_PATH=./data/participium.db  # Optional, defaults to this path
+LOG_LEVEL=info  # Optional
+```
+
+### Development
+
+```bash
+npm run dev
+```
+
+### Production
+
+```bash
+npm run build
+npm start
+```
+
+### Testing
+
+```bash
+npm test
+```
+
+## Database
+
+The project uses **SQLite** with the following structure:
+
+### Tables
+- **users** - User accounts and authentication
+- **roles** - User roles (citizen, operators, admin)
+- **user_roles** - User-role assignments (many-to-many)
+- **offices** - Organization and technical offices
+- **categories** - Issue report categories
+- **category_offices** - Category-office assignments (many-to-many)
+
+### Default Data
+The database is automatically seeded with:
+- 4 roles: citizen, org_office_operator, technical_office_operator, admin
+- 9 categories: Water Supply, Architectural Barriers, Sewer System, etc.
 
 
 ## API Endpoints
+
+### Health Check
+
+- **GET** `/health` - Returns the health status of the server
+
+## Project Structure
+
+```
+src/
+├── app.ts              # Express app configuration
+├── server.ts           # Server entry point
+├── config/             # Configuration files
+│   ├── env.ts          # Environment variable validation
+│   ├── logger.ts       # Logging configuration
+│   └── database.ts     # Database connection
+├── db/                 # Database related files
+│   ├── init.ts         # Database initialization
+│   └── schema.sql      # Database schema
+├── middlewares/        # Express middlewares
+│   └── error.ts        # Error handling middleware
+├── routes/             # API routes
+│   ├── index.ts        # Main router
+│   └── health.routes.ts # Health check routes
+└── dao/                # Data Access Objects
+```
