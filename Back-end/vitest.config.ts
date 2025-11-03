@@ -15,21 +15,6 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html'],
       reportsDirectory: './coverage',
-
-      // ✅ Only include these files/folders in coverage
-      include: [
-        'src/routes/**/*.ts',
-        'src/dao/**',
-      ],
-
-      // 🚫 Ignore everything else
-      exclude: [
-        'tests/**',
-        'src/config/**',
-        'src/db/**',
-        'src/middlewares/**',
-        '**/*.d.ts',
-      ],
     },
   },
 });
