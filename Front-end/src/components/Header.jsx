@@ -15,8 +15,11 @@ function Header() {
         className='site-header'
         data-bs-theme='dark'
       >
-        <Container fluid className='justify-content-center'>
-          <Navbar.Brand href='#home'>
+        <Container
+          fluid
+          className='d-flex align-items-center justify-content-between'
+        >
+          <Navbar.Brand href='/'>
             <img
               alt='logo'
               src={yellowbull}
@@ -29,8 +32,8 @@ function Header() {
           <Navbar.Toggle aria-controls='responsive-navbar-nav' />
           <Navbar.Collapse id='responsive-navbar-nav'>
             <Nav className='ms-auto'>
-              <Nav.Link href='#features'>Signup</Nav.Link>
-              <Nav.Link href='#pricing'>Pricing</Nav.Link>
+              <Nav.Link href='/signup'>Sign Up</Nav.Link>
+              <Nav.Link href='/login'>Log in</Nav.Link>
             </Nav>
           </Navbar.Collapse>
         </Container>
