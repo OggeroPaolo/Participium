@@ -1,5 +1,6 @@
 import { Router } from "express";
 import healthRoutes from "./health.routes.js";
+import OperatorRoutes from "./operator.routes.js";
 
 const router = Router();
 
@@ -11,5 +12,7 @@ router.use(healthRoutes);
 // import userRoutes from "./user.routes.js";
 // router.use("/users", userRoutes);
 
-export default router;
 
+router.use(OperatorRoutes);
+
+export default router;

@@ -73,6 +73,72 @@ The database is automatically seeded with:
 
 - **GET** `/health` - Returns the health status of the server
 
+### Operators
+
+**GET `/operators`**
+
+- **Request Parameters:** None
+
+- **Success Response (200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "email": "admin@example.com",
+    "username": "adminUser",
+    "first_name": "John",
+    "last_name": "Doe",
+    "profile_photo_url": "https://example.com/photos/john_doe.jpg",
+    "role_name": "Admin",
+    "created_at": "2025-11-06T10:15:32"
+  },
+  {
+    "id": 2,
+    "email": "operator@example.com",
+    "username": "operatorUser",
+    "first_name": "Jane",
+    "last_name": "Smith",
+    "profile_photo_url": "https://example.com/photos/jane_smith.jpg",
+    "role_name": "Operator",
+    "created_at": "2025-10-30T09:12:45"
+  }
+]
+```
+
+- **No Content Response (204 No Content):**
+```json
+// Empty response body
+```
+
+- **Error Response (401 Unauthorized):**
+Returned when no valid authentication token is provided.
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+- **Error Response (403 Forbidden):**
+Returned when the authenticated user is not an admin.
+```json
+{
+  "error": "Forbidden: admin access required"
+}
+```
+
+- **Error Response (500 Internal Server Error):**
+```json
+{
+  "error": "Database connection failed"
+}
+```
+```json
+{
+  "error": "Failed to retrieve operators"
+}
+```
+
+
 ## Project Structure
 
 ```
