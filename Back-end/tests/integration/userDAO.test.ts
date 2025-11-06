@@ -1,7 +1,27 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import * as db from "../../src/config/database.js"; // mocked db module
+import UserDAO from "../../src/dao/UserDAO.js";
+import * as db from "../../src/config/database.js";
 
+/* 
+  Sign up (Create User): 
+    - 200 OK: Create user 
+    - 400 Bad Request: Missing fields 
+    - 409 Conflict: Email/username already exists 
+    - 500 Internal Server Error: Database error 
+
+  Sign In (Authenticate User): 
+    - 200 OK: Successful authentication
+    - 400 Bad Request: Missing fields 
+    - 401 Unauthorized: Invalid credentials 
+    - 500 Internal Server Error: Database error 
+    - User already sign in (TBD) 
+*/
+
+// Generic Test — waiting for actual DAO implementation to test DB queries
+// For password comparison, assuming bcrypt is used
 describe("UserDAO Integration Test Suite", () => {
+  const dao = new UserDAO();
+
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.clearAllMocks();
@@ -11,64 +31,152 @@ describe("UserDAO Integration Test Suite", () => {
     vi.restoreAllMocks();
   });
 
-  // ---------------------------------------------------
-  // createUser (manual query version)
-  // ---------------------------------------------------
-  describe("createUser (manual query)", () => {
-    it("creates a new user successfully by running SQL manually", async () => {
-      // Arrange: mock db.runQuery to simulate a manual SQL INSERT
+  // ---------------------------------
+  // Sign Up (Create User)
+  // ---------------------------------
+  describe("signUp", () => {
+    it("creates a new user successfully (200 OK)", async () => {
+      vi.spyOn(db, "getOne")
+        .mockResolvedValueOnce(null) // no existing email or user name
+
       vi.spyOn(db, "runQuery").mockResolvedValue(undefined);
-
-      // Mock db.getOne to simulate returning the newly inserted user
-      const fakeUser = {
+      vi.spyOn(db, "getOne").mockResolvedValueOnce({
         id: 1,
-        name: "Alice Doe",
-        email: "alice@example.com",
-        password: "hashed_password",
-        created_at: "2025-11-05 10:00:00",
-      };
-      vi.spyOn(db, "getOne").mockResolvedValue(fakeUser);
+        email: "test@example.com",
+        username: "testuser",
+      }); // after insert, return new user
 
-      // Act: run the same logic that a createUser API would run manually
-      const insertSql = `
-        INSERT INTO users (name, email, password, created_at)
-        VALUES (?, ?, ?, datetime('now'));
-      `;
-      await db.runQuery(insertSql, [
-        fakeUser.name,
-        fakeUser.email,
-        fakeUser.password,
-      ]);
+      const result = await dao.signUp("test@example.com", "testuser", "hashedpassword");
 
-      // Retrieve the inserted user (simulate SELECT)
-      const result = await db.getOne(
-        "SELECT * FROM users WHERE email = ?",
-        [fakeUser.email]
-      );
+      expect(result).toEqual({
+        id: 1,
+        email: "test@example.com",
+        username: "testuser",
+      });
 
-      // Assert
-      expect(result).toEqual(fakeUser);
+      expect(db.getOne).toHaveBeenCalledTimes(2);
       expect(db.runQuery).toHaveBeenCalledTimes(1);
+    });
+
+
+    describe("throws 400 if required fields are missing", () => {
+      it("throws 400 if email is missing", async () => {
+        await expect(dao.signUp("", "user1", "pass")).rejects.toThrow("Missing required fields");
+      });
+
+      it("throws 400 if username is missing", async () => {
+        await expect(dao.signUp("test@example.com", "", "pass")).rejects.toThrow("Missing required fields");
+      });
+
+      it("throws 400 if password is missing", async () => {
+        await expect(dao.signUp("test@example.com", "user1", "")).rejects.toThrow("Missing required fields");
+      });
+
+      it("throws 400 if all fields are missing", async () => {
+        await expect(dao.signUp("", "", "")).rejects.toThrow("Missing required fields");
+      });
+    });
+
+    it("throws 409 if email already exists", async () => {
+      vi.spyOn(db, "getOne").mockResolvedValueOnce({ id: 1 }); // email already taken
+
+      await expect(dao.signUp("duplicate@example.com", "user1", "pass")).rejects.toThrow(
+        "Email or username already exists"
+      );
+    });
+
+    it("throws 409 if username already exists", async () => {
+      vi.spyOn(db, "getOne")
+        .mockResolvedValueOnce(null) // email ok
+        .mockResolvedValueOnce({ id: 2 }); // username exists
+
+      await expect(dao.signUp("unique@example.com", "takenuser", "pass")).rejects.toThrow(
+        "Email or username already exists"
+      );
+    });
+
+    it("throws 500 on database error", async () => {
+      vi.spyOn(db, "getOne").mockRejectedValue(new Error("DB Error"));
+
+      await expect(dao.signUp("test@example.com", "user", "pass")).rejects.toThrow(
+        "Database error"
+      );
+    });
+  });
+
+  // ---------------------------------
+  // Sign In (Authenticate User)
+  // ---------------------------------
+  describe("signIn", () => {
+    it("authenticates user successfully (200 OK)", async () => {
+      vi.spyOn(db, "getOne").mockResolvedValueOnce({
+        id: 1,
+        email: "test@example.com",
+        username: "testuser",
+        password: "hashedpassword",
+      });
+
+      vi.mock("bcrypt", () => ({
+        compare: vi.fn().mockResolvedValue(true),
+      }));
+
+      const result = await dao.signIn("test@example.com", "password123");
+      expect(result).toEqual({
+        id: 1,
+        email: "test@example.com",
+        username: "testuser",
+      });
+
       expect(db.getOne).toHaveBeenCalledTimes(1);
     });
 
-    it("throws an error if insert fails", async () => {
-      vi.spyOn(db, "runQuery").mockRejectedValue(
-        new Error("SQLITE_CONSTRAINT: UNIQUE constraint failed: users.email")
-      );
+    describe("throws 400 if required fields are missing", () => {
+      it("throws 400 if email is missing", async () => {
+        await expect(dao.signIn("", "password")).rejects.toThrow("Missing required fields");
+      });
 
-      const insertSql = `
-        INSERT INTO users (name, email, password, created_at)
-        VALUES (?, ?, ?, datetime('now'));
-      `;
+      it("throws 400 if password is missing", async () => {
+        await expect(dao.signIn("test@example.com", "")).rejects.toThrow("Missing required fields");
+      });
 
-      await expect(
-        db.runQuery(insertSql, [
-          "Bob",
-          "existing@example.com",
-          "hashed_pw",
-        ])
-      ).rejects.toThrow("SQLITE_CONSTRAINT");
+      it("throws 400 if both fields are missing", async () => {
+        await expect(dao.signIn("", "")).rejects.toThrow("Missing required fields");
+      });
     });
+
+    it("throws 401 if invalid credentials", async () => {
+      vi.spyOn(db, "getOne").mockResolvedValueOnce(null);
+
+      await expect(dao.signIn("notfound@example.com", "wrong")).rejects.toThrow(
+        "Invalid credentials"
+      );
+    });
+
+    it("throws 401 if password does not match", async () => {
+      vi.spyOn(db, "getOne").mockResolvedValueOnce({
+        id: 1,
+        email: "test@example.com",
+        username: "testuser",
+        password: "hashedpassword",
+      });
+
+      vi.mock("bcrypt", () => ({
+        compare: vi.fn().mockResolvedValue(false),
+      }));
+
+      await expect(dao.signIn("test@example.com", "wrongpass")).rejects.toThrow(
+        "Invalid credentials"
+      );
+    });
+
+    it("throws 500 on database error", async () => {
+      vi.spyOn(db, "getOne").mockRejectedValue(new Error("DB Error"));
+
+      await expect(dao.signIn("test@example.com", "password")).rejects.toThrow(
+        "Database error"
+      );
+    });
+
+    it.todo("throws error if user already signed in (TBD)");
   });
 });
