@@ -5,11 +5,11 @@
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY,
+  firebase_uid TEXT NOT NULL UNIQUE,
   email TEXT NOT NULL UNIQUE,
   username TEXT NOT NULL UNIQUE,
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
-  password_hash TEXT NOT NULL,
   profile_photo_url TEXT,
   telegram_username TEXT,
   email_notifications_enabled INTEGER DEFAULT 1, -- SQLite uses INTEGER for boolean (1=true, 0=false)
