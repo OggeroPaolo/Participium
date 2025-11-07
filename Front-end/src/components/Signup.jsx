@@ -1,6 +1,6 @@
-import { Link } from "react-router";
 import { useActionState } from "react";
 import { Form, Button, Container } from "react-bootstrap";
+import { handleSignup } from "../API/API";
 
 function Signup() {
   const [state, formAction] = useActionState(submitCredentials, {
@@ -19,8 +19,14 @@ function Signup() {
       username: formData.get("username"),
       email: formData.get("email"),
       password: formData.get("password"),
-      passwordConfirm: formData.get("passwordConfirm"),
     };
+
+    let passwordConfirm = formData.get("passwordConfirm");
+
+    if (credentials.password !== passwordConfirm) {
+      return { error: "Passowords do not match" };
+    }
+
     try {
       await handleSignup(credentials);
       return { success: true };
