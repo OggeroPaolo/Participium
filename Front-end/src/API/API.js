@@ -5,4 +5,9 @@ async function handleSignup(credentials) {
   // TODO
 }
 
-export { handleSignup };
+// Login a user
+async function handleLogin(credentials) {
+  // TODO
+}
+
+export { handleSignup, handleLogin };
