@@ -1,8 +1,13 @@
-import { useActionState } from "react";
-import { Form, Button, Container } from "react-bootstrap";
+import { useActionState, useState } from "react";
+import { Form, Button, Container, Alert, InputGroup } from "react-bootstrap";
 import { handleSignup } from "../API/API";
+import { useNavigate } from "react-router";
 
 function Signup() {
+  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConf, setShowPasswordConf] = useState(false);
+
   const [state, formAction] = useActionState(submitCredentials, {
     firstName: "",
     lastName: "",
@@ -21,15 +26,21 @@ function Signup() {
       password: formData.get("password"),
     };
 
-    let passwordConfirm = formData.get("passwordConfirm");
+    const passwordConfirm = formData.get("passwordConfirm");
 
     if (credentials.password !== passwordConfirm) {
-      return { error: "Passowords do not match" };
+      return { error: "Passwords do not match" };
     }
 
     try {
       await handleSignup(credentials);
-      return { success: true };
+      setTimeout(() => {
+        // redirection to login
+        navigate("/login");
+      }, 2000);
+      return {
+        success: "Account created successfully! Redirecting to login...",
+      };
     } catch (error) {
       return { error: "Invalid signup" };
     }
@@ -46,6 +57,11 @@ function Signup() {
             <b>Sign up</b>
           </h3>
           <p className='subtitle'> Create an account to get started</p>
+          {state.success && (
+            <Alert variant='success' className='mt-4'>
+              {state.success}
+            </Alert>
+          )}
           <Form action={formAction}>
             <Form.Group controlId='firstName' className='mb-3 mt-4'>
               <Form.Label>
@@ -75,23 +91,49 @@ function Signup() {
               <Form.Label>
                 <b>Password</b>
               </Form.Label>
-              <Form.Control
-                type='password'
-                name='password'
-                required
-                placeholder='Enter password'
-              ></Form.Control>
+              <InputGroup>
+                <Form.Control
+                  type={showPassword ? "text" : "password"}
+                  name='password'
+                  required
+                  placeholder='Enter password'
+                ></Form.Control>
+                <Button
+                  variant='outline-secondary'
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <i className='bi bi-eye-slash'></i>
+                  ) : (
+                    <i className='bi bi-eye'></i>
+                  )}
+                </Button>
+              </InputGroup>
             </Form.Group>
             <Form.Group controlId='passwordConfirm' className='mb-3'>
-              <Form.Control
-                type='password'
-                name='passwordConfirm'
-                required
-                placeholder='Confirm password'
-              ></Form.Control>
+              <InputGroup>
+                <Form.Control
+                  type={showPasswordConf ? "text" : "password"}
+                  name='passwordConfirm'
+                  required
+                  placeholder='Confirm password'
+                ></Form.Control>
+                <Button
+                  variant='outline-secondary'
+                  onClick={() => setShowPasswordConf((prev) => !prev)}
+                  tabIndex={-1}
+                >
+                  {showPasswordConf ? (
+                    <i className='bi bi-eye-slash'></i>
+                  ) : (
+                    <i className='bi bi-eye'></i>
+                  )}
+                </Button>
+              </InputGroup>
             </Form.Group>
 
-            {state.error && <p className='text-danger'>{state.error}</p>}
+            {state.error && <Alert variant='danger'>{state.error}</Alert>}
 
             <Button type='submit' className='mt-4 confirm-button w-100'>
               SIGNUP

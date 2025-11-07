@@ -4,7 +4,7 @@ import { Container } from "react-bootstrap";
 import yellowbull from "../assets/yellowbull.png";
 import { Nav } from "react-bootstrap";
 
-function Header() {
+function Header(props) {
   const expand = "sm";
 
   return (
@@ -32,8 +32,17 @@ function Header() {
           <Navbar.Toggle aria-controls='responsive-navbar-nav' />
           <Navbar.Collapse id='responsive-navbar-nav'>
             <Nav className='ms-auto'>
-              <Nav.Link href='/signup'>Sign Up</Nav.Link>
-              <Nav.Link href='/login'>Log in</Nav.Link>
+              {props.loggedIn ? (
+                <>
+                  <Nav.Link href='/'>Profile</Nav.Link>
+                  <Nav.Link href='/'>Logout</Nav.Link>
+                </>
+              ) : (
+                <>
+                  <Nav.Link href='/login'>Login</Nav.Link>
+                  <Nav.Link href='/signup'>Signup</Nav.Link>
+                </>
+              )}
             </Nav>
           </Navbar.Collapse>
         </Container>
