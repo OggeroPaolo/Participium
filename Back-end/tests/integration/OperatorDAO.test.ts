@@ -27,7 +27,7 @@ describe("OperatorDAO Integration Test Suite", () => {
           first_name: "John",
           last_name: "Doe",
           profile_photo_url: "https://example.com/photos/john_doe.jpg",
-          role_name: "Admin",
+          //role_name: "Admin",
           created_at: "2025-11-06T10:15:32",
         },
         {
@@ -37,7 +37,7 @@ describe("OperatorDAO Integration Test Suite", () => {
           first_name: "Jane",
           last_name: "Smith",
           profile_photo_url: "https://example.com/photos/jane_smith.jpg",
-          role_name: "Operator",
+          //role_name: "Operator",
           created_at: "2025-10-30T09:12:45",
         },
       ];
@@ -45,7 +45,7 @@ describe("OperatorDAO Integration Test Suite", () => {
       vi.spyOn(db, "getAll").mockResolvedValue(mockOperators);
 
       const token = "valid_admin_token";
-      const result = await dao.getOperators(token, "admin");
+      const result = await dao.getOperators();
 
       expect(result).toEqual(mockOperators);
       expect(db.getAll).toHaveBeenCalledTimes(1);
@@ -55,23 +55,23 @@ describe("OperatorDAO Integration Test Suite", () => {
       vi.spyOn(db, "getAll").mockResolvedValue([]);
 
       const token = "valid_admin_token";
-      await expect(dao.getOperators(token, "admin")).rejects.toThrow("No Content");
+      await expect(dao.getOperators()).rejects.toThrow("No Content");
     });
 
     it("throws 401 Unauthorized when token is missing, invalid, or not admin", async () => {
       // Missing token
-      await expect(dao.getOperators(null, "admin")).rejects.toThrow(
+      await expect(dao.getOperators()).rejects.toThrow(
         "Unauthorized: missing or invalid token"
       );
 
       // Empty token
-      await expect(dao.getOperators("", "admin")).rejects.toThrow(
+      await expect(dao.getOperators()).rejects.toThrow(
         "Unauthorized: missing or invalid token"
       );
 
       // Not an admin
       const token = "valid_user_token";
-      await expect(dao.getOperators(token, "operator")).rejects.toThrow(
+      await expect(dao.getOperators()).rejects.toThrow(
         "Unauthorized: missing or invalid token"
       );
     });
@@ -80,7 +80,7 @@ describe("OperatorDAO Integration Test Suite", () => {
       vi.spyOn(db, "getAll").mockRejectedValue(new Error("Database connection failed"));
 
       const token = "valid_admin_token";
-      await expect(dao.getOperators(token, "admin")).rejects.toThrow(
+      await expect(dao.getOperators()).rejects.toThrow(
         "Database connection failed"
       );
     });
@@ -89,7 +89,7 @@ describe("OperatorDAO Integration Test Suite", () => {
       vi.spyOn(db, "getAll").mockRejectedValue(new Error("Failed to retrieve operators"));
 
       const token = "valid_admin_token";
-      await expect(dao.getOperators(token, "admin")).rejects.toThrow(
+      await expect(dao.getOperators()).rejects.toThrow(
         "Failed to retrieve operators"
       );
     });
