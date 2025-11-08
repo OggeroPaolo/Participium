@@ -1,5 +1,7 @@
 import { useActionState, useState } from "react";
 import { Form, Button, Container, InputGroup } from "react-bootstrap";
+import { loginWithEmail } from "../firebaseService";
+
 
 function Login(props) {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,10 +18,14 @@ function Login(props) {
     };
 
     try {
-      await props.login(credentials);
+      await loginWithEmail(credentials);
       return { success: true };
     } catch (error) {
-      return { error: "Invalid login" };
+      let message = "Invalid login";
+      if (error.code === "auth/user-not-found") message = "User not found.";
+      else if (error.code === "auth/wrong-password") message = "Incorrect email or password.";
+      else if (error.code === "auth/too-many-requests") message = "Too many failed attempts, please try later.";
+      return { error: message };
     }
   }
 

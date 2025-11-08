@@ -5,22 +5,23 @@ import { Navigate, Route, Routes } from "react-router";
 import Header from "./components/Header.jsx";
 import Signup from "./components/Signup.jsx";
 import Login from "./components/Login.jsx";
-import { handleLogin } from "./API/API.js";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 // TODO: add index route homepage once created
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const auth = getAuth();
 
-  const login = async (credentials) => {
-    try {
-      await handleLogin(credentials);
-      setLoggedIn(true);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  useEffect(() => {
+    // Listener per aggiornare loggedIn al cambio stato autenticazione Firebase
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setLoggedIn(!!user);
+    });
+
+    return () => unsubscribe();
+  }, [auth]);
 
   return (
     <>
@@ -33,7 +34,7 @@ function App() {
           <Route
             path='login'
             element={
-              loggedIn ? <Navigate replace to='/' /> : <Login login={login} />
+              loggedIn ? <Navigate replace to='/' /> : <Login />
             }
           />
         </Route>
