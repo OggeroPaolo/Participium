@@ -8,8 +8,6 @@ const router = Router();
 // Mount route modules
 router.use(healthRoutes);
 router.use(registrationsRoutes);
-
-
 router.use(OperatorRoutes);
 
 export default router;
