@@ -20,19 +20,20 @@ This directory contains database-related files for the Participium project.
 │       users          │         │       roles          │
 ├──────────────────────┤         ├──────────────────────┤
 │ • id (PK)            │         │ • id (PK)            │
-│ • email (unique)     │         │ • name (unique)      │
-│ • username (unique)  │◄───┐    │ • created_at         │
-│ • first_name         │    │    └──────────────────────┘
-│ • last_name          │    │              ▲
-│ • password_hash      │    │              │
-│ • profile_photo_url  │    │    ┌─────────┴────────┐
-│ • telegram_username  │    │    │   user_roles     │
-│ • email_notif...     │    └────┤   (junction)     │
-│ • is_active          │         ├──────────────────┤
-│ • created_at         │         │ • user_id (PK,FK)│
-│ • updated_at         │         │ • role_id (PK,FK)│
-│ • last_login_at      │         │ • assigned_at    │
-└──────────────────────┘         └──────────────────┘
+│ • firebase_uid       │         │ • name (unique)      │
+│ • email (unique)     │         │ • created_at         │
+│ • username (unique)  │         └──────────────────────┘
+│ • first_name         │                   ▲
+│ • last_name          │                   │
+│ • role_id (FK)       │───────────────────┘
+│ • profile_photo_url  │         (one-to-many)
+│ • telegram_username  │
+│ • email_notif...     │
+│ • is_active          │
+│ • created_at         │
+│ • updated_at         │
+│ • last_login_at      │
+└──────────────────────┘
 
 ┌──────────────────────┐         ┌──────────────────────────────┐
 │     offices          │         │        categories            │
@@ -61,11 +62,13 @@ This directory contains database-related files for the Participium project.
 ### Core Tables
 
 #### users
-Stores user account information including credentials, profile data, and preferences.
-- **Key Fields**: email (unique), username (unique), password_hash
+Stores user account information including Firebase authentication, profile data, and preferences.
+- **Key Fields**: firebase_uid (unique), email (unique), username (unique)
+- **Foreign Keys**: role_id → roles.id (one user has one role)
 - **Optional**: telegram_username, profile_photo_url
 - **Settings**: email_notifications_enabled, is_active
 - **Timestamps**: created_at, updated_at, last_login_at
+- **Note**: Uses Firebase Authentication, no password stored locally
 
 #### roles
 Predefined user roles for access control:
@@ -73,11 +76,6 @@ Predefined user roles for access control:
 - `org_office_operator` - Organization office staff (approval)
 - `technical_office_operator` - Technical office staff (execution)
 - `admin` - System administrators
-
-#### user_roles (Junction Table)
-Many-to-many relationship between users and roles.
-- A user can have multiple roles
-- Composite primary key: (user_id, role_id)
 
 #### offices
 Physical or organizational offices that handle reports:
@@ -101,8 +99,9 @@ Many-to-many relationship between categories and offices.
 ## Relationships
 
 ```
-users ←→ roles (via user_roles)
-  Many users can have many roles
+users → roles (one-to-many)
+  Each user has ONE role
+  A role can be assigned to MANY users
 
 categories ←→ offices (via category_offices)
   Many categories can be handled by many offices
@@ -126,14 +125,15 @@ categories → offices (default_technical_office_id)
 
 ### Indexes
 Optimized for common queries:
-- User lookups by email/username
-- Role-based queries
+- User lookups by email/username/firebase_uid
+- Role-based queries (users by role)
 - Active categories/users filtering
 - Category-office relationships
 
 ### Foreign Key Constraints
-- CASCADE on delete for junction tables
-- SET NULL for optional foreign keys
+- **users → roles**: RESTRICT on delete (prevents deleting a role with active users)
+- **categories → offices**: SET NULL on delete (optional default office)
+- **Junction tables**: CASCADE on delete (removes associations when parent is deleted)
 - Ensures referential integrity
 
 ## Pre-defined Database Promises

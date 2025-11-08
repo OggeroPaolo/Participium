@@ -10,13 +10,15 @@ CREATE TABLE IF NOT EXISTS users (
   username TEXT NOT NULL UNIQUE,
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
+  role_id INTEGER NOT NULL DEFAULT 1,
   profile_photo_url TEXT,
   telegram_username TEXT,
   email_notifications_enabled INTEGER DEFAULT 1, -- SQLite uses INTEGER for boolean (1=true, 0=false)
   is_active INTEGER DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  last_login_at DATETIME
+  last_login_at DATETIME,
+  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT
 );
 
 -- Roles table
@@ -24,16 +26,6 @@ CREATE TABLE IF NOT EXISTS roles (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- User roles junction table (many-to-many)
-CREATE TABLE IF NOT EXISTS user_roles (
-  user_id INTEGER NOT NULL,
-  role_id INTEGER NOT NULL,
-  assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (user_id, role_id),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
 );
 
 -- Offices table
@@ -76,11 +68,9 @@ CREATE TABLE IF NOT EXISTS category_offices (
 -- Users indexes
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_firebase_uid ON users(firebase_uid);
 CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
-
--- User roles indexes
-CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_roles_role_id ON user_roles(role_id);
+CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id);
 
 -- Offices indexes
 CREATE INDEX IF NOT EXISTS idx_offices_type ON offices(type);

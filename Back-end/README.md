@@ -54,9 +54,8 @@ npm test
 The project uses **SQLite** with the following structure:
 
 ### Tables
-- **users** - User accounts and authentication
+- **users** - User accounts with Firebase authentication (includes role_id)
 - **roles** - User roles (citizen, operators, admin)
-- **user_roles** - User-role assignments (many-to-many)
 - **offices** - Organization and technical offices
 - **categories** - Issue report categories
 - **category_offices** - Category-office assignments (many-to-many)
