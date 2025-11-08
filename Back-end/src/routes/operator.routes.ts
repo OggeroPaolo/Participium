@@ -1,10 +1,12 @@
 import { Router } from "express";
 import OperatorDao from "../dao/OperatorDAO.js";
+import { verifyFirebaseToken } from "../middlewares/verifyFirebaseToken.js";
+import { ROLES } from "../models/userRoles.js";
 
 const router = Router();
 
 // Health check endpoint
-router.get("/operators", async (req, res) => {
+router.get("/operators", verifyFirebaseToken([ROLES.ADMIN]), async (req, res) => {
   try {
     const operatorDao = new OperatorDao();
 
