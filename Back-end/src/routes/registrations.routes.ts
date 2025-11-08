@@ -2,14 +2,15 @@ import { Router } from "express";
 import type { Request, Response, NextFunction } from "express";
 import { body, validationResult } from "express-validator";
 import { verifyFirebaseToken } from "../middlewares/verifyFirebaseToken.js";
-import UserDAO from "../dao/userDao.js";
+import UserDAO from "../dao/UserDAO.js";
+import { ROLES } from "../models/userRoles.js";
 
 const router = Router();
 const userDao = new UserDAO();
 
 // Registrates a new User
 router.post("/user-registrations",
-    verifyFirebaseToken,
+    verifyFirebaseToken([ROLES.ADMIN, ROLES.OPERATOR, ROLES.CITIZEN]),
     [
         body("firebaseUid").isString().notEmpty(),
         body("firstName").isString().notEmpty(),
