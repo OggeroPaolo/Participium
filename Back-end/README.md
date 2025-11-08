@@ -133,6 +133,54 @@ The database is automatically seeded with:
 }
 ```
 
+### Registration
+
+**POST `/user-registrations`**
+
+- **Request Parameters:** None
+
+- **Request Body content:**
+```json
+{
+  "firebaseUid": "XPbEc2V01QhOQm6YRNlYNo57aQl1",
+  "firstName": "Mario",
+  "lastName": "Rossi",
+  "username": "SuperMario",
+  "email": "mario.rossi@gmail.com"
+}
+```
+
+- **Success Response (201 Created):**
+```json
+{
+  "message": "User data saved successfully",
+  "userId": "XPbEc2V01QhOQm6YRNlYNo57aQl1"
+}
+```
+- **Error Response (500 Internal Server Error):**
+```json
+{
+  "error": "Internal server error"
+}
+```
+- **Error Response (400 Bad Request):**
+```json
+{
+  "error": "Invalid request data"
+}
+```
+- **Error Response (409 Conflict):**
+```json
+{
+  "error": "User already registered"
+}
+```
+- **Error Response (422 Unprocessable Entity):**
+```json
+{
+  "error": "Email or username already in use"
+}
+```
 
 ### Operators
 
@@ -209,53 +257,79 @@ Returned when the authenticated user is not an admin.
 {
   "error": "Failed to retrieve operators"
 }
+```
 
-### Registration
-
-**POST `/user-registrations`**
+**POST `/operator-registrations`**
 
 - **Request Parameters:** None
 
-- **Request Body content:**
+* **Request Body:**
+
 ```json
 {
   "firebaseUid": "XPbEc2V01QhOQm6YRNlYNo57aQl1",
   "firstName": "Mario",
   "lastName": "Rossi",
   "username": "SuperMario",
-  "email": "mario.rossi@gmail.com"
+  "email": "mario.rossi@gmail.com",
+  "role_id": "number"
 }
 ```
 
-- **Success Response (201 Created):**
+* **Success Response (201 Created):**
 ```json
 {
   "message": "User data saved successfully",
   "userId": "XPbEc2V01QhOQm6YRNlYNo57aQl1"
 }
 ```
-- **Error Response (500 Internal Server Error):**
-```json
-{
-  "error": "Internal server error"
-}
-```
-- **Error Response (400 Bad Request):**
+
+* **Error Response (400 Bad Request):**
 ```json
 {
   "error": "Invalid request data"
 }
 ```
-- **Error Response (409 Conflict):**
+
+* **Error Response (401 Unauthorized):**
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+* **Error Response (403 Forbidden):**
+```json
+{
+  "error": "Forbidden: admin access required"
+}
+```
+
+* **Error Response (409 Conflict):**
 ```json
 {
   "error": "User already registered"
 }
 ```
-- **Error Response (422 Unprocessable Entity):**
+
+* **Error Response (422 Unprocessable Entity):**
+```json
+{
+  "error": "Invalid role data, cannot assign admin or citizen"
+}
+```
+
 ```json
 {
   "error": "Email or username already in use"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server error"
 }
 ```
 

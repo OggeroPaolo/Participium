@@ -22,10 +22,11 @@ class UserDAO {
         lastName: string;
         username: string;
         email: string;
+        role_id?: number;
     }): Promise<User> {
         const sql = `
-      INSERT INTO users (firebase_uid, first_name, last_name, username, email)
-      VALUES (?, ?, ?, ?, ?);
+      INSERT INTO users (firebase_uid, first_name, last_name, username, email, role_id)
+      VALUES (?, ?, ?, ?, ?, ?);
     `;
         await runQuery(sql, [
             userData.firebaseUid,
@@ -33,6 +34,7 @@ class UserDAO {
             userData.lastName,
             userData.username,
             userData.email,
+            userData.role_id? userData.role_id : 1,
         ]);
         const createdUser = await this.findUserByUid(userData.firebaseUid);
         if (!createdUser) {

@@ -13,7 +13,7 @@ router.get("/roles", verifyFirebaseToken([ROLES.ADMIN]), async (req, res) => {
     const rolesList = await rolesDao.getRoles();
 
     if (Array.isArray(rolesList) && rolesList.length === 0) {
-      return res.status(204).send(); // No Operators saved
+      return res.status(204).send(); // No Roles saved
     }
 
     res.status(200).json(rolesList);
