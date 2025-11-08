@@ -72,6 +72,68 @@ The database is automatically seeded with:
 
 - **GET** `/health` - Returns the health status of the server
 
+### Roles
+
+**GET `/roles`**
+
+* **Request Parameters:** None
+
+* **Success Response (200 OK):**
+
+```json
+[
+  {
+    "id": 2,
+    "name": "org_office_operator",
+    "created_at": "2025-11-08 11:46:55"
+  },
+  {
+    "id": 3,
+    "name": "technical_office_operator",
+    "created_at": "2025-11-08 11:46:55"
+  }
+]
+```
+
+* **No Content Response (204 No Content):**
+
+```json
+// Empty response body
+```
+
+* **Error Response (401 Unauthorized):**
+  Returned when no valid authentication token is provided.
+
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+* **Error Response (403 Forbidden):**
+  Returned when the authenticated user is not an admin.
+
+```json
+{
+  "error": "Forbidden: admin access required"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Database connection failed"
+}
+```
+
+```json
+{
+  "error": "Failed to retrieve roles"
+}
+```
+
+
 ### Operators
 
 **GET `/operators`**
@@ -83,23 +145,35 @@ The database is automatically seeded with:
 [
   {
     "id": 1,
-    "email": "admin@example.com",
-    "username": "adminUser",
+    "firebase_uid": "uid_operator1",
+    "email": "operator1@example.com",
+    "username": "operator_user1",
     "first_name": "John",
-    "last_name": "Doe",
-    "profile_photo_url": "https://example.com/photos/john_doe.jpg",
-    "role_name": "Admin",
-    "created_at": "2025-11-06T10:15:32"
+    "last_name": "Amber",
+    "role_name": "org_office_operator1",
+    "profile_photo_url": null,
+    "telegram_username": null,
+    "email_notifications_enabled": 1,
+    "is_active": 1,
+    "created_at": "2025-11-08 11:46:55",
+    "updated_at": "2025-11-08 11:46:55",
+    "last_login_at": null
   },
   {
     "id": 2,
-    "email": "operator@example.com",
-    "username": "operatorUser",
+    "firebase_uid": "uid_operator2",
+    "email": "operator2@example.com",
+    "username": "operator_user2",
     "first_name": "Jane",
     "last_name": "Smith",
-    "profile_photo_url": "https://example.com/photos/jane_smith.jpg",
-    "role_name": "Operator",
-    "created_at": "2025-10-30T09:12:45"
+    "role_name": "org_office_operator2",
+    "profile_photo_url": null,
+    "telegram_username": null,
+    "email_notifications_enabled": 1,
+    "is_active": 1,
+    "created_at": "2025-11-08 11:46:55",
+    "updated_at": "2025-11-08 11:46:55",
+    "last_login_at": null
   }
 ]
 ```
