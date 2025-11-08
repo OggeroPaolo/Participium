@@ -136,8 +136,55 @@ Returned when the authenticated user is not an admin.
 {
   "error": "Failed to retrieve operators"
 }
+
+### Registration
+
+**POST `/user-registrations`**
+
+- **Request Parameters:** None
+
+- **Request Body content:**
+```json
+{
+  "firebaseUid": "XPbEc2V01QhOQm6YRNlYNo57aQl1",
+  "firstName": "Mario",
+  "lastName": "Rossi",
+  "username": "SuperMario",
+  "email": "mario.rossi@gmail.com"
+}
 ```
 
+- **Success Response (201 Created):**
+```json
+{
+  "message": "User data saved successfully",
+  "userId": "XPbEc2V01QhOQm6YRNlYNo57aQl1"
+}
+```
+- **Error Response (500 Internal Server Error):**
+```json
+{
+  "error": "Internal server error"
+}
+```
+- **Error Response (400 Bad Request):**
+```json
+{
+  "error": "Invalid request data"
+}
+```
+- **Error Response (409 Conflict):**
+```json
+{
+  "error": "User already registered"
+}
+```
+- **Error Response (422 Unprocessable Entity):**
+```json
+{
+  "error": "Email or username already in use"
+}
+```
 
 ## Project Structure
 
