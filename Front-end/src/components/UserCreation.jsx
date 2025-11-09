@@ -1,12 +1,22 @@
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { Form, Button, Container, Alert, InputGroup } from "react-bootstrap";
-import { handleSignup } from "../API/API";
 import { useNavigate } from "react-router";
+import { createInternalUser, getUserRoles } from "../API/API.js";
 
-function Signup() {
+function UserCreation() {
   const navigate = useNavigate();
+
   const [showPassword, setShowPassword] = useState(false);
-  const [showPasswordConf, setShowPasswordConf] = useState(false);
+  const [roles, setRoles] = useState([]);
+
+  useEffect(() => {
+    const loadRoles = async () => {
+      const roleList = await getUserRoles();
+      setRoles(roleList);
+    };
+
+    loadRoles();
+  }, []);
 
   const [state, formAction] = useActionState(submitCredentials, {
     firstName: "",
@@ -14,7 +24,7 @@ function Signup() {
     username: "",
     email: "",
     password: "",
-    passwordConfirm: "",
+    userRole: "",
   });
 
   async function submitCredentials(prevData, formData) {
@@ -24,26 +34,30 @@ function Signup() {
       username: formData.get("username"),
       email: formData.get("email"),
       password: formData.get("password"),
+      userRole: formData.get("userRole"),
     };
 
-    const passwordConfirm = formData.get("passwordConfirm");
-
-    if (credentials.password !== passwordConfirm) {
-      return { error: "Passwords do not match" };
-    }
-
     try {
-      await handleSignup(credentials);
+      await createInternalUser(credentials);
       setTimeout(() => {
-        // redirection to login
-        navigate("/login");
+        // TODO: redirection to list of users page
+        navigate("/");
       }, 2500);
       return {
-        success: "Account created successfully! Redirecting to login...",
+        success: "Account created successfully! Redirecting to homepage...",
       };
     } catch (error) {
-      return { error: "Invalid signup" };
+      return { error: "Invalid user creation" };
     }
+  }
+
+  // string formatter for user roles
+  function formatRole(role) {
+    const r = role.name;
+    return r
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   }
 
   return (
@@ -52,11 +66,10 @@ function Signup() {
         fluid
         className='mt-3 ms-1 me-1 d-flex justify-content-center body-font'
       >
-        <Container className='p-4' style={{ maxWidth: "400px", width: "100%" }}>
+        <Container className='p-4' style={{ maxWidth: "800px" }}>
           <h3>
-            <b>Sign up</b>
+            <b>Create a new user</b>
           </h3>
-          <p className='subtitle'> Create an account to get started</p>
           {state.success && (
             <Alert variant='success' className='mt-4'>
               {state.success}
@@ -87,7 +100,7 @@ function Signup() {
               </Form.Label>
               <Form.Control type='email' name='email' required />
             </Form.Group>
-            <Form.Group controlId='password' className='mb-2'>
+            <Form.Group controlId='password' className='mb-3'>
               <Form.Label>
                 <b>Password</b>
               </Form.Label>
@@ -111,32 +124,24 @@ function Signup() {
                 </Button>
               </InputGroup>
             </Form.Group>
-            <Form.Group controlId='passwordConfirm' className='mb-3'>
-              <InputGroup>
-                <Form.Control
-                  type={showPasswordConf ? "text" : "password"}
-                  name='passwordConfirm'
-                  required
-                  placeholder='Confirm password'
-                ></Form.Control>
-                <Button
-                  variant='outline-secondary'
-                  onClick={() => setShowPasswordConf((prev) => !prev)}
-                  tabIndex={-1}
-                >
-                  {showPasswordConf ? (
-                    <i className='bi bi-eye-slash'></i>
-                  ) : (
-                    <i className='bi bi-eye'></i>
-                  )}
-                </Button>
-              </InputGroup>
+            <Form.Group controlId='userRole' className='mb-3'>
+              <Form.Label>
+                <b>User role</b>
+              </Form.Label>
+              <Form.Select>
+                <option>Select a role</option>
+                {roles.map((r) => (
+                  <option key={formatRole(r)} value={r}>
+                    {formatRole(r)}
+                  </option>
+                ))}
+              </Form.Select>
             </Form.Group>
 
             {state.error && <Alert variant='danger'>{state.error}</Alert>}
 
             <Button type='submit' className='mt-4 confirm-button w-100'>
-              SIGNUP
+              CREATE USER
             </Button>
           </Form>
         </Container>
@@ -145,4 +150,4 @@ function Signup() {
   );
 }
 
-export default Signup;
+export default UserCreation;
