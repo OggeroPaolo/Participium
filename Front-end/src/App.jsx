@@ -7,8 +7,11 @@ import Signup from "./components/Signup.jsx";
 import Login from "./components/Login.jsx";
 import { useState, useEffect } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import UserCreation from "./components/UserCreation.jsx";
 
 // TODO: add index route homepage once created
+
+//TODO: add admin route protection
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -37,6 +40,7 @@ function App() {
               loggedIn ? <Navigate replace to='/' /> : <Login />
             }
           />
+          <Route path='/user-creation' element={<UserCreation />} />
         </Route>
 
         <Route path='*' element={<h1>404 Not Found</h1>} />
