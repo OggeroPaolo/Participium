@@ -7,6 +7,13 @@ import { Nav } from "react-bootstrap";
 function Header(props) {
   const expand = "sm";
 
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    if (props.onLogout) {
+      await props.onLogout();
+    }
+  }
+
   return (
     <>
       <Navbar
@@ -35,7 +42,7 @@ function Header(props) {
               {props.loggedIn ? (
                 <>
                   <Nav.Link href='/'>Profile</Nav.Link>
-                  <Nav.Link href='/'>Logout</Nav.Link>
+                  <Nav.Link href='#' onClick={handleLogout}>Logout</Nav.Link>
                 </>
               ) : (
                 <>

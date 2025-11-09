@@ -19,6 +19,7 @@ function Login(props) {
 
     try {
       await loginWithEmail(credentials);
+      //TODO: Rimuovere il return esplicito di success, fare chiamata API a nostro BE
       return { success: true };
     } catch (error) {
       let message = "Invalid login";

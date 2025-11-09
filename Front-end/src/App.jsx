@@ -8,6 +8,7 @@ import Login from "./components/Login.jsx";
 import { useState, useEffect } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import UserCreation from "./components/UserCreation.jsx";
+import { logout } from "./firebaseService.js";
 
 // TODO: add index route homepage once created
 
@@ -16,6 +17,14 @@ import UserCreation from "./components/UserCreation.jsx";
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const auth = getAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error("Errore logout: ", err);
+    }
+  };
 
   useEffect(() => {
     // Listener per aggiornare loggedIn al cambio stato autenticazione Firebase
@@ -29,7 +38,7 @@ function App() {
   return (
     <>
       <Routes>
-        <Route path='/' element={<Header loggedIn={loggedIn} />}>
+        <Route path='/' element={<Header loggedIn={loggedIn} onLogout={handleLogout} />}>
           <Route
             path='signup'
             element={loggedIn ? <Navigate replace to='/' /> : <Signup />}
