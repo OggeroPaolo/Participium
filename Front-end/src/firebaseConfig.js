@@ -7,7 +7,8 @@ const firebaseConfig = {
   projectId: "participium-53ae1",
   storageBucket: "participium-53ae1.firebasestorage.app",
   messagingSenderId: "512696154591",
-  appId: "TUO_APP_ID",
+  appId: "1:512696154591:web:2d95f7014b393b333aac6a",
+  measurementId: "G-YEF6YTHNMP"
 };
 
 const app = initializeApp(firebaseConfig);
