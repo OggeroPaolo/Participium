@@ -142,11 +142,11 @@ The database is automatically seeded with:
 - **Request Body content:**
 ```json
 {
-  "firebaseUid": "XPbEc2V01QhOQm6YRNlYNo57aQl1",
   "firstName": "Mario",
   "lastName": "Rossi",
   "username": "SuperMario",
-  "email": "mario.rossi@gmail.com"
+  "email": "mario.rossi@gmail.com",
+  "password": "passwordincredibile"
 }
 ```
 

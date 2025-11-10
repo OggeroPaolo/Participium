@@ -5,7 +5,8 @@ import { verifyFirebaseToken } from "../middlewares/verifyFirebaseToken.js";
 import { ROLES } from "../models/userRoles.js";
 import UserDAO from "../dao/UserDAO.js";
 import OperatorDAO from "../dao/OperatorDAO.js";
-import admin from "../config/firebaseAdmin.js";
+import { createUserWithFirebase, UserAlreadyExistsError, EmailOrUsernameConflictError } from "../services/userService.js";
+
 
 const router = Router();
 const operatorDao = new OperatorDAO();
@@ -52,40 +53,25 @@ router.post("/operator-registrations",
         return res.status(422).json({ error: "Invalid role data, cannot assign admin or citizen" });
       }
 
-      // Controlla se email o username sono già usati
-      const conflictUser = await userDao.findUserByEmailOrUsername(email, username);
-      if (conflictUser) {
-        return res.status(422).json({ error: "Email or username already in use" });
-      }
-
-      // Crea il nuovo account firebase
-      const firebaseUser = await admin.auth().createUser({
-        email,
-        password,
-        displayName: `${firstName} ${lastName}`,
-      });
-
-      // Crea il nuovo account localmente
-      const newUser = await operatorDao.createOperator({
-        firebaseUid: firebaseUser.uid,
-        firstName,
-        lastName,
-        username,
-        email,
-        role_id,
-      });
+      const newUser = await createUserWithFirebase(
+        { firstName, lastName, username, email, password, role_id },
+        userDao
+      );
 
       return res.status(201).json({
         message: "User created successfully",
         userId: newUser.id,
       });
-    } catch (error: any) {
-      console.error(error);
 
-      if (error.code === "auth/email-already-exists") {
-        return res.status(409).json({ error: "Email already registered in Firebase" });
+    } catch (error: any) {
+      if (error instanceof EmailOrUsernameConflictError) {
+        return res.status(422).json({ error: error.message });
+      }
+      if (error instanceof UserAlreadyExistsError) {
+        return res.status(409).json({ error: error.message });
       }
 
+      console.error(error);
       return res.status(500).json({ error: "Internal server error" });
     }
   }

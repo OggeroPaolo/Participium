@@ -22,7 +22,7 @@ class UserDAO {
         lastName: string;
         username: string;
         email: string;
-        role_id?: number;
+        role_id?: number | null | undefined;
     }): Promise<User> {
         const sql = `
       INSERT INTO users (firebase_uid, first_name, last_name, username, email, role_id)

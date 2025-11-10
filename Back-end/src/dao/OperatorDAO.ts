@@ -12,15 +12,4 @@ export default class OperatorDao {
 
     return operators;
   }
-
-  async createOperator(operatorData: {
-    firebaseUid: string;
-    firstName: string;
-    lastName: string;
-    username: string;
-    email: string;
-    role_id: number;
-  }): Promise<User> {
-    return userDao.createUser(operatorData);
-  }
 }

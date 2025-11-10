@@ -4,6 +4,7 @@ import { body, validationResult } from "express-validator";
 import { verifyFirebaseToken } from "../middlewares/verifyFirebaseToken.js";
 import UserDAO from "../dao/UserDAO.js";
 import { ROLES } from "../models/userRoles.js";
+import { createUserWithFirebase, UserAlreadyExistsError, EmailOrUsernameConflictError } from "../services/userService.js";
 
 const router = Router();
 const userDao = new UserDAO();
@@ -12,11 +13,11 @@ const userDao = new UserDAO();
 router.post("/user-registrations",
     verifyFirebaseToken([ROLES.ADMIN, ROLES.OPERATOR, ROLES.CITIZEN]),
     [
-        body("firebaseUid").isString().notEmpty(),
         body("firstName").isString().notEmpty(),
         body("lastName").isString().notEmpty(),
         body("username").isAlphanumeric().notEmpty(),
         body("email").isEmail().normalizeEmail(),
+        body("password").isString()
     ],
     async (req: Request, res: Response) => {
         const errors = validationResult(req);
@@ -25,27 +26,9 @@ router.post("/user-registrations",
         }
 
         try {
-            const { firebaseUid, firstName, lastName, username, email } = req.body;
+            const { firstName, lastName, username, email, password } = req.body;
 
-            // Controllo che l'UID nel token corrisponda a quello nel body
-            if (firebaseUid !== req.uid) {
-                return res.status(401).json({ error: "Unauthorized" });
-            }
-
-            // Controlla se utente esiste già per UID
-            const existingUser = await userDao.findUserByUid(firebaseUid);
-            if (existingUser) {
-                return res.status(409).json({ error: "User already registered" });
-            }
-
-            // Controlla se email o username sono già usati
-            const conflictUser = await userDao.findUserByEmailOrUsername(email, username);
-            if (conflictUser) {
-                return res.status(422).json({ error: "Email or username already in use" });
-            }
-
-            // Crea il nuovo utente
-            const newUser = await userDao.createUser({ firebaseUid, firstName, lastName, username, email });
+            const newUser = await createUserWithFirebase({ firstName, lastName, username, email, password }, userDao);
 
             return res.status(201).json({
                 message: "User data saved successfully",
@@ -53,7 +36,13 @@ router.post("/user-registrations",
             });
 
 
-        } catch (error) {
+        } catch (error: any) {
+            if (error instanceof EmailOrUsernameConflictError) {
+                return res.status(422).json({ error: error.message });
+            }
+            if (error instanceof UserAlreadyExistsError) {
+                return res.status(409).json({ error: error.message });
+            }
             console.error(error);
             return res.status(500).json({ error: "Internal server error" });
         }
