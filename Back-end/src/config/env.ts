@@ -8,6 +8,9 @@ const EnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   CORS_ORIGIN: z.string().default("*"),
   DB_PATH: z.string().default("./data/participium.db"),
+  FIREBASE_PROJECT_ID: z.string(),
+  FIREBASE_CLIENT_EMAIL: z.string(),
+  FIREBASE_PRIVATE_KEY: z.string()
 });
 
 const parsed = EnvSchema.safeParse(process.env);
@@ -17,4 +20,3 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
-

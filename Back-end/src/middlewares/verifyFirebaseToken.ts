@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import admin from "firebase-admin";
+import firebaseAdmin from "../config/firebaseAdmin.js";
 import UserDAO from "../dao/UserDAO.js";
 
 const userDAO = new UserDAO();
@@ -15,7 +15,7 @@ export function verifyFirebaseToken(allowedRoles: string[]) {
             if (!idToken) {
                 return res.status(401).json({ error: "Unauthorized" });
             }
-            const decodedToken = await admin.auth().verifyIdToken(idToken);
+            const decodedToken = await firebaseAdmin.auth().verifyIdToken(idToken);
             req.uid = decodedToken.uid;
 
             // Fetch user from database
