@@ -261,25 +261,33 @@ Returned when the authenticated user is not an admin.
 
 **POST `/operator-registrations`**
 
-- **Request Parameters:** None
+* **Request Parameters:** None
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+---
 
 * **Request Body:**
 
 ```json
 {
-  "firebaseUid": "XPbEc2V01QhOQm6YRNlYNo57aQl1",
   "firstName": "Mario",
   "lastName": "Rossi",
   "username": "SuperMario",
   "email": "mario.rossi@gmail.com",
-  "role_id": "number"
+  "password": "securePassword123",
+  "role_id": 2
 }
 ```
 
 * **Success Response (201 Created):**
 ```json
 {
-  "message": "User data saved successfully",
+  "message": "Operator created successfully",
   "userId": "XPbEc2V01QhOQm6YRNlYNo57aQl1"
 }
 ```
