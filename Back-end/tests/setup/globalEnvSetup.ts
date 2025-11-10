@@ -1,20 +1,19 @@
 // tests/setup/globalEnvSetup.ts
-import { ensureEnvFiles, setupTestEnv, teardownTestEnv, cleanDatabase } from ".//tests_util.js";
+import { ensureEnvFiles, setupTestEnv, cleanDatabase } from "../setup/tests_util.js";
 
 export default async function globalSetup() {
-  // Ensure .env and .env.tests exist
-  ensureEnvFiles();
+  try {
+    // Ensure .env.tests exists (copy from .env if needed)
+    ensureEnvFiles();
 
-  // Setup test environment
-  setupTestEnv();
+    // Backup .env and overwrite with .env.tests
+    setupTestEnv();
 
-  // Clean DB before tests
-  await cleanDatabase();
-  console.log("[setup] Test environment ready");
-
-  // Return teardown function that Vitest will call after all tests
-  return async () => {
-    teardownTestEnv();
-    console.log("[teardown] Test environment restored");
-  };
+    // Clean the database before tests
+    await cleanDatabase();
+    console.log("[setup] Test environment ready");
+  } catch (err) {
+    console.error("[setup] Failed to setup test environment:", err);
+    throw err;
+  }
 }
