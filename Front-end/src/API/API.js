@@ -50,7 +50,17 @@ async function getUserRoles() {
 
 // Get internal users as an admin
 async function getInternalUsers() {
-  // TODO
+  try {
+    const response = await fetch(URI + "/operators");
+    if (response.ok) {
+      const roles = await response.json();
+      return roles;
+    } else {
+      throw new Error("Failed to fetch operators");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
 }
 
 export { handleSignup, createInternalUser, getUserRoles, getInternalUsers };
