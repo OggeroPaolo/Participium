@@ -97,6 +97,8 @@ function Signup() {
                   name='password'
                   required
                   placeholder='Enter password'
+                  minLength='6'
+                  maxLength='25'
                 ></Form.Control>
                 <Button
                   variant='outline-secondary'
@@ -118,6 +120,8 @@ function Signup() {
                   name='passwordConfirm'
                   required
                   placeholder='Confirm password'
+                  minLength='6'
+                  maxLength='25'
                 ></Form.Control>
                 <Button
                   variant='outline-secondary'
