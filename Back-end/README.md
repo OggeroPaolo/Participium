@@ -76,6 +76,12 @@ The database is automatically seeded with:
 
 **GET `/roles`**
 
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
 * **Request Parameters:** None
 
 * **Success Response (200 OK):**
@@ -186,6 +192,12 @@ The database is automatically seeded with:
 
 **GET `/operators`**
 
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
 - **Request Parameters:** None
 
 - **Success Response (200 OK):**
@@ -261,15 +273,13 @@ Returned when the authenticated user is not an admin.
 
 **POST `/operator-registrations`**
 
-* **Request Parameters:** None
-
 * **Request Headers:**
 
 ```http
 Authorization: Bearer <firebase-token>
 ```
 
----
+* **Request Parameters:** None
 
 * **Request Body:**
 
