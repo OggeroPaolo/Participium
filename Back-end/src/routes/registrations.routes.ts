@@ -11,7 +11,6 @@ const userDao = new UserDAO();
 
 // Registrates a new User
 router.post("/user-registrations",
-    verifyFirebaseToken([ROLES.ADMIN, ROLES.OPERATOR, ROLES.CITIZEN]),
     [
         body("firstName").isString().notEmpty(),
         body("lastName").isString().notEmpty(),
