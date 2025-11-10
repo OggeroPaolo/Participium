@@ -14,12 +14,15 @@ export function useAuthSync() {
       if (firebaseUser) {
         try {
           // get user data from backend
-          const userData = await getUserData(firebaseUser.uid);
+          const response = await getUserData(firebaseUser.uid);
+          
+          // Backend returns nested { user: {...} } structure
+          const userData = response.user || response;
           
           setUser({
             uid: firebaseUser.uid,
             email: firebaseUser.email,
-            ...userData, // username, role, firstName, lastName vs.
+            ...userData, // username, role_id, first_name, last_name vs.
           });
         } catch (error) {
           console.error('Failed to fetch user data:', error);

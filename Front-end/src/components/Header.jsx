@@ -44,10 +44,10 @@ function Header(props) {
                 <>
                   {user && (
                     <Navbar.Text className='me-3'>
-                      Welcome, <strong>{user.username || user.firstName}</strong>
+                      Welcome, <strong>{user.username || user.first_name}</strong>
                     </Navbar.Text>
                   )}
-                  {user?.role === 'admin' && (
+                  {user?.role_id === 4 && (
                     <>
                       <Nav.Link href='/user-creation'>User Creation</Nav.Link>
                       <Nav.Link href='/user-list'>User List</Nav.Link>
