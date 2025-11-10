@@ -6,6 +6,7 @@ import { Nav } from "react-bootstrap";
 
 function Header(props) {
   const expand = "sm";
+  const { user, isAuthenticated } = props;
 
   const handleLogout = async (e) => {
     e.preventDefault();
@@ -39,9 +40,19 @@ function Header(props) {
           <Navbar.Toggle aria-controls='responsive-navbar-nav' />
           <Navbar.Collapse id='responsive-navbar-nav'>
             <Nav className='ms-auto'>
-              {props.loggedIn ? (
+              {isAuthenticated ? (
                 <>
-                  <Nav.Link href='/'>Profile</Nav.Link>
+                  {user && (
+                    <Navbar.Text className='me-3'>
+                      Welcome, <strong>{user.username || user.firstName}</strong>
+                    </Navbar.Text>
+                  )}
+                  {user?.role === 'admin' && (
+                    <>
+                      <Nav.Link href='/user-creation'>User Creation</Nav.Link>
+                      <Nav.Link href='/user-list'>User List</Nav.Link>
+                    </>
+                  )}
                   <Nav.Link href='#' onClick={handleLogout}>Logout</Nav.Link>
                 </>
               ) : (

@@ -15,11 +15,19 @@ export async function logout() {
 
 export function getBearerToken() {
   return new Promise((resolve, reject) => {
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) return reject(new Error("User not logged in"));
+    // Get current user without creating new listener
+    const currentUser = auth.currentUser;
+    
+    if (!currentUser) {
+      return reject(new Error("User not logged in"));
+    }
 
-      const idToken = await user.getIdToken();
-      resolve(`Bearer ${idToken}`);
-    });
+    // Get token with force refresh to check expiration
+    currentUser.getIdToken(true)
+      .then(idToken => resolve(`Bearer ${idToken}`))
+      .catch(error => {
+        console.error("Failed to get token:", error);
+        reject(error);
+      });
   });
 }

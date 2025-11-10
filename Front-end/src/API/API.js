@@ -98,4 +98,25 @@ async function getInternalUsers() {
   }
 }
 
-export { handleSignup, createInternalUser, getUserRoles, getInternalUsers };
+// Get current user data from backend
+async function getUserData(uid) {
+  try {
+    const response = await fetch(`${URI}/users/${uid}`, {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+    
+    if (response.ok) {
+      const userData = await response.json();
+      return userData;
+    } else {
+      throw new Error("Failed to fetch user data");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
+export { handleSignup, createInternalUser, getUserRoles, getInternalUsers, getUserData };

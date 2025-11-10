@@ -5,54 +5,69 @@ import { Navigate, Route, Routes } from "react-router";
 import Header from "./components/Header.jsx";
 import Signup from "./components/Signup.jsx";
 import Login from "./components/Login.jsx";
-import { useState, useEffect } from "react";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
 import UserCreation from "./components/UserCreation.jsx";
 import { logout } from "./firebaseService.js";
 import UserList from "./components/UserList.jsx";
+import { useAuthSync } from "./hooks/useAuthSync.js";
+import useUserStore from "./store/userStore.js";
 
 // TODO: add index route homepage once created
 
-//TODO: add admin route protection
-
 function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
-  const auth = getAuth();
+  // Sync Zustand store with Firebase auth state
+  useAuthSync();
+  
+  // get user data from Zustand store
+  const { user, isAuthenticated, isLoading } = useUserStore();
 
   const handleLogout = async () => {
     try {
       await logout();
+      // clearUser is automatic in onAuthStateChanged no need to call here
     } catch (err) {
       console.error("Errore logout: ", err);
     }
   };
 
-  useEffect(() => {
-    // Listener per aggiornare loggedIn al cambio stato autenticazione Firebase
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setLoggedIn(!!user);
-    });
-
-    return () => unsubscribe();
-  }, [auth]);
+  if (isLoading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "100vh" }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
       <Routes>
         <Route
           path='/'
-          element={<Header loggedIn={loggedIn} onLogout={handleLogout} />}
+          element={<Header user={user} isAuthenticated={isAuthenticated} onLogout={handleLogout} />}
         >
           <Route
             path='signup'
-            element={loggedIn ? <Navigate replace to='/' /> : <Signup />}
+            element={isAuthenticated ? <Navigate replace to='/' /> : <Signup />}
           />
           <Route
             path='login'
-            element={loggedIn ? <Navigate replace to='/' /> : <Login />}
+            element={isAuthenticated ? <Navigate replace to='/' /> : <Login />}
           />
-          <Route path='/user-creation' element={<UserCreation />} />
-          <Route path='/user-list' element={<UserList />} />
+          
+          {/* Admin route protection */}
+          <Route 
+            path='/user-creation' 
+            element={
+              user?.role === 'admin' ? <UserCreation /> : <Navigate replace to='/' />
+            } 
+          />
+          <Route 
+            path='/user-list' 
+            element={
+              user?.role === 'admin' ? <UserList /> : <Navigate replace to='/' />
+            } 
+          />
         </Route>
 
         <Route path='*' element={<h1>404 Not Found</h1>} />
