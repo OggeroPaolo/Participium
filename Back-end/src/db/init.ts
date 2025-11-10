@@ -1,4 +1,4 @@
-import { getDatabase, execSQL, runQuery, getOne } from "../config/database.js";
+import { getDatabase, execSQL, runQuery, getOne, getAll } from "../config/database.js";
 import { logger } from "../config/logger.js";
 import fs from "fs";
 import path from "path";
@@ -53,27 +53,18 @@ const seedDefaultData = async (): Promise<void> => {
       logger.info("Seeding default roles...");
       
       // Insert default roles
-      await runQuery(
-        `INSERT INTO roles (name) VALUES (?)`,
-        ["citizen"]
-      );
-      await runQuery(
-        `INSERT INTO roles (name) VALUES (?)`,
-        ["org_office_operator"]
-      );
-      await runQuery(
-        `INSERT INTO roles (name) VALUES (?)`,
-        ["technical_office_operator"]
-      );
-      await runQuery(
-        `INSERT INTO roles (name) VALUES (?)`,
-        ["admin"]
-      );
+      const roles = ["citizen", "org_office_operator", "technical_office_operator", "admin"];
+      for (const role of roles) {
+        await runQuery(`INSERT INTO roles (name) VALUES (?)`, [role]);
+      }
 
       logger.info("Default roles seeded successfully");
-      
+
       // Seed default categories
       await seedDefaultCategories();
+
+      // Seed default users
+      await seedDefaultUsers();
       
     } else {
       logger.info("Database already contains data, skipping seed");
@@ -81,6 +72,69 @@ const seedDefaultData = async (): Promise<void> => {
   } catch (error) {
     logger.error({ error }, "Failed to seed default data");
     // Don't throw error, as seeding is optional
+  }
+};
+
+/**
+ * Seed default users
+ */
+const seedDefaultUsers = async (): Promise<void> => {
+  try {
+    logger.info("Seeding default users...");
+
+    // Get role IDs dynamically
+    const roles = await getAll<{ id: number; name: string }>("SELECT id, name FROM roles");
+    const roleMap: Record<string, number> = {};
+    roles.forEach(r => {
+      roleMap[r.name] = r.id;
+    });
+
+    const users = [
+      {
+        firebase_uid: "uid_citizen",
+        email: "citizen@example.com",
+        username: "citizen_user",
+        first_name: "John",
+        last_name: "Doe",
+        role_id: roleMap["citizen"]
+      },
+      {
+        firebase_uid: "uid_operator",
+        email: "operator@example.com",
+        username: "operator_user",
+        first_name: "Jane",
+        last_name: "Smith",
+        role_id: roleMap["org_office_operator"]
+      },
+      {
+        firebase_uid: "QS9bJobR9SMi1eaWVNjrNSsQK4g1",
+        email: "test@example.com",
+        username: "admin_user",
+        first_name: "Alice",
+        last_name: "Admin",
+        role_id: roleMap["admin"]
+      }
+    ];
+
+    for (const user of users) {
+      await runQuery(
+        `INSERT INTO users 
+          (firebase_uid, email, username, first_name, last_name, role_id)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          user.firebase_uid,
+          user.email,
+          user.username,
+          user.first_name,
+          user.last_name,
+          user.role_id
+        ]
+      );
+    }
+
+    logger.info("Default users seeded successfully");
+  } catch (error) {
+    logger.error({ error }, "Failed to seed default users");
   }
 };
 
