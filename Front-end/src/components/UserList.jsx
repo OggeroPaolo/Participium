@@ -15,7 +15,7 @@ function UserList() {
       };
 
       loadUsers();
-    }, [users]);
+    }, []);
   }
 
   if (test) {
@@ -62,7 +62,7 @@ function UserList() {
       };
 
       loadUsers();
-    }, [users]);
+    }, []);
   }
 
   return (
