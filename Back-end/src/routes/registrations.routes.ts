@@ -1,9 +1,7 @@
 import { Router } from "express";
 import type { Request, Response, NextFunction } from "express";
 import { body, validationResult } from "express-validator";
-import { verifyFirebaseToken } from "../middlewares/verifyFirebaseToken.js";
 import UserDAO from "../dao/UserDAO.js";
-import { ROLES } from "../models/userRoles.js";
 import { createUserWithFirebase, UserAlreadyExistsError, EmailOrUsernameConflictError } from "../services/userService.js";
 
 const router = Router();

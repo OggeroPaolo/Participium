@@ -1,6 +1,8 @@
 node_modules
 dist
 .env
+.env.tests
+.env.backup
 .env.*
 data/*.db
 coverage
