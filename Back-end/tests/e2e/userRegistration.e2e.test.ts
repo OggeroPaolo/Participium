@@ -1,7 +1,7 @@
 import request from "supertest";
 import { Express } from "express";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import userRouter from "../../src/routes/registrations.routes"; // adjust path
+import userRouter from "../../src/routes/registrations.routes"; 
 import * as userService from "../../src/services/userService";
 import UserDAO from "../../src/dao/UserDAO";
 import { makeTestApp } from "../utils/testApp";
