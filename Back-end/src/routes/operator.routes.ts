@@ -5,7 +5,7 @@ import { verifyFirebaseToken } from "../middlewares/verifyFirebaseToken.js";
 import { ROLES } from "../models/userRoles.js";
 import UserDAO from "../dao/UserDAO.js";
 import OperatorDAO from "../dao/OperatorDAO.js";
-import admin from "../config/firebaseAdmin.js";
+import firebaseAdmin from "../config/firebaseAdmin.js";
 
 const router = Router();
 const operatorDao = new OperatorDAO();
@@ -59,10 +59,9 @@ router.post("/operator-registrations",
       }
 
       // Crea il nuovo account firebase
-      const firebaseUser = await admin.auth().createUser({
+      const firebaseUser = await firebaseAdmin.auth().createUser({
         email,
         password,
-        displayName: `${firstName} ${lastName}`,
       });
 
       // Crea il nuovo account localmente
