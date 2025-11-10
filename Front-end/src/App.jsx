@@ -59,13 +59,13 @@ function App() {
           <Route 
             path='/user-creation' 
             element={
-              user?.role_id === 4 ? <UserCreation /> : <Navigate replace to='/' />
+              user?.role_name === 'admin' ? <UserCreation /> : <Navigate replace to='/' />
             } 
           />
           <Route 
             path='/user-list' 
             element={
-              user?.role_id === 4 ? <UserList /> : <Navigate replace to='/' />
+              user?.role_name === 'admin' ? <UserList /> : <Navigate replace to='/' />
             } 
           />
         </Route>

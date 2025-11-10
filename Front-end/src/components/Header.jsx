@@ -47,7 +47,7 @@ function Header(props) {
                       Welcome, <strong>{user.username || user.first_name}</strong>
                     </Navbar.Text>
                   )}
-                  {user?.role_id === 4 && (
+                  {user?.role_name === 'admin' && (
                     <>
                       <Nav.Link href='/user-creation'>User Creation</Nav.Link>
                       <Nav.Link href='/user-list'>User List</Nav.Link>
