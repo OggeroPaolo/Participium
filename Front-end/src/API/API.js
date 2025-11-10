@@ -2,7 +2,7 @@ const URI = "http://localhost:3000";
 
 // Register a new user
 async function handleSignup(credentials) {
-  const { firstName, lastName, username, email, firebaseToken, firebaseUid } =
+  const { firstName, lastName, username, email, password, firebaseToken } =
     credentials;
 
   const response = await fetch(`${URI}/user-registrations`, {
@@ -12,11 +12,11 @@ async function handleSignup(credentials) {
       Authorization: `Bearer ${firebaseToken}`,
     },
     body: JSON.stringify({
-      firebaseUid: firebaseUid,
       firstName: firstName,
       lastName: lastName,
       username: username,
       email: email,
+      password: password
     }),
   });
 
