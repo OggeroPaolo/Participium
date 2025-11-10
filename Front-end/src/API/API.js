@@ -2,21 +2,22 @@ const URI = "http://localhost:3000";
 
 // Register a new user
 async function handleSignup(credentials) {
-  const { firstName, lastName, username, email, firebaseToken, firebaseUid } = credentials;
+  const { firstName, lastName, username, email, firebaseToken, firebaseUid } =
+    credentials;
 
   const response = await fetch(`${URI}/user-registrations`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${firebaseToken}`
+      Authorization: `Bearer ${firebaseToken}`,
     },
     body: JSON.stringify({
       firebaseUid: firebaseUid,
       firstName: firstName,
       lastName: lastName,
       username: username,
-      email: email
-    })
+      email: email,
+    }),
   });
 
   if (!response.ok) {
@@ -47,4 +48,9 @@ async function getUserRoles() {
   }
 }
 
-export { handleSignup, createInternalUser, getUserRoles };
+// Get internal users as an admin
+async function getInternalUsers() {
+  // TODO
+}
+
+export { handleSignup, createInternalUser, getUserRoles, getInternalUsers };

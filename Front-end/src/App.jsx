@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import UserCreation from "./components/UserCreation.jsx";
 import { logout } from "./firebaseService.js";
+import UserList from "./components/UserList.jsx";
 
 // TODO: add index route homepage once created
 
@@ -38,18 +39,20 @@ function App() {
   return (
     <>
       <Routes>
-        <Route path='/' element={<Header loggedIn={loggedIn} onLogout={handleLogout} />}>
+        <Route
+          path='/'
+          element={<Header loggedIn={loggedIn} onLogout={handleLogout} />}
+        >
           <Route
             path='signup'
             element={loggedIn ? <Navigate replace to='/' /> : <Signup />}
           />
           <Route
             path='login'
-            element={
-              loggedIn ? <Navigate replace to='/' /> : <Login />
-            }
+            element={loggedIn ? <Navigate replace to='/' /> : <Login />}
           />
           <Route path='/user-creation' element={<UserCreation />} />
+          <Route path='/user-list' element={<UserList />} />
         </Route>
 
         <Route path='*' element={<h1>404 Not Found</h1>} />
