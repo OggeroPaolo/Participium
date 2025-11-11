@@ -1,6 +1,6 @@
 import request from "supertest";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { makeTestApp } from "../../utils/testApp";
+import { makeTestApp } from "../../setup/tests_util.js";
 import router from "../../../src/routes/registrations.routes.js";
 import {
   createUserWithFirebase,

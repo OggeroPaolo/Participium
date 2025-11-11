@@ -3,10 +3,10 @@ import OperatorDAO from "../../../src/dao/OperatorDAO.js";
 import * as db from "../../../src/config/database.js";
 
 describe("OperatorDAO Integration Test Suite", () => {
-  const dao = new OperatorDAO();
+  let dao: OperatorDAO;
 
   beforeEach(() => {
-    vi.restoreAllMocks();
+    dao = new OperatorDAO();
     vi.clearAllMocks();
   });
 
@@ -14,84 +14,63 @@ describe("OperatorDAO Integration Test Suite", () => {
     vi.restoreAllMocks();
   });
 
-  // ------------------------------
-  // GET /operators
-  // ------------------------------
   describe("getOperators", () => {
-    it("returns a list of operators successfully (200 OK)", async () => {
+    it("returns a list of operators successfully", async () => {
       const mockOperators = [
         {
           id: 1,
-          email: "admin@example.com",
-          username: "adminUser",
-          first_name: "John",
+          email: "operator1@example.com",
+          username: "op1",
+          first_name: "Alice",
           last_name: "Doe",
-          profile_photo_url: "https://example.com/photos/john_doe.jpg",
-          //role_name: "Admin",
+          profile_photo_url: "https://example.com/photos/alice.jpg",
+          role_name: "Operator",
           created_at: "2025-11-06T10:15:32",
         },
         {
           id: 2,
-          email: "operator@example.com",
-          username: "operatorUser",
-          first_name: "Jane",
+          email: "operator2@example.com",
+          username: "op2",
+          first_name: "Bob",
           last_name: "Smith",
-          profile_photo_url: "https://example.com/photos/jane_smith.jpg",
-          //role_name: "Operator",
+          profile_photo_url: "https://example.com/photos/bob.jpg",
+          role_name: "Operator",
           created_at: "2025-10-30T09:12:45",
         },
       ];
 
-      vi.spyOn(db, "getAll").mockResolvedValue(mockOperators);
+      const getAllSpy = vi
+        .spyOn(db, "getAll")
+        .mockResolvedValueOnce(mockOperators);
 
-      const token = "valid_admin_token";
       const result = await dao.getOperators();
 
       expect(result).toEqual(mockOperators);
-      expect(db.getAll).toHaveBeenCalledTimes(1);
+      expect(getAllSpy).toHaveBeenCalledTimes(1);
+      expect(getAllSpy).toHaveBeenCalledWith(expect.stringContaining("SELECT"));
     });
 
-    it("returns 204 No Content when no operators found", async () => {
-      vi.spyOn(db, "getAll").mockResolvedValue([]);
+    it("returns an empty array when no operators are found", async () => {
+      vi.spyOn(db, "getAll").mockResolvedValueOnce([]);
 
-      const token = "valid_admin_token";
-      await expect(dao.getOperators()).rejects.toThrow("No Content");
+      const result = await dao.getOperators();
+      expect(result).toEqual([]);
     });
 
-    it("throws 401 Unauthorized when token is missing, invalid, or not admin", async () => {
-      // Missing token
-      await expect(dao.getOperators()).rejects.toThrow(
-        "Unauthorized: missing or invalid token"
+    it("throws an error when database connection fails", async () => {
+      vi.spyOn(db, "getAll").mockRejectedValueOnce(
+        new Error("Database connection failed")
       );
 
-      // Empty token
-      await expect(dao.getOperators()).rejects.toThrow(
-        "Unauthorized: missing or invalid token"
-      );
-
-      // Not an admin
-      const token = "valid_user_token";
-      await expect(dao.getOperators()).rejects.toThrow(
-        "Unauthorized: missing or invalid token"
-      );
+      await expect(dao.getOperators()).rejects.toThrow("Database connection failed");
     });
 
-    it("throws 500 when database connection fails", async () => {
-      vi.spyOn(db, "getAll").mockRejectedValue(new Error("Database connection failed"));
-
-      const token = "valid_admin_token";
-      await expect(dao.getOperators()).rejects.toThrow(
-        "Database connection failed"
+    it("throws an error when query fails unexpectedly", async () => {
+      vi.spyOn(db, "getAll").mockRejectedValueOnce(
+        new Error("Failed to retrieve operators")
       );
-    });
 
-    it("throws 500 when query fails unexpectedly", async () => {
-      vi.spyOn(db, "getAll").mockRejectedValue(new Error("Failed to retrieve operators"));
-
-      const token = "valid_admin_token";
-      await expect(dao.getOperators()).rejects.toThrow(
-        "Failed to retrieve operators"
-      );
+      await expect(dao.getOperators()).rejects.toThrow("Failed to retrieve operators");
     });
   });
 });

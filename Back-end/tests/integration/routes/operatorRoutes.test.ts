@@ -1,0 +1,156 @@
+import request from "supertest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { makeTestApp } from "../../setup/tests_util.js";
+import router from "../../../src/routes/operator.routes.js";
+import {
+  createUserWithFirebase,
+  EmailOrUsernameConflictError,
+  UserAlreadyExistsError,
+} from "../../../src/services/userService.js";
+
+// Mock firebase token verification middleware
+vi.mock("../../../src/middlewares/verifyFirebaseToken.js", () => ({
+  verifyFirebaseToken: (_roles: string[]) => (_req: any, _res: any, next: any) => next(),
+}));
+
+// Mock userService to isolate integration tests
+vi.mock("../../../src/services/userService.js", () => ({
+  createUserWithFirebase: vi.fn(),
+  EmailOrUsernameConflictError: class EmailOrUsernameConflictError extends Error {},
+  UserAlreadyExistsError: class UserAlreadyExistsError extends Error {},
+}));
+
+let app: any;
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  app = makeTestApp(router);
+});
+
+describe("POST /operator-registrations", () => {
+  it("should create a new operator successfully", async () => {
+    (createUserWithFirebase as any).mockResolvedValue({ id: 100 });
+
+    const res = await request(app)
+      .post("/operator-registrations")
+      .send({
+        firstName: "Alice",
+        lastName: "Operator",
+        username: "aliceop",
+        email: "alice@example.com",
+        password: "password123",
+        role_id: 2, // valid operator role
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toEqual({
+      message: "User created successfully",
+      userId: 100,
+    });
+  });
+
+  it("should return 400 if request body is invalid", async () => {
+    const res = await request(app)
+      .post("/operator-registrations")
+      .send({
+        firstName: "",
+        email: "invalid-email",
+        role_id: "abc",
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: "Invalid request data" });
+  });
+
+  it("should return 422 if role_id is invalid (admin or citizen)", async () => {
+    const resAdmin = await request(app)
+      .post("/operator-registrations")
+      .send({
+        firstName: "Bob",
+        lastName: "Admin",
+        username: "bobadmin",
+        email: "bob@example.com",
+        password: "pass123",
+        role_id: 4, // admin
+      });
+
+    expect(resAdmin.status).toBe(422);
+    expect(resAdmin.body).toEqual({
+      error: "Invalid role data, cannot assign admin or citizen",
+    });
+
+    const resCitizen = await request(app)
+      .post("/operator-registrations")
+      .send({
+        firstName: "Charlie",
+        lastName: "Citizen",
+        username: "charlie",
+        email: "charlie@example.com",
+        password: "pass123",
+        role_id: 1, // citizen
+      });
+
+    expect(resCitizen.status).toBe(422);
+    expect(resCitizen.body).toEqual({
+      error: "Invalid role data, cannot assign admin or citizen",
+    });
+  });
+
+  it("should return 422 if EmailOrUsernameConflictError is thrown", async () => {
+    (createUserWithFirebase as any).mockRejectedValue(
+      new EmailOrUsernameConflictError("Email or username already in use")
+    );
+
+    const res = await request(app)
+      .post("/operator-registrations")
+      .send({
+        firstName: "Dana",
+        lastName: "Operator",
+        username: "danaop",
+        email: "dana@example.com",
+        password: "password123",
+        role_id: 2,
+      });
+
+    expect(res.status).toBe(422);
+    expect(res.body).toEqual({ error: "Email or username already in use" });
+  });
+
+  it("should return 409 if UserAlreadyExistsError is thrown", async () => {
+    (createUserWithFirebase as any).mockRejectedValue(
+      new UserAlreadyExistsError("User already registered")
+    );
+
+    const res = await request(app)
+      .post("/operator-registrations")
+      .send({
+        firstName: "Eve",
+        lastName: "Operator",
+        username: "eveop",
+        email: "eve@example.com",
+        password: "password123",
+        role_id: 2,
+      });
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: "User already registered" });
+  });
+
+  it("should return 500 for unknown errors", async () => {
+    (createUserWithFirebase as any).mockRejectedValue(new Error("Unexpected failure"));
+
+    const res = await request(app)
+      .post("/operator-registrations")
+      .send({
+        firstName: "Frank",
+        lastName: "Operator",
+        username: "frankop",
+        email: "frank@example.com",
+        password: "password123",
+        role_id: 2,
+      });
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: "Internal server error" });
+  });
+});

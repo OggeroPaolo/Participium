@@ -1,10 +1,10 @@
 import request from "supertest";
 import { Express } from "express";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import userRouter from "../../src/routes/registrations.routes"; 
-import * as userService from "../../src/services/userService";
-import UserDAO from "../../src/dao/UserDAO";
-import { makeTestApp } from "../utils/testApp";
+import userRouter from "../../src/routes/registrations.routes.js"; 
+import * as userService from "../../src/services/userService.js";
+import UserDAO from "../../src/dao/UserDAO.js";
+import { makeTestApp } from "../setup/tests_util.js";
 
 describe("POST /user-registrations (E2E)", () => {
     let app: Express;
@@ -15,7 +15,6 @@ describe("POST /user-registrations (E2E)", () => {
     });
 
     it("should create a new user successfully", async () => {
-        // Mock createUserWithFirebase and DAO
         const mockUser = {
             id: "12345",
             firebase_uid: "firebase123",
@@ -75,9 +74,11 @@ describe("POST /user-registrations (E2E)", () => {
     });
 
     it("should return 422 if username or email conflicts", async () => {
-        vi.spyOn(userService, "createUserWithFirebase").mockRejectedValue(
-            new userService.EmailOrUsernameConflictError("Username or email already taken")
-        );
+        const conflictMock = vi
+            .spyOn(userService, "createUserWithFirebase")
+            .mockRejectedValue(
+                new userService.EmailOrUsernameConflictError("Username or email already taken")
+            );
 
         const response = await request(app)
             .post("/user-registrations")
@@ -91,12 +92,16 @@ describe("POST /user-registrations (E2E)", () => {
 
         expect(response.status).toBe(422);
         expect(response.body).toEqual({ error: "Username or email already taken" });
+
+        conflictMock.mockRestore();
     });
 
     it("should return 409 if user already exists", async () => {
-        vi.spyOn(userService, "createUserWithFirebase").mockRejectedValue(
-            new userService.UserAlreadyExistsError("User already exists in Firebase")
-        );
+        const existsMock = vi
+            .spyOn(userService, "createUserWithFirebase")
+            .mockRejectedValue(
+                new userService.UserAlreadyExistsError("User already exists in Firebase")
+            );
 
         const response = await request(app)
             .post("/user-registrations")
@@ -110,12 +115,14 @@ describe("POST /user-registrations (E2E)", () => {
 
         expect(response.status).toBe(409);
         expect(response.body).toEqual({ error: "User already exists in Firebase" });
+
+        existsMock.mockRestore();
     });
 
     it("should return 500 for unexpected errors", async () => {
-        vi.spyOn(userService, "createUserWithFirebase").mockRejectedValue(
-            new Error("Unexpected error")
-        );
+        const errorMock = vi
+            .spyOn(userService, "createUserWithFirebase")
+            .mockRejectedValue(new Error("Unexpected error"));
 
         const response = await request(app)
             .post("/user-registrations")
@@ -129,5 +136,7 @@ describe("POST /user-registrations (E2E)", () => {
 
         expect(response.status).toBe(500);
         expect(response.body).toEqual({ error: "Internal server error" });
+
+        errorMock.mockRestore();
     });
 });
