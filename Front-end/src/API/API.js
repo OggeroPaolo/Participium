@@ -87,8 +87,8 @@ async function getInternalUsers() {
       },
     });
     if (response.ok) {
-      const roles = await response.json();
-      return roles;
+      const users = await response.json();
+      return users;
     } else {
       throw new Error("Failed to fetch operators");
     }

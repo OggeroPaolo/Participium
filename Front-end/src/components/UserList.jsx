@@ -2,7 +2,7 @@ import { Col, Container, Row } from "react-bootstrap";
 import { getInternalUsers } from "../API/API";
 import { useState, useEffect } from "react";
 
-const test = true;
+const test = false;
 
 function UserList() {
   const [users, setUsers] = useState([]);
@@ -65,6 +65,14 @@ function UserList() {
     }, []);
   }
 
+  // string formatter for user roles
+  function formatRole(role_name) {
+    return role_name
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+
   return (
     <>
       <Container fluid className='p-3 mt-3 ms-1 me-1 body-font'>
@@ -77,15 +85,19 @@ function UserList() {
               <Container className='mt-2'>
                 <Row>
                   <Col>
-                    <p className='mb-1'>
-                      <b>{u.first_name + u.last_name}</b>
-                    </p>
+                    <Row>
+                      <p className='mb-1'>
+                        <b>{u.first_name + " " + u.last_name}</b>
+                      </p>
+                    </Row>
+                    <Row>
+                      <p className='subtitle mb-1'>{u.username}</p>
+                    </Row>
                   </Col>
                   <Col className='text-end me-2'>
-                    <p className='mb-1'>Role id: {u.role_id}</p>
+                    <p className='mb-1'>{formatRole(u.role_name)}</p>
                   </Col>
                 </Row>
-                <p className='subtitle mb-1'>{u.username}</p>
                 <p className='subtitle'>{u.email}</p>
                 <hr />
               </Container>
