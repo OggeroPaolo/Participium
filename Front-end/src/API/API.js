@@ -86,6 +86,11 @@ async function getInternalUsers() {
         Authorization: `${await getBearerToken()}`,
       },
     });
+
+    if (response.status === 204) {
+      return [];
+    }
+
     if (response.ok) {
       const users = await response.json();
       return users;

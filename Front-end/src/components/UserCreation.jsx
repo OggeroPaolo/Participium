@@ -69,11 +69,6 @@ function UserCreation() {
           <h3>
             <b>Create a new user</b>
           </h3>
-          {state.success && (
-            <Alert variant='success' className='mt-4'>
-              {state.success}
-            </Alert>
-          )}
           <Form action={formAction}>
             <Form.Group controlId='firstName' className='mb-3 mt-4'>
               <Form.Label>
@@ -109,6 +104,8 @@ function UserCreation() {
                   name='password'
                   required
                   placeholder='Enter password'
+                  minLength='6'
+                  maxLength='25'
                 ></Form.Control>
                 <Button
                   variant='outline-secondary'
@@ -137,6 +134,11 @@ function UserCreation() {
             </Form.Group>
 
             {state.error && <Alert variant='danger'>{state.error}</Alert>}
+            {state.success && (
+              <Alert variant='success' className='mt-4'>
+                {state.success}
+              </Alert>
+            )}
 
             <Button type='submit' className='mt-4 confirm-button w-100'>
               CREATE USER

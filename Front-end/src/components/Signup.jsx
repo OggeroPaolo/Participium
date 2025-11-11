@@ -57,11 +57,6 @@ function Signup() {
             <b>Sign up</b>
           </h3>
           <p className='subtitle'> Create an account to get started</p>
-          {state.success && (
-            <Alert variant='success' className='mt-4'>
-              {state.success}
-            </Alert>
-          )}
           <Form action={formAction}>
             <Form.Group controlId='firstName' className='mb-3 mt-4'>
               <Form.Label>
@@ -138,6 +133,11 @@ function Signup() {
             </Form.Group>
 
             {state.error && <Alert variant='danger'>{state.error}</Alert>}
+            {state.success && (
+              <Alert variant='success' className='mt-4'>
+                {state.success}
+              </Alert>
+            )}
 
             <Button type='submit' className='mt-4 confirm-button w-100'>
               SIGNUP
