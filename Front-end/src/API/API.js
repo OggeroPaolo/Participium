@@ -1,11 +1,10 @@
-import {getBearerToken} from "../firebaseService"
+import { getBearerToken } from "../firebaseService";
 
 const URI = "http://localhost:3000";
 
 // Register a new user
 async function handleSignup(credentials) {
-  const { firstName, lastName, username, email, password } =
-    credentials;
+  const { firstName, lastName, username, email, password } = credentials;
 
   const response = await fetch(`${URI}/user-registrations`, {
     method: "POST",
@@ -17,7 +16,7 @@ async function handleSignup(credentials) {
       lastName: lastName,
       username: username,
       email: email,
-      password: password
+      password: password,
     }),
   });
 
@@ -46,7 +45,7 @@ async function createInternalUser(credentials) {
       username: username,
       email: email,
       password: password,
-      role_id: role_id
+      role_id: role_id,
     }),
   });
 
@@ -62,11 +61,11 @@ async function createInternalUser(credentials) {
 async function getUserRoles() {
   try {
     const response = await fetch(URI + "/roles", {
-    method: "GET",
-    headers: {
-      Authorization: `${await getBearerToken()}`,
-    },
-  });
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
     if (response.ok) {
       const roles = await response.json();
       return roles;
@@ -82,11 +81,11 @@ async function getUserRoles() {
 async function getInternalUsers() {
   try {
     const response = await fetch(URI + "/operators", {
-    method: "GET",
-    headers: {
-      Authorization: `${await getBearerToken()}`,
-    },
-  });
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
     if (response.ok) {
       const roles = await response.json();
       return roles;
@@ -107,7 +106,7 @@ async function getUserData(uid) {
         Authorization: `${await getBearerToken()}`,
       },
     });
-    
+
     if (response.ok) {
       const userData = await response.json();
       return userData;
@@ -119,4 +118,10 @@ async function getUserData(uid) {
   }
 }
 
-export { handleSignup, createInternalUser, getUserRoles, getInternalUsers, getUserData };
+export {
+  handleSignup,
+  createInternalUser,
+  getUserRoles,
+  getInternalUsers,
+  getUserData,
+};

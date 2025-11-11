@@ -34,17 +34,16 @@ function UserCreation() {
       username: formData.get("username"),
       email: formData.get("email"),
       password: formData.get("password"),
-      userRole: formData.get("userRole"),
+      role_id: formData.get("userRole"),
     };
 
     try {
       await createInternalUser(credentials);
       setTimeout(() => {
-        // TODO: redirection to list of users page
-        navigate("/");
+        navigate("/user-list");
       }, 2500);
       return {
-        success: "Account created successfully! Redirecting to homepage...",
+        success: "Account created successfully! Redirecting to users list...",
       };
     } catch (error) {
       return { error: "Invalid user creation" };
@@ -128,10 +127,9 @@ function UserCreation() {
               <Form.Label>
                 <b>User role</b>
               </Form.Label>
-              <Form.Select>
-                <option>Select a role</option>
+              <Form.Select name='userRole' required>
                 {roles.map((r) => (
-                  <option key={formatRole(r)} value={r}>
+                  <option key={r.id} value={r.id}>
                     {formatRole(r)}
                   </option>
                 ))}
