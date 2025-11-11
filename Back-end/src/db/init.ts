@@ -51,11 +51,20 @@ const seedDefaultData = async (): Promise<void> => {
     
     if (result && result.count === 0) {
       logger.info("Seeding default roles...");
-      
+
       // Insert default roles
-      const roles = ["citizen", "org_office_operator", "technical_office_operator", "admin"];
+      const roles = [
+        { name: "citizen", type: "citizen" },
+        { name: "org_office_operator", type: "operator" },
+        { name: "technical_office_operator", type: "operator" },
+        { name: "admin", type: "admin" }
+      ];
+
       for (const role of roles) {
-        await runQuery(`INSERT INTO roles (name) VALUES (?)`, [role]);
+        await runQuery(
+          `INSERT INTO roles (name, type) VALUES (?, ?)`,
+          [role.name, role.type]
+        );
       }
 
       logger.info("Default roles seeded successfully");

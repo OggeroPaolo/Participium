@@ -13,4 +13,5 @@ export interface User {
     updated_at?: string;
     last_login_at?: string | null;
     role_name: string;
+    role_type: string;
 }
