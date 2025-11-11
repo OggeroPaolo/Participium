@@ -13,7 +13,7 @@ function Header(props) {
     if (props.onLogout) {
       await props.onLogout();
     }
-  }
+  };
 
   return (
     <>
@@ -43,17 +43,20 @@ function Header(props) {
               {isAuthenticated ? (
                 <>
                   {user && (
-                    <Navbar.Text className='me-3'>
-                      Welcome, <strong>{user.username || user.first_name}</strong>
+                    <Navbar.Text className='me-3 nav-text'>
+                      Welcome, {user.first_name}
                     </Navbar.Text>
                   )}
-                  {user?.role_name === 'admin' && (
+                  {user?.role_name === "admin" && (
                     <>
                       <Nav.Link href='/user-creation'>User Creation</Nav.Link>
                       <Nav.Link href='/user-list'>User List</Nav.Link>
                     </>
                   )}
-                  <Nav.Link href='#' onClick={handleLogout}>Logout</Nav.Link>
+                  <div className='nav-divider d-sm-none'></div>
+                  <Nav.Link href='#' onClick={handleLogout}>
+                    Logout
+                  </Nav.Link>
                 </>
               ) : (
                 <>

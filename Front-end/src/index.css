@@ -8,6 +8,16 @@
   color: white;
 }
 
+.nav-text {
+  color: white !important;
+}
+
+.nav-divider {
+  height: 1px;
+  background-color: #7ea9e0;
+  margin: 0.5rem 0;
+}
+
 body,
 html {
   margin: 0;
