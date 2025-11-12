@@ -42,7 +42,7 @@ function Signup() {
         success: "Account created successfully! Redirecting to login...",
       };
     } catch (error) {
-      return { error: error.message };
+      return { error: "Invalid signup" };
     }
   }
 
