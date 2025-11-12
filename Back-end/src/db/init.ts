@@ -55,8 +55,8 @@ const seedDefaultData = async (): Promise<void> => {
       // Insert default roles
       const roles = [
         { name: "citizen", type: "citizen" },
-        { name: "org_office_operator", type: "operator" },
-        { name: "technical_office_operator", type: "operator" },
+        { name: "Roads_Maintenance_Office_Staff", type: "operator" },
+        { name: "Water_Utility_Office_Staff", type: "operator" },
         { name: "admin", type: "admin" }
       ];
 
@@ -100,27 +100,27 @@ const seedDefaultUsers = async (): Promise<void> => {
 
     const users = [
       {
-        firebase_uid: "uid_citizen",
+        firebase_uid: "QBUqptp5sYa46a2ALU3t8QXRIHz2",
         email: "citizen@example.com",
-        username: "citizen_user",
+        username: "JohnDoe",
         first_name: "John",
         last_name: "Doe",
         role_id: roleMap["citizen"]
       },
       {
-        firebase_uid: "uid_operator",
+        firebase_uid: "QF6qat0SyJcdX91zZINZLaTakM12",
         email: "operator@example.com",
-        username: "operator_user",
+        username: "JaneSmith",
         first_name: "Jane",
         last_name: "Smith",
-        role_id: roleMap["org_office_operator"]
+        role_id: roleMap["Water_Utility_Office_Staff"]
       },
       {
-        firebase_uid: "QS9bJobR9SMi1eaWVNjrNSsQK4g1",
-        email: "test@example.com",
-        username: "admin_user",
-        first_name: "Alice",
-        last_name: "Admin",
+        firebase_uid: "CV0ZG2bmDva06EHVdSwcF4rz18F3",
+        email: "admin@example.com",
+        username: "EmilyCarter",
+        first_name: "Emily",
+        last_name: "Carter",
         role_id: roleMap["admin"]
       }
     ];
