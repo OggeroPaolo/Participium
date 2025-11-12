@@ -3,6 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { Navigate, Route, Routes } from "react-router";
 import Header from "./components/Header.jsx";
+import Home from "./components/Home.jsx";
 import Signup from "./components/Signup.jsx";
 import Login from "./components/Login.jsx";
 import UserCreation from "./components/UserCreation.jsx";
@@ -10,8 +11,6 @@ import { logout } from "./firebaseService.js";
 import UserList from "./components/UserList.jsx";
 import { useAuthSync } from "./hooks/useAuthSync.js";
 import useUserStore from "./store/userStore.js";
-
-// TODO: add index route homepage once created
 
 function App() {
   // Sync Zustand store with Firebase auth state
@@ -46,6 +45,7 @@ function App() {
           path='/'
           element={<Header user={user} isAuthenticated={isAuthenticated} onLogout={handleLogout} />}
         >
+          <Route index element={<Home />} />
           <Route
             path='signup'
             element={isAuthenticated ? <Navigate replace to='/' /> : <Signup />}
