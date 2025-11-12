@@ -8,6 +8,9 @@ function Header(props) {
   const expand = "sm";
   const { user, isAuthenticated } = props;
 
+  const displayName =
+    user?.username || user?.first_name || user?.email || "User";
+
   const handleLogout = async (e) => {
     e.preventDefault();
     if (props.onLogout) {
@@ -44,7 +47,8 @@ function Header(props) {
                 <>
                   {user && (
                     <Navbar.Text className='me-3 nav-text'>
-                      Welcome, {user.first_name}
+                      <span>Welcome, </span>
+                      <span>{displayName}</span>
                     </Navbar.Text>
                   )}
                   {user?.role_name === "admin" && (
