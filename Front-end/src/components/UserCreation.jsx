@@ -46,7 +46,7 @@ function UserCreation() {
         success: "Account created successfully! Redirecting to users list...",
       };
     } catch (error) {
-      return { error: "Invalid user creation" };
+      return { error: error.message };
     }
   }
 

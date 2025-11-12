@@ -40,6 +40,9 @@ router.post("/user-registrations",
             if (error instanceof UserAlreadyExistsError) {
                 return res.status(409).json({ error: error.message });
             }
+            if (error.code === "auth/email-already-exists") {
+                return res.status(422).json({ error: error.message });
+            }
             console.error(error);
             return res.status(500).json({ error: "Internal server error" });
         }
