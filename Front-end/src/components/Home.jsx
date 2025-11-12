@@ -14,7 +14,7 @@ function Home() {
           </div>
         </Container>
       ) : (
-        <Container fluid className="mt-5">
+        <Container fluid className='mt-5 body-font'>
           <Row className="justify-content-center">
             <Col md={8} lg={6} className="text-center">
               <h1 className="display-4 fw-bold mb-4">
