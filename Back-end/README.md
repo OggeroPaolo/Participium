@@ -62,7 +62,7 @@ The project uses **SQLite** with the following structure:
 
 ### Default Data
 The database is automatically seeded with:
-- 4 roles: citizen, org_office_operator, technical_office_operator, admin
+- 3 role types: citizen, operator, admin
 - 9 categories: Water Supply, Architectural Barriers, Sewer System, etc.
 
 
@@ -90,12 +90,14 @@ Authorization: Bearer <firebase-token>
 [
   {
     "id": 2,
-    "name": "org_office_operator",
+    "name": "Roads_Maintenance_Office_Staff",
+    "type": "operator",
     "created_at": "2025-11-08 11:46:55"
   },
   {
     "id": 3,
-    "name": "technical_office_operator",
+    "name": "Water_Utility_Office_Staff",
+    "type": "operator",
     "created_at": "2025-11-08 11:46:55"
   }
 ]
@@ -210,7 +212,7 @@ Authorization: Bearer <firebase-token>
     "username": "operator_user1",
     "first_name": "John",
     "last_name": "Amber",
-    "role_name": "org_office_operator1",
+    "role_name": "Water_Utility_Office_Staff",
     "profile_photo_url": null,
     "telegram_username": null,
     "email_notifications_enabled": 1,
@@ -226,7 +228,7 @@ Authorization: Bearer <firebase-token>
     "username": "operator_user2",
     "first_name": "Jane",
     "last_name": "Smith",
-    "role_name": "org_office_operator2",
+    "role_name": "Water_Utility_Office_Staff",
     "profile_photo_url": null,
     "telegram_username": null,
     "email_notifications_enabled": 1,
