@@ -15,7 +15,7 @@ import useUserStore from "./store/userStore.js";
 function App() {
   // Sync Zustand store with Firebase auth state
   useAuthSync();
-  
+
   // get user data from Zustand store
   const { user, isAuthenticated, isLoading } = useUserStore();
 
@@ -30,9 +30,12 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "100vh" }}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
+      <div
+        className='d-flex justify-content-center align-items-center'
+        style={{ minHeight: "100vh" }}
+      >
+        <div className='spinner-border text-primary' role='status'>
+          <span className='visually-hidden'>Loading...</span>
         </div>
       </div>
     );
@@ -43,7 +46,13 @@ function App() {
       <Routes>
         <Route
           path='/'
-          element={<Header user={user} isAuthenticated={isAuthenticated} onLogout={handleLogout} />}
+          element={
+            <Header
+              user={user}
+              isAuthenticated={isAuthenticated}
+              onLogout={handleLogout}
+            />
+          }
         >
           <Route index element={<Home />} />
           <Route
@@ -52,21 +61,39 @@ function App() {
           />
           <Route
             path='login'
-            element={isAuthenticated ? <Navigate replace to='/' /> : <Login />}
+            element={
+              isAuthenticated ? (
+                user?.role_name === "admin" ? (
+                  <Navigate replace to='/user-list' />
+                ) : (
+                  <Navigate replace to='/' />
+                )
+              ) : (
+                <Login />
+              )
+            }
           />
-          
+
           {/* Admin route protection */}
-          <Route 
-            path='/user-creation' 
+          <Route
+            path='/user-creation'
             element={
-              user?.role_name === 'admin' ? <UserCreation /> : <Navigate replace to='/' />
-            } 
+              user?.role_name === "admin" ? (
+                <UserCreation />
+              ) : (
+                <Navigate replace to='/' />
+              )
+            }
           />
-          <Route 
-            path='/user-list' 
+          <Route
+            path='/user-list'
             element={
-              user?.role_name === 'admin' ? <UserList /> : <Navigate replace to='/' />
-            } 
+              user?.role_name === "admin" ? (
+                <UserList />
+              ) : (
+                <Navigate replace to='/' />
+              )
+            }
           />
         </Route>
 
