@@ -77,40 +77,69 @@ function UserList() {
 
   return (
     <>
-      <Container fluid className='p-3 mt-3 ms-1 me-1 body-font'>
-        <h3 className='mb-3'>
+      <Container fluid className='p-3 mt-3 body-font'>
+        <h3 className='mb-4'>
           <b>List of registered internal users</b>
         </h3>
-        {users.length !== 0 &&
-          users.map((u) => {
-            return (
-              <Row key={u.email}>
-                <Container className='mt-2'>
-                  <Row>
-                    <Col>
-                      <Row>
-                        <p className='mb-1'>
-                          <b>{u.first_name + " " + u.last_name}</b>
-                        </p>
-                      </Row>
-                      <Row>
-                        <p className='subtitle mb-1'>{u.username}</p>
-                      </Row>
-                    </Col>
-                    <Col className='text-end me-2'>
-                      <p className='mb-1'>{formatRole(u.role_name)}</p>
-                    </Col>
-                  </Row>
-                  <p className='subtitle'>{u.email}</p>
-                  <hr />
-                </Container>
-              </Row>
-            );
-          })}
+        
+        {!loadingDone && (
+          <div className='text-center mt-5'>
+            <div className='spinner-border text-primary' role='status'>
+              <span className='visually-hidden'>Loading...</span>
+            </div>
+          </div>
+        )}
+        
+        {users.length !== 0 && (
+          <div className='d-flex flex-column gap-3'>
+            {users.map((u) => {
+              return (
+                <Card key={u.email} className='shadow-sm'>
+                  <Card.Body>
+                    <Row>
+                      <Col xs={12} md={8}>
+                        <h5 className='mb-2'>
+                          <b>{u.first_name} {u.last_name}</b>
+                        </h5>
+                        <div className='mb-2'>
+                          <small className='text-muted'>
+                            <i className='bi bi-person-circle me-1'></i>
+                            Username:
+                          </small>{' '}
+                          {u.username}
+                        </div>
+                        <div>
+                          <small className='text-muted'>
+                            <i className='bi bi-envelope me-1'></i>
+                            Email:
+                          </small>{' '}
+                          {u.email}
+                        </div>
+                      </Col>
+                      
+                      <Col xs={12} md={4} className='text-md-end'>
+                        <span 
+                          className='badge bg-primary'
+                          style={{ fontSize: '0.85rem' }}
+                        >
+                          {formatRole(u.role_name)}
+                        </span>
+                      </Col>
+                    </Row>
+                  </Card.Body>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+        
         {users.length === 0 && loadingDone && (
-          <Card className='mt-5 p-2'>
-            <Card.Body>
-              <p className='text-center mb-0'> No registered interal users </p>
+          <Card className='mt-5 shadow-sm'>
+            <Card.Body className='text-center py-5'>
+              <i className='bi bi-people' style={{ fontSize: '3rem', color: '#ccc' }}></i>
+              <p className='mt-3 mb-0 text-muted'>
+                No internal users registered yet
+              </p>
             </Card.Body>
           </Card>
         )}
