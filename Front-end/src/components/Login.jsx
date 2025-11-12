@@ -2,9 +2,9 @@ import { useActionState, useState } from "react";
 import { Form, Button, Container, InputGroup } from "react-bootstrap";
 import { loginWithEmail } from "../firebaseService";
 
-
-function Login(props) {
+function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const [isFormLoading, setIsFormLoading] = useState(false);
 
   const [state, formAction] = useActionState(submitCredentials, {
     email: "",
@@ -12,6 +12,8 @@ function Login(props) {
   });
 
   async function submitCredentials(prevData, formData) {
+    setIsFormLoading(true);
+
     const credentials = {
       email: formData.get("email"),
       password: formData.get("password"),
@@ -23,9 +25,13 @@ function Login(props) {
       return { success: true };
     } catch (error) {
       let message = "Invalid login";
-      if (error.code === "auth/invalid-credential") message = "Incorrect email or password.";
-      else if (error.code === "auth/too-many-requests") message = "Too many failed attempts, please try later.";
+      if (error.code === "auth/invalid-credential")
+        message = "Incorrect email or password.";
+      else if (error.code === "auth/too-many-requests")
+        message = "Too many failed attempts, please try later.";
       return { error: message };
+    } finally {
+      setIsFormLoading(false);
     }
   }
 
@@ -78,7 +84,21 @@ function Login(props) {
                 </Button>
               </InputGroup>
             </Form.Group>
-            {state.error && <p className='text-danger'>{state.error}</p>}
+            {state.error && (
+              <p className='text-danger mt-3 mb-2'>{state.error}</p>
+            )}
+            {isFormLoading && (
+              <>
+                <div
+                  className='d-flex justify-content-center align-items-center'
+                  style={{ minHeight: "10vh" }}
+                >
+                  <div className='spinner-border text-primary' role='status'>
+                    <span className='visually-hidden'>Loading...</span>
+                  </div>
+                </div>
+              </>
+            )}
 
             <Button type='submit' className='mt-4 confirm-button w-100'>
               LOGIN

@@ -8,6 +8,7 @@ function UserCreation() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [roles, setRoles] = useState([]);
+  const [isFormLoading, setIsFormLoading] = useState(false);
 
   useEffect(() => {
     const loadRoles = async () => {
@@ -28,6 +29,8 @@ function UserCreation() {
   });
 
   async function submitCredentials(prevData, formData) {
+    setIsFormLoading(true);
+
     const credentials = {
       firstName: formData.get("firstName"),
       lastName: formData.get("lastName"),
@@ -47,6 +50,8 @@ function UserCreation() {
       };
     } catch (error) {
       return { error: error.message };
+    } finally {
+      setIsFormLoading(false);
     }
   }
 
@@ -138,6 +143,18 @@ function UserCreation() {
               <Alert variant='success' className='mt-4'>
                 {state.success}
               </Alert>
+            )}
+            {isFormLoading && (
+              <>
+                <div
+                  className='d-flex justify-content-center align-items-center'
+                  style={{ minHeight: "10vh" }}
+                >
+                  <div className='spinner-border text-primary' role='status'>
+                    <span className='visually-hidden'>Loading...</span>
+                  </div>
+                </div>
+              </>
             )}
 
             <Button type='submit' className='mt-4 confirm-button w-100'>

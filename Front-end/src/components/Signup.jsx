@@ -7,6 +7,7 @@ function Signup() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConf, setShowPasswordConf] = useState(false);
+  const [isFormLoading, setIsFormLoading] = useState(false);
 
   const [state, formAction] = useActionState(submitCredentials, {
     firstName: "",
@@ -18,6 +19,8 @@ function Signup() {
   });
 
   async function submitCredentials(prevData, formData) {
+    setIsFormLoading(true);
+
     const credentials = {
       firstName: formData.get("firstName"),
       lastName: formData.get("lastName"),
@@ -29,6 +32,7 @@ function Signup() {
     const passwordConfirm = formData.get("passwordConfirm");
 
     if (credentials.password !== passwordConfirm) {
+      setIsFormLoading(false);
       return { error: "Passwords do not match" };
     }
 
@@ -43,6 +47,8 @@ function Signup() {
       };
     } catch (error) {
       return { error: error.message };
+    } finally {
+      setIsFormLoading(false);
     }
   }
 
@@ -137,6 +143,18 @@ function Signup() {
               <Alert variant='success' className='mt-4'>
                 {state.success}
               </Alert>
+            )}
+            {isFormLoading && (
+              <>
+                <div
+                  className='d-flex justify-content-center align-items-center'
+                  style={{ minHeight: "10vh" }}
+                >
+                  <div className='spinner-border text-primary' role='status'>
+                    <span className='visually-hidden'>Loading...</span>
+                  </div>
+                </div>
+              </>
             )}
 
             <Button type='submit' className='mt-4 confirm-button w-100'>
