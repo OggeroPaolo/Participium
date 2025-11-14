@@ -66,12 +66,12 @@ sections:
 - Unit Testing:
   - Total hours estimated: 4h
   - Total hours spent: 5h
-  - Nr of automated unit test cases: 53
+  - Nr of automated unit test cases: 47
   - Coverage: 96.15%
 - E2E testing:
   - Total hours estimated: 9h 30m
   - Total hours spent: 8h
-  - Nr of test cases: 15
+  - Nr of test cases: 21
 - Code review
   - Total hours estimated: 15h
   - Total hours spent: 13h 5m
