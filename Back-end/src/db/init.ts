@@ -54,10 +54,11 @@ const seedDefaultData = async (): Promise<void> => {
 
       // Insert default roles
       const roles = [
-        { name: "citizen", type: "citizen" },
-        { name: "Roads_Maintenance_Office_Staff", type: "operator" },
-        { name: "Water_Utility_Office_Staff", type: "operator" },
-        { name: "admin", type: "admin" }
+        { name: "Citizen", type: "citizen" },
+        { name: "Municipal_public_relations_officer", type: "operator" },
+        { name: "Water_utility_officer", type: "operator" },
+        { name: "Sewer_system_officer", type: "operator" },
+        { name: "Admin", type: "admin" }
       ];
 
       for (const role of roles) {
@@ -113,7 +114,7 @@ const seedDefaultUsers = async (): Promise<void> => {
         username: "JaneSmith",
         first_name: "Jane",
         last_name: "Smith",
-        role_id: roleMap["Water_Utility_Office_Staff"]
+        role_id: roleMap["Water_utility_officer"]
       },
       {
         firebase_uid: "CV0ZG2bmDva06EHVdSwcF4rz18F3",
