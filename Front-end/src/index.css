@@ -43,6 +43,27 @@ html {
   color: #fff !important;
 }
 
+/* make the map button look like a Bootstrap button for consistency */
+.map-button {
+  background-color: #0350b5;
+  color: #fff;
+  border: none;
+  border-radius: 0.25rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  cursor: pointer;
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+}
+
+.map-button:hover,
+.map-button:focus {
+  background-color: #023a82 !important;
+}
+
 /* Responsive scaling for larger screens */
 @media (min-width: 768px) {
   /* Tablet and up: slightly bigger */
@@ -56,7 +77,7 @@ html {
   html {
     font-size: 18px;
   }
-  
+
   .container {
     padding-left: 2rem;
     padding-right: 2rem;
@@ -68,7 +89,7 @@ html {
   html {
     font-size: 19px;
   }
-  
+
   .container {
     padding-left: 3rem;
     padding-right: 3rem;
