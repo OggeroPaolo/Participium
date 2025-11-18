@@ -43,22 +43,25 @@ html {
   color: #fff !important;
 }
 
+.reporte-by-size {
+  font-size: smaller;
+}
+
 /* make the map button look like a Bootstrap button for consistency */
 .map-button {
   background-color: #0350b5;
   color: #fff;
   border: none;
   border-radius: 0.25rem;
-  margin-top: 0.5rem;
-  padding: 0.5rem 1rem;
+  margin: 0.25rem auto 0;
+  padding: 0.25rem 1rem;
   font-size: 0.8rem;
   line-height: 1.5;
   cursor: pointer;
-  display: inline-block;
+  display: block;
   text-align: center;
   text-decoration: none;
 }
-
 .map-button:hover,
 .map-button:focus {
   background-color: #023a82 !important;
