@@ -106,7 +106,7 @@ const seedDefaultUsers = async (): Promise<void> => {
         username: "JohnDoe",
         first_name: "John",
         last_name: "Doe",
-        role_id: roleMap["citizen"]
+        role_id: roleMap["Citizen"]
       },
       {
         firebase_uid: "QF6qat0SyJcdX91zZINZLaTakM12",
@@ -122,7 +122,7 @@ const seedDefaultUsers = async (): Promise<void> => {
         username: "EmilyCarter",
         first_name: "Emily",
         last_name: "Carter",
-        role_id: roleMap["admin"]
+        role_id: roleMap["Admin"]
       }
     ];
 
