@@ -13,7 +13,7 @@ This directory contains database-related files for the Participium project.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                          DATABASE SCHEMA                                 │
+│                          DATABASE SCHEMA                                │
 └─────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────┐         ┌──────────────────────┐
@@ -31,10 +31,29 @@ This directory contains database-related files for the Participium project.
 │ • email_notif...     │
 │ • is_active          │
 │ • created_at         │
-│ • updated_at         │
-│ • last_login_at      │
-└──────────────────────┘
-
+│ • updated_at         │ ◄────┐
+│ • last_login_at      │ ◄──┐ │
+└──────────────────────┘    | │
+                            │ │ (many-to-one)
+┌──────────────────────┐    │ │                   ┌──────────────────────┐
+|     reports          |    │ │                   |       photos         |
+├──────────────────────┤    │ │                   ├──────────────────────┤
+| • id (PK)            |    │ │                   | • id (PK)            |
+| • user_id (FK)       |────┘ │                ┌──| • report_id (FK)     |
+| • reviewed_by (FK)   |──────┘                │  | • url                |
+| • title              | ◄─────────────────────┘  | • ordering           |
+| • category_id(FK)    |────────────────┐         └──────────────────────┘
+| • description        |                │
+| • status             |                │
+| • note               |                │
+| • position_lat       |                │
+| • position_lng       |                |
+| • reviewed_at        |                │ (many-to-one)
+| • created_at         |                │
+| • updated_at         |                │
+└──────────────────────┘                │
+                                        │
+                                        ▼
 ┌──────────────────────┐         ┌──────────────────────────────┐
 │     offices          │         │        categories            │
 ├──────────────────────┤         ├──────────────────────────────┤
@@ -48,8 +67,8 @@ This directory contains database-related files for the Participium project.
 └──────────────────────┘         │ • updated_at                 │
          ▲                       └──────────────────────────────┘
          │                                  ▲
-         │        ┌────────────────┐        │
-         └────────┤ category_offices│────────┘
+         │        ┌─────────────────┐       │
+         └────────┤ category_offices│───────┘
                   │   (junction)    │
                   ├─────────────────┤
                   │ • category_id   │
@@ -96,12 +115,41 @@ Many-to-many relationship between categories and offices.
 - Defines which offices can handle which categories
 - Composite primary key: (category_id, office_id)
 
+#### reports
+Stores user-submitted reports for issues, tracking their status and review process
+- **Foreign Keys**: user_id (FK -> users.id), reviewed_by (FK -> users.id). category_id (FK -> categories.id)
+- **Main fields**: title, description (report content)
+- **Status**:
+- `pending`  - Not yet reviewed
+- `accepted` - Accepted by an officer (note field null)
+- `rejected` - Rejected by an officer (note filed becomes mandatory)
+- **Geographical location**: position_lat, position_lng
+- **Relationships**: Each report is created by a single user and may be reviewed by a municipal public relations officer
+- **Timestamps**: created_at, updated_at, reviewed_at
+
+#### photos
+Stores 1 to 3 photos associated with each report, maintaining order and links to the report.
+- **Foreign Keys**: report_id(FK -> reports.id)
+- **Relationships**: Each photo belongs exactly to one report.
+
 ## Relationships
 
 ```
 users → roles (one-to-many)
   Each user has ONE role
   A role can be assigned to MANY users
+
+users → reports (one-to-many) (via user_id)
+  Each report is created by ONE user
+  Each user can create MANY reports
+
+users (officers) → reports (one to many) (via reviewed_by)
+  Each report can be reviewed by ONE officer (optional)
+  Each officer can review MANY reports
+
+reports → categories (many-to-one)
+  Each report belongs to ONE category
+  Each category can have MANY reports
 
 categories ←→ offices (via category_offices)
   Many categories can be handled by many offices
@@ -133,6 +181,9 @@ Optimized for common queries:
 ### Foreign Key Constraints
 - **users → roles**: RESTRICT on delete (prevents deleting a role with active users)
 - **categories → offices**: SET NULL on delete (optional default office)
+- **reports → users** RESTRICT on delete (prevents deleting a user with reports or that has reviewed a report)
+- **reports → categories** RESTRICT on delete (prevents deleting a category with reports)
+- **photos → reports** CASCADE on delete (removes photos if the parent report is deleted)
 - **Junction tables**: CASCADE on delete (removes associations when parent is deleted)
 - Ensures referential integrity
 

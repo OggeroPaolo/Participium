@@ -62,6 +62,34 @@ CREATE TABLE IF NOT EXISTS category_offices (
   FOREIGN KEY (office_id) REFERENCES offices(id) ON DELETE CASCADE
 );
 
+-- Reports table
+CREATE TABLE IF NOT EXISTS reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  category_id INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  status TEXT NOT NULL CHECK(status in ('pending', 'accepted', 'rejected')),
+  reviewed_by INTEGER,
+  reviewed_at DATETIME,
+  note TEXT,
+  position_lat REAL NOT NULL,
+  position_lng REAL NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE RESTRICT,
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
+  FOREIGN KEY (reviewed_by) REFERENCES user(id) ON DELETE SET NULL
+);
+
+-- Photos table
+CREATE TABLE IF NOT EXISTS photos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  report_id INTEGER NOT NULL,
+  url TEXT NOT NULL,
+  ordering INTEGER NOT NULL CHECK(ordering >=1 AND ordering <=3),
+  FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE
+);
 -- ============================================
 -- Indexes for better query performance
 -- ============================================
@@ -83,6 +111,14 @@ CREATE INDEX IF NOT EXISTS idx_categories_default_office ON categories(default_t
 -- Category offices indexes
 CREATE INDEX IF NOT EXISTS idx_category_offices_category_id ON category_offices(category_id);
 CREATE INDEX IF NOT EXISTS idx_category_offices_office_id ON category_offices(office_id);
+
+-- Reports indexes
+CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id);
+CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
+CREATE INDEX IF NOT EXISTS idx_reports_reviewed_by ON reports(reviewed_by);
+
+-- Photos indexes
+CREATE INDEX IF NOT EXISTS idx_photos_report_id ON photos(report_id);
 
 -- ============================================
 -- Triggers for updated_at timestamps
@@ -110,4 +146,12 @@ AFTER UPDATE ON categories
 FOR EACH ROW
 BEGIN
   UPDATE categories SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- Reports updated_at trigger
+CREATE TRIGGER IF NOT EXISTS trigger_reports_updated_at
+AFTER UPDATE ON reports
+FOR EACH ROW
+BEGIN
+  UPDATE reports SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
