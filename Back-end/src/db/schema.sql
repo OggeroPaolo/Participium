@@ -150,3 +150,14 @@ FOR EACH ROW
 BEGIN
   UPDATE reports SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
+
+-- Reports reviewed_at trigger
+CREATE TRIGGER IF NOT EXISTS trigger_set_reviewed_at
+BEFORE UPDATE ON reports
+FOR EACH ROW
+WHEN OLD.reviewed_by IS NOT NEW.reviewed_by
+BEGIN
+    UPDATE reports
+    SET reviewed_at = CURRENT_TIMESTAMP
+    WHERE id = OLD.id;
+END;
