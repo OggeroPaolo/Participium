@@ -10,7 +10,10 @@ const EnvSchema = z.object({
   DB_PATH: z.string().default("./data/participium.db"),
   FIREBASE_PROJECT_ID: z.string(),
   FIREBASE_CLIENT_EMAIL: z.string(),
-  FIREBASE_PRIVATE_KEY: z.string()
+  FIREBASE_PRIVATE_KEY: z.string(),
+  CLOUDINARY_CLOUD_NAME: z.string(),
+  CLOUDINARY_API_KEY: z.string(),
+  CLOUDINARY_API_SECRET: z.string()
 });
 
 const parsed = EnvSchema.safeParse(process.env);
