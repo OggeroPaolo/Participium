@@ -8,7 +8,6 @@ const router = Router();
 /**
  * GET /categories
  * Returns all categories
- * Only accessible by admin users
  */
 router.get("/categories", verifyFirebaseToken([ROLES.ADMIN, ROLES.CITIZEN, ROLES.OPERATOR]), async (req, res) => {
   try {

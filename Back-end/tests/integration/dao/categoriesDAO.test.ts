@@ -33,15 +33,7 @@ describe("CategoriesDao Unit Test Suite", () => {
       expect(getAllMock).toHaveBeenCalledTimes(1);
       expect(getAllMock).toHaveBeenCalledWith(
         `
-      SELECT 
-        id,
-        name,
-        description,
-        default_technical_office_id,
-        is_active,
-        created_at,
-        updated_at
-      FROM categories
+      SELECT * FROM categories
     `
       );
     });
