@@ -57,6 +57,23 @@ export const runQuery = (sql: string, params: any[] = []): Promise<void> => {
   });
 };
 
+/*
+ * Update rows (returns the number of rows modified)
+ */
+
+export const Update = (sql: string, params: any[] = []): Promise<{ changes: number; lastID?: number }> => {
+  return new Promise((resolve, reject) => {
+    const database = getDatabase();
+    database.run(sql, params, function (this: sqlite3.RunResult, err: Error | null) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve({ changes: this.changes, lastID: this.lastID });
+      }
+    });
+  });
+};
+
 /**
  * Get a single row from the database
  */
