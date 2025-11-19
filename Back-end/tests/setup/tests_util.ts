@@ -21,14 +21,12 @@ export function ensureEnvFiles() {
 
   if (!fs.existsSync(TEST_ENV_PATH)) {
     fs.copyFileSync(ENV_PATH, TEST_ENV_PATH);
-    console.log("[setup] Created .env.test from .env");
   }
 }
 
 export function setupTestEnv() {
   ensureEnvFiles();
   loadEnv({ path: TEST_ENV_PATH });
-  console.log("[setup] Loaded test environment from .env.test");
 
   // Save original DB_PATH
   originalDbPath = process.env.DB_PATH;
@@ -39,14 +37,16 @@ export function setupTestEnv() {
 
 export function teardownTestEnv() {
   if (fs.existsSync(TEST_ENV_PATH)) {
-    fs.unlinkSync(TEST_ENV_PATH);
-    console.log("[teardown] Deleted .env.test after tests");
+    try {
+      fs.unlinkSync(TEST_ENV_PATH);
+    } catch (err) {
+      console.error("[teardown] Error deleting .env.test:", err);
+    }
   }
 
   // Restore original DB_PATH
   if (originalDbPath !== undefined) {
     process.env.DB_PATH = originalDbPath;
-    console.log("[teardown] Restored original DB_PATH");
   } else {
     delete process.env.DB_PATH;
   }
@@ -60,46 +60,49 @@ export async function initTestDB(): Promise<void> {
 
   setupTestEnv();
 
-  // Initialize database singleton connection
-  await getDatabase();
+  try {
+    await getDatabase();
 
-  const schemaPath = path.resolve(__dirname, "../../src/db/schema.sql");
-  if (!fs.existsSync(schemaPath)) throw new Error("schema.sql not found for test DB init");
+    const schemaPath = path.resolve(__dirname, "../../src/db/schema.sql");
+    if (!fs.existsSync(schemaPath)) throw new Error("schema.sql not found for test DB init");
 
-  const schema = fs.readFileSync(schemaPath, "utf-8").trim();
-  if (schema.length > 0) {
-    await execSQL(schema);
-    console.log("[setup] Database schema executed");
+    const schema = fs.readFileSync(schemaPath, "utf-8").trim();
+    if (schema.length > 0) {
+      await execSQL(schema);
+    }
+
+    await seedDefaultData();
+
+    dbInitialized = true;
+  } catch (err) {
+    console.error("[setup] Error initializing test DB:", err);
   }
-
-  await seedDefaultData();
-
-  dbInitialized = true;
-  console.log("[setup] In-memory test DB initialized and seeded");
 }
 
 // ---------------------------
 // Reset database between tests
 // ---------------------------
 export async function resetTestDB(): Promise<void> {
-  const tables = await getAll<{ name: string }>(
-    "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
-  );
+  try {
+    const tables = await getAll<{ name: string }>(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+    );
 
-  for (const { name } of tables) {
-    await runQuery(`DELETE FROM ${name}`);
+    for (const { name } of tables) {
+      await runQuery(`DELETE FROM ${name}`);
+    }
+
+    const seqExists = await getOne<{ count: number }>(
+      "SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='sqlite_sequence'"
+    );
+    if (seqExists && seqExists.count > 0) {
+      await runQuery("DELETE FROM sqlite_sequence");
+    }
+
+    await seedDefaultData();
+  } catch (err) {
+    console.error("[setup] Error resetting test DB:", err);
   }
-
-  // Reset SQLite AUTOINCREMENT
-  const seqExists = await getOne<{ count: number }>(
-    "SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='sqlite_sequence'"
-  );
-  if (seqExists && seqExists.count > 0) {
-    await runQuery("DELETE FROM sqlite_sequence");
-  }
-
-  await seedDefaultData();
-  console.log("[setup] In-memory test DB reset and reseeded");
 }
 
 // ---------------------------
@@ -178,8 +181,6 @@ async function seedDefaultData(): Promise<void> {
         [user.firebase_uid, user.email, user.username, user.first_name, user.last_name, user.role_id]
       );
     }
-
-    console.log("[setup] Default roles, categories, and users seeded");
   } catch (err) {
     console.error("[setup] Error seeding default data:", err);
   }
