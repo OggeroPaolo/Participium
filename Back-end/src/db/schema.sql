@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS roles (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
   type TEXT NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  office_id INTEGER,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (office_id) REFERENCES offices(id) ON DELETE SET NULL
 );
 
 -- Offices table. TODO: type necessary?
@@ -105,6 +107,9 @@ CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id);
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
 CREATE INDEX IF NOT EXISTS idx_reports_reviewed_by ON reports(reviewed_by);
 CREATE INDEX IF NOT EXISTS idx_reports_assigned_to ON reports(assigned_to);
+
+-- Roles index
+CREATE INDEX IF NOT EXISTS idx_roles_office_id ON roles(office_id);
 
 -- Photos indexes
 CREATE INDEX IF NOT EXISTS idx_photos_report_id ON photos(report_id);

@@ -20,52 +20,52 @@ This directory contains database-related files for the Participium project.
 │       users          │         │       roles          │
 ├──────────────────────┤         ├──────────────────────┤
 │ • id (PK)            │         │ • id (PK)            │
-│ • firebase_uid       │         │ • name (unique)      │
-│ • email (unique)     │         │ • created_at         │
-│ • username (unique)  │         └──────────────────────┘
-│ • first_name         │                   ▲
-│ • last_name          │                   │
-│ • role_id (FK)       │───────────────────┘
-│ • profile_photo_url  │         (one-to-many)
-│ • telegram_username  │
-│ • email_notif...     │
-│ • is_active          │
-│ • created_at         │ ◄──────┐
-│ • updated_at         │ ◄────┐ │
-│ • last_login_at      │ ◄──┐ │ │
-└──────────────────────┘    | │ │
-                            │ │ │ (many-to-one)
-┌──────────────────────┐    │ │ │                  ┌──────────────────────┐
-|     reports          |    │ │ │                  |       photos         |
-├──────────────────────┤    │ │ │                  ├──────────────────────┤
-| • id (PK)            |    │ │ │                  | • id (PK)            |
-| • user_id (FK)       |────┘ │ │               ┌──| • report_id (FK)     |
-| • reviewed_by (FK)   |──────┘ │               │  | • url                |
-| • assigned_to (FK)   |────────┘               |  | • ordering           |
-| • title              | ◄──────────────────────┘  └──────────────────────┘
-| • category_id(FK)    |────────────────────┐     
-| • description        |                    │
-| • status             |                    │
-| • note               |                    │
-| • position_lat       |                    │
-| • position_lng       |                    |
-| • reviewed_at        |                    │ (many-to-one)
-| • created_at         |                    │
-| • updated_at         |                    │
-└──────────────────────┘                    │
-                                            │
-                                            ▼
-┌──────────────────────┐              ┌──────────────────────────────┐
-│     offices          │              │        categories            │
-├──────────────────────┤ (one to one) ├──────────────────────────────┤
-│ • id (PK)            │◄─────────────┤ • id (PK)                    │
-│ • name               │              │ • name (unique)              │
-│ • type (org/tech)    │              │ • description                │
-| • type               |              │ • is_active                  │
-│ • email              │              │ • created_at                 │           
-│ • phone              │              │ • updated_at                 │
-│ • created_at         │              └──────────────────────────────┘      
-│ • updated_at         │              
+│ • firebase_uid       │         │ • name (unique)      │         (many-to-one)
+│ • email (unique)     │         │ • office_id (FK)     │────────────────────────┐
+│ • username (unique)  │         │ • created_at         │                        │
+│ • first_name         │         └──────────────────────┘                        │
+│ • last_name          │                   ▲                                     │
+│ • role_id (FK)       │                   │                                     │
+│ • profile_photo_url  │───────────────────┘                                     │
+│ • telegram_username  │         (one-to-many)                                   │
+│ • email_notif...     │                                                         │
+│ • is_active          │                                                         │
+│ • created_at         │ ◄──────┐                                                │
+│ • updated_at         │ ◄────┐ │                                                │
+│ • last_login_at      │ ◄──┐ │ │                                                │
+└──────────────────────┘    | │ │                                                │
+                            │ │ │ (many-to-one)                                  │
+┌──────────────────────┐    │ │ │                  ┌──────────────────────┐      │
+|     reports          |    │ │ │                  |       photos         |      │
+├──────────────────────┤    │ │ │                  ├──────────────────────┤      │
+| • id (PK)            |    │ │ │                  | • id (PK)            |      │
+| • user_id (FK)       |────┘ │ │               ┌──| • report_id (FK)     |      │
+| • reviewed_by (FK)   |──────┘ │               │  | • url                |      │
+| • assigned_to (FK)   |────────┘               |  | • ordering           |      │
+| • title              | ◄──────────────────────┘  └──────────────────────┘      │
+| • category_id(FK)    |────────────────────┐                                    │
+| • description        |                    │                                    │
+| • status             |                    │                                    │
+| • note               |                    │                                    │
+| • position_lat       |                    │                                    │
+| • position_lng       |                    |                                    │
+| • reviewed_at        |                    │ (many-to-one)                      │
+| • created_at         |                    │                                    │
+| • updated_at         |                    │                                    │
+└──────────────────────┘                    │                                    │
+                                            │                                    │
+                                            ▼                                    │
+┌──────────────────────┐              ┌──────────────────────────────┐           │
+│     offices          │              │        categories            │           │
+├──────────────────────┤              ├──────────────────────────────┤           │
+│ • id (PK)            │              | • id (PK)                    │           │
+│ • name               │              │ • name (unique)              │           │
+│ • type (org/tech)    │ (one to one) │ • description                │           │
+| • category_id (FK)   |─────────────►│ • is_active                  │           │
+│ • email              │              │ • created_at                 |           │
+│ • phone              │              │ • updated_at                 │           │
+│ • created_at         │              └──────────────────────────────┘           │
+│ • updated_at         │ ◄───────────────────────────────────────────────────────┘
 └──────────────────────┘              
                                       
 
@@ -81,12 +81,16 @@ Stores user account information including Firebase authentication, profile data,
 - **Timestamps**: created_at, updated_at, last_login_at
 - **Note**: Uses Firebase Authentication, no password stored locally
 
-#### roles TODO: UPDATE?
+#### roles
 Predefined user roles for access control:
 - `citizen` - Regular users who can submit reports
-- `org_office_operator` - Organization office staff (approval)
-- `technical_office_operator` - Technical office staff (execution)
+- `Municipal_public_relations_officer` - Organization office staff (approval)
+- `Technical_office_staff_member` - Technical office staff (execution)
+- `Water_utility_officer` - Specialized technical staff
+- `Sewer_system_officer` - Specialized technical staff
 - `admin` - System administrators
+- **Foreign Keys**: office_id → offices.id (each role belongs to one office)
+- **Note**: Each user has exactly one role, which is linked to a specific office, defining the scope of reports they can manage.
 
 #### offices
 Physical or organizational offices that handle reports:
@@ -94,7 +98,9 @@ Physical or organizational offices that handle reports:
   - `organization` - Approval offices
   - `technical` - Execution offices
 - **Contact**: email, phone
+- **Foreign Keys**: category_id → categories.id (unique)
 - **Timestamps**: created_at, updated_at
+- **Note**: Each office manages a single category (one-to-one)
 
 #### categories
 Report categories with default routing:
@@ -106,9 +112,12 @@ Stores user-submitted reports for issues, tracking their status and review proce
 - **Foreign Keys**: user_id (FK -> users.id), reviewed_by (FK -> users.id), assigned_to (FK -> users.id) category_id (FK -> categories.id)
 - **Main fields**: title, description (report content)
 - **Status**:
-- `pending`  - Not yet reviewed
-- `accepted` - Accepted by an officer (note field null)
-- `rejected` - Rejected by an officer (note filed becomes mandatory)
+- `pending_approval`  - The report has been created and is awaiting review by an officer
+- `assigned` - The report has been assigned to a specific user for handling.
+- `in_progress` - The assigned user is actively working on the report.
+- `suspended`  - The handling of the report is temporarily on hold.
+- `rejected` - The report has been rejected by an officer; in this case, the note field is mandatory to provide the reason for rejection.
+- `resolved` - The report has been successfully addressed and closed
 - **Geographical location**: position_lat, position_lng
 - **Relationships**: Each report is created by a single user and may be reviewed by a municipal public relations officer; then is associated to a technical office member that will work on it
 - **Timestamps**: created_at, updated_at, reviewed_at
@@ -143,6 +152,10 @@ reports → categories (many-to-one)
   
 officies → categories (one-to-one)
   Each offices has one category and vice versa
+
+officies → roles (one-to-many)
+  Each role belongs to ONE office
+  Each office can have MANY roles
 ```
 
 ## Initialization Process
