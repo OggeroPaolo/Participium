@@ -29,15 +29,17 @@ CREATE TABLE IF NOT EXISTS roles (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Offices table
+-- Offices table. TODO: type necessary?
 CREATE TABLE IF NOT EXISTS offices (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL,
   type TEXT NOT NULL CHECK(type IN ('organization', 'technical')),
+  category_id INTEGER UNIQUE,
   email TEXT,
   phone TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 );
 
 -- Categories table
@@ -45,21 +47,9 @@ CREATE TABLE IF NOT EXISTS categories (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
   description TEXT,
-  default_technical_office_id INTEGER,
   is_active INTEGER DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (default_technical_office_id) REFERENCES offices(id) ON DELETE SET NULL
-);
-
--- Category-Office junction table (many-to-many)
-CREATE TABLE IF NOT EXISTS category_offices (
-  category_id INTEGER NOT NULL,
-  office_id INTEGER NOT NULL,
-  assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (category_id, office_id),
-  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
-  FOREIGN KEY (office_id) REFERENCES offices(id) ON DELETE CASCADE
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Reports table
@@ -69,7 +59,8 @@ CREATE TABLE IF NOT EXISTS reports (
   category_id INTEGER NOT NULL,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
-  status TEXT NOT NULL CHECK(status in ('pending', 'accepted', 'rejected')),
+  status TEXT NOT NULL CHECK(status in ('pending_approval', 'assigned', 'in_progress', 'suspended', 'rejected', 'resolved')),
+  assigned_to INTEGER,
   reviewed_by INTEGER,
   reviewed_at DATETIME,
   note TEXT,
@@ -80,6 +71,7 @@ CREATE TABLE IF NOT EXISTS reports (
   FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE RESTRICT,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
   FOREIGN KEY (reviewed_by) REFERENCES user(id) ON DELETE SET NULL
+  FOREIGN KEY (assigned_to) REFERENCES user(id) ON DELETE SET NULL
 );
 
 -- Photos table
@@ -103,19 +95,16 @@ CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id);
 
 -- Offices indexes
 CREATE INDEX IF NOT EXISTS idx_offices_type ON offices(type);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_offices_category_id ON offices(category_id);
 
 -- Categories indexes
 CREATE INDEX IF NOT EXISTS idx_categories_is_active ON categories(is_active);
-CREATE INDEX IF NOT EXISTS idx_categories_default_office ON categories(default_technical_office_id);
-
--- Category offices indexes
-CREATE INDEX IF NOT EXISTS idx_category_offices_category_id ON category_offices(category_id);
-CREATE INDEX IF NOT EXISTS idx_category_offices_office_id ON category_offices(office_id);
 
 -- Reports indexes
 CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id);
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
 CREATE INDEX IF NOT EXISTS idx_reports_reviewed_by ON reports(reviewed_by);
+CREATE INDEX IF NOT EXISTS idx_reports_assigned_to ON reports(assigned_to);
 
 -- Photos indexes
 CREATE INDEX IF NOT EXISTS idx_photos_report_id ON photos(report_id);

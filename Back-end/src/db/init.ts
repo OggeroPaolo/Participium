@@ -56,6 +56,7 @@ const seedDefaultData = async (): Promise<void> => {
       const roles = [
         { name: "Citizen", type: "citizen" },
         { name: "Municipal_public_relations_officer", type: "operator" },
+        { name: "Technical_office_staff_member", type: "operator"},
         { name: "Water_utility_officer", type: "operator" },
         { name: "Sewer_system_officer", type: "operator" },
         { name: "Admin", type: "admin" }
