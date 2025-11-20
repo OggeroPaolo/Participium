@@ -8,15 +8,20 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["tests/**/*.test.ts", "tests/**/*.spec.ts"],
-    exclude: ["node_modules", "dist", "coverage"],
-    globalSetup: [path.resolve(__dirname, "tests/setup/globalEnvSetup.ts")],
-    
 
-    // ✅ Coverage configuration
+    // Include test files
+    include: ["tests/**/*.test.ts", "tests/**/*.spec.ts"],
+
+    // Exclude unwanted files/folders
+    exclude: ["node_modules", "dist", "coverage"],
+
+    // Optional: global setup file
+    globalSetup: [path.resolve(__dirname, "tests/setup/globalEnvSetup.ts")],
+
+    // Coverage configuration for SonarQube
     coverage: {
-      provider: "v8", // "v8" is fastest; you can also use "istanbul"
-      reporter: ["text", "lcov", "html"], // Add LCOV for CI tools
+      provider: "v8", // Fast V8 coverage
+      reporter: ["text", "lcov", "html"], // LCOV for SonarQube
       reportsDirectory: "./coverage",
       exclude: [
         "node_modules/",
@@ -29,9 +34,7 @@ export default defineConfig({
         "src/server.ts",
         "vitest.config.ts",
       ],
-
-      // ✅ Optional but highly recommended:
-      all: true, // include all files, not just those touched by tests
+      all: true, // Include all files, even if not tested
       thresholds: {
         lines: 80,
         functions: 80,
