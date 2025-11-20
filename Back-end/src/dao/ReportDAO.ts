@@ -1,21 +1,24 @@
-import { Update } from "../config/database.js"
+import { Update, getOne } from "../config/database.js"
+import type { Report } from "../models/report.js"
 
 //TMP error definition
-export class ReportNotFoundError extends Error {}
-export class CategoryNotFoundError extends Error{}
+export class ReportNotFoundError extends Error { }
+export class CategoryNotFoundError extends Error { }
 
 
 export default class ReportDao {
-  async updateReportStatus(reportId: number, status: string, reviewerId: number, note?: string) {
-    const baseQuery = `UPDATE reports SET status = ?, reviewed_by=? WHERE id = ?`;
-    const rejectResolveQuery = `UPDATE reports SET status = ?, note = ?, reviewed_by=? WHERE id = ?`;
-    let result;
-    // TO DO: add logic to assign a tech office member
-    if (status === "rejected" || status === "resolved") {
-      result = await Update(rejectResolveQuery, [status, note, reviewerId, reportId]);
-    } else {
-      result = await Update(baseQuery, [status, reviewerId, reportId]);
-    }
+  async updateReportStatusAndAssign(reportId: number, status: string, reviewerId: number, note?: string, categoryId?: number, assigneeId?: number) {
+    const query = `
+      UPDATE reports
+      SET status = ?, 
+        reviewed_by = ?,
+        note = COALESCE(?, note),
+        category_id = COALESCE(?, category_id),
+        assigned_to = COALESCE(?, assigned_to)
+      WHERE id = ?;
+    `;
+
+    const result = await Update(query, [status, reviewerId, note, categoryId, assigneeId, reportId]);
 
     if (result.changes === 0) {
       throw new Error("Report not found or no changes made");
@@ -24,25 +27,13 @@ export default class ReportDao {
     return result;
   }
 
-  async updateReportCategory(reportId: number, categoryId: number) {
-    try {
-      const result = await Update(
-        `UPDATE reports SET category_id = ? WHERE id = ?`,
-        [categoryId, reportId]
-      );
-
-      //See if keep this error or not make a report id check before the update
-      if (result.changes === 0) {
-        throw new ReportNotFoundError("Report not found or no changes made");
-      }
-
-      return result;
-    } catch (err: any) {
-      if (err.code === "SQLITE_CONSTRAINT") {
-        throw new CategoryNotFoundError("Category not found");
-      }
-      throw err;
-    }
+  async getReportById(reportId: number): Promise<Report | undefined> {
+    const sql = `
+      SELECT *
+      FROM reports
+      WHERE id = ?
+    `;
+    return getOne<Report>(sql, [reportId]);
   }
 
 }
