@@ -16,11 +16,24 @@ const TEST_ENV_PATH = path.resolve(".env.test");
 
 export function ensureEnvFiles() {
   if (!fs.existsSync(ENV_PATH)) {
-    throw new Error(".env file does not exist. Cannot create .env.test");
+    throw new Error(".env file does not exist. Cannot create or sync .env.test");
   }
 
-  if (!fs.existsSync(TEST_ENV_PATH)) {
-    fs.copyFileSync(ENV_PATH, TEST_ENV_PATH);
+  const envContent = fs.readFileSync(ENV_PATH, "utf8");
+  const testEnvExists = fs.existsSync(TEST_ENV_PATH);
+
+  if (!testEnvExists) {
+    // Create .env.test if missing
+    fs.writeFileSync(TEST_ENV_PATH, envContent);
+    return;
+  }
+
+  // Compare contents
+  const testEnvContent = fs.readFileSync(TEST_ENV_PATH, "utf8");
+
+  if (envContent !== testEnvContent) {
+    // Update .env.test if different
+    fs.writeFileSync(TEST_ENV_PATH, envContent);
   }
 }
 
@@ -84,26 +97,44 @@ export async function initTestDB(): Promise<void> {
 // ---------------------------
 export async function resetTestDB(): Promise<void> {
   try {
-    const tables = await getAll<{ name: string }>(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
-    );
+    // ---------------------------
+    // Delete tables in dependency order
+    // ---------------------------
+    const deleteOrder = [
+      "photos",
+      "reports",
+      "users",
+      "roles",
+      "offices",
+      "categories"
+    ];
 
-    for (const { name } of tables) {
-      await runQuery(`DELETE FROM ${name}`);
+    for (const table of deleteOrder) {
+      await runQuery(`DELETE FROM ${table}`);
     }
 
+    // ---------------------------
+    // Reset AUTOINCREMENT sequences
+    // ---------------------------
     const seqExists = await getOne<{ count: number }>(
       "SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='sqlite_sequence'"
     );
+
     if (seqExists && seqExists.count > 0) {
       await runQuery("DELETE FROM sqlite_sequence");
     }
 
+    // ---------------------------
+    // Seed default data
+    // ---------------------------
     await seedDefaultData();
+
+    console.log("[setup] Test database reset successfully!");
   } catch (err) {
     console.error("[setup] Error resetting test DB:", err);
   }
 }
+
 
 // ---------------------------
 // Seed default roles, categories, users
@@ -181,10 +212,72 @@ async function seedDefaultData(): Promise<void> {
         [user.firebase_uid, user.email, user.username, user.first_name, user.last_name, user.role_id]
       );
     }
+
+    // ---------------------------
+    // Add Test Reports
+    // ---------------------------
+
+    const dbUsers = await getAll<{ id: number }>("SELECT id FROM users");
+    const dbCategories = await getAll<{ id: number }>("SELECT id FROM categories");
+
+    const citizenUser = dbUsers[0]; // first user = citizen
+    const catWater = dbCategories[0];
+    const catRoad = dbCategories[6];
+    const catLighting = dbCategories[3];
+
+    const reports = [
+      {
+        user_id: citizenUser.id,
+        category_id: catWater.id,
+        title: "Broken water pipe",
+        description: "Water is leaking from an underground pipe near the sidewalk.",
+        status: "pending_approval",
+        position_lat: 40.712776,
+        position_lng: -74.005974,
+      },
+      {
+        user_id: citizenUser.id,
+        category_id: catRoad.id,
+        title: "Pothole in main road",
+        description: "Large pothole on the right lane causing traffic slowdown.",
+        status: "pending_approval",
+        position_lat: 40.713500,
+        position_lng: -74.002000,
+      },
+      {
+        user_id: citizenUser.id,
+        category_id: catLighting.id,
+        title: "Street light not working",
+        description: "The street lamp near my house has been off for 3 days.",
+        status: "pending_approval",
+        position_lat: 40.710200,
+        position_lng: -74.007500,
+      }
+    ];
+
+    for (const r of reports) {
+      await runQuery(
+        `INSERT INTO reports (
+            user_id, category_id, title, description, status, position_lat, position_lng
+         ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          r.user_id,
+          r.category_id,
+          r.title,
+          r.description,
+          r.status,
+          r.position_lat,
+          r.position_lng,
+        ]
+      );
+    }
+
+    console.log("[setup] Default data + test reports seeded successfully!");
   } catch (err) {
     console.error("[setup] Error seeding default data:", err);
   }
 }
+
 
 // ---------------------------
 // Express test app helper

@@ -9,7 +9,7 @@ vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
   verifyFirebaseToken: (_roles: string[]) => (_req: any, _res: any, next: any) => next(),
 }));
 
-describe("GET /categories (E2E with real DB)", () => {
+describe("GET /categories (E2E)", () => {
   let app: Express;
 
   beforeAll(async () => {
@@ -33,15 +33,20 @@ describe("GET /categories (E2E with real DB)", () => {
     expect(categoryNames).toContain("Other");
   });
 
-  it("should return 204 if no categories exist", async () => {
-    const { runQuery } = await import("../../src/config/database.js");
+it("should return 204 if no categories exist", async () => {
+  const { runQuery } = await import("../../src/config/database.js");
 
-    // Delete all categories to simulate empty DB
-    await runQuery("DELETE FROM categories");
+  // Clear dependent data first
+  await runQuery("DELETE FROM reports");
+  await runQuery("DELETE FROM offices");
 
-    const res = await request(app).get("/categories");
-    expect(res.status).toBe(204);
-  });
+  // Clear categories
+  await runQuery("DELETE FROM categories");
+
+  const res = await request(app).get("/categories");
+  expect(res.status).toBe(204);
+});
+
 
   it("should return 500 if DAO throws an error", async () => {
     const CategoriesDao = (await import("../../src/dao/CategoriesDAO.js")).default;

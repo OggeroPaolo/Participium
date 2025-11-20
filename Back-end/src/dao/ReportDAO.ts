@@ -1,5 +1,9 @@
 import { Update } from "../config/database.js"
 
+//TMP error definition
+export class ReportNotFoundError extends Error {}
+export class CategoryNotFoundError extends Error{}
+
 
 export default class ReportDao {
   async updateReportStatus(reportId: number, status: string, reviewerId: number, note?: string) {
@@ -19,4 +23,26 @@ export default class ReportDao {
 
     return result;
   }
+
+  async updateReportCategory(reportId: number, categoryId: number) {
+    try {
+      const result = await Update(
+        `UPDATE reports SET category_id = ? WHERE id = ?`,
+        [categoryId, reportId]
+      );
+
+      //See if keep this error or not make a report id check before the update
+      if (result.changes === 0) {
+        throw new ReportNotFoundError("Report not found or no changes made");
+      }
+
+      return result;
+    } catch (err: any) {
+      if (err.code === "SQLITE_CONSTRAINT") {
+        throw new CategoryNotFoundError("Category not found");
+      }
+      throw err;
+    }
+  }
+
 }
