@@ -8,7 +8,7 @@ function Home() {
   return (
     <>
       {isAuthenticated ? (
-        user?.role_name === 'Citizen' ? (
+        user?.role_type === 'citizen' ? (
           <Container fluid style={{ padding: '20px' }} className='body-font'>
             <div style={{ height: 'calc(100vh - 120px)' }}>
               <Map center={[45.0703, 7.6869]} zoom={13} />

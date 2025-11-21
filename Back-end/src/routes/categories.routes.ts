@@ -9,7 +9,7 @@ const router = Router();
  * GET /categories
  * Returns all categories
  */
-router.get("/categories", verifyFirebaseToken([ROLES.ADMIN, ROLES.CITIZEN, ROLES.OPERATOR]), async (req, res) => {
+router.get("/categories", verifyFirebaseToken([ROLES.ADMIN, ROLES.CITIZEN, ROLES.PUB_RELATIONS, ROLES.TECH_OFFICER]), async (req, res) => {
   try {
     const categoriesDao = new CategoriesDao();
     const categories = await categoriesDao.getCategories();

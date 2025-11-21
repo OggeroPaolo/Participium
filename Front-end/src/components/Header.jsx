@@ -51,7 +51,7 @@ function Header(props) {
                       <span>{displayName}</span>
                     </Navbar.Text>
                   )}
-                  {user?.role_name === "admin" && (
+                  {user?.role_type === "admin" && (
                     <>
                       <Nav.Link href='/user-creation'>User Creation</Nav.Link>
                       <Nav.Link href='/user-list'>User List</Nav.Link>

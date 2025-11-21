@@ -63,7 +63,7 @@ function App() {
             path='login'
             element={
               isAuthenticated ? (
-                user?.role_name === "admin" ? (
+                user?.role_type === "admin" ? (
                   <Navigate replace to='/user-list' />
                 ) : (
                   <Navigate replace to='/' />
@@ -78,7 +78,7 @@ function App() {
           <Route
             path='/user-creation'
             element={
-              user?.role_name === "admin" ? (
+              user?.role_type === "admin" ? (
                 <UserCreation />
               ) : (
                 <Navigate replace to='/' />
@@ -88,7 +88,7 @@ function App() {
           <Route
             path='/user-list'
             element={
-              user?.role_name === "admin" ? (
+              user?.role_type === "admin" ? (
                 <UserList />
               ) : (
                 <Navigate replace to='/' />

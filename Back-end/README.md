@@ -91,13 +91,13 @@ Authorization: Bearer <firebase-token>
   {
     "id": 2,
     "name": "Roads_Maintenance_Office_Staff",
-    "type": "operator",
+    "type": "tech_officer",
     "created_at": "2025-11-08 11:46:55"
   },
   {
     "id": 3,
     "name": "Water_Utility_Office_Staff",
-    "type": "operator",
+    "type": "tech_officer",
     "created_at": "2025-11-08 11:46:55"
   }
 ]
