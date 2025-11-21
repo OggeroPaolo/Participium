@@ -28,6 +28,7 @@ router.patch("/pub_relations/reports/:reportId",
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log(errors)
       return res.status(400).json({ errors: "Invalid request data" });
     }
 
@@ -35,11 +36,11 @@ router.patch("/pub_relations/reports/:reportId",
       let { status, note, categoryId } = req.body;
 
       // //if status to be changed is not rejected set note to null so it won't be changed in the sql query
-      // if (status === "rejected") {
-      //   note = note? note : null;
-      // } else {
-      //   note = null;
-      // }
+      if (status === "rejected") {
+        note = note? note : null;
+      } else {
+        note = null;
+      }
 
       // category is always optional (probably not needed to set it to null but i dont know)
       // categoryId = categoryId? categoryId : null;
