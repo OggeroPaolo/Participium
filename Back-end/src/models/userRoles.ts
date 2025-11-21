@@ -3,6 +3,7 @@
 
 export const ROLES = {
   ADMIN: "admin",
-  OPERATOR: "operator",
+  PUB_RELATIONS: "pub_relations",
+  TECH_OFFICER: "tech_officer",
   CITIZEN: "citizen"
 } as const;
