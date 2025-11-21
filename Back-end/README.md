@@ -353,6 +353,87 @@ Authorization: Bearer <firebase-token>
 }
 ```
 
+**PATCH `/reports/{reportId}`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:**
+
+  - reportId: integer
+
+* **Request Body:**
+
+```json
+{
+  "status": "rejected",
+  "note": "Insufficient details",
+  "categoryId": 3
+}
+```
+
+* **Field Usage Notes:**
+
+| Field      | When Required                                                                             | Types                                                                               |
+| ---------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| status     | Always required                                                                           | ["pending_approval", "assigned", "in_progress", "suspended", "rejected" "resolved"] |
+| note       | Required when `status` is `rejected`; Optional for `resolved`; ignored for other statuses | string                                                                              |
+| categoryId | Optional for Municipal_public_relations_officer ; ignored for technical officers          | integer                                                                             |
+
+* **Success Response (200 OK):**
+
+```json
+{
+  "message": "Report status updated successfully"
+}
+```
+
+* **Error Response (400 Bad Request):**
+
+```json
+{
+  "errors": "Invalid request data"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+  Returned when no valid authentication token is provided.
+
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+* **Error Response (403 Forbidden):**
+  Returned when the authenticated user doesn't have the correct role to change the status (ex. a Municipal Public Relation Officer cannot change the status from assigned to in_progress).
+
+```json
+{
+  "error": "You are not allowed to change status from assigned to pending_approval"
+}
+```
+
+* **Error Response (404 Not Found):**
+
+```json
+{
+  "error": "Report not found"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server error"
+}
+```
+
+
 ## Project Structure
 
 ```

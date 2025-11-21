@@ -28,8 +28,7 @@ router.patch("/reports/:reportId",
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      const extractedErrors = errors.array().map(err => err.msg);
-      return res.status(400).json({ errors: extractedErrors });
+      return res.status(400).json({ errors: "Invalid request data" });
     }
 
     try {
@@ -71,6 +70,10 @@ router.patch("/reports/:reportId",
           error: `You are not allowed to change status from ${currentStatus} to ${status}`
         });
       }
+
+      /*******************************************************************************************************************************************
+       * TO DO: set categoryId to null if userRole !== "Municipal_public_relations_officer" since a technical officer cannot modify the category *
+       *******************************************************************************************************************************************/
 
       // if status to be is assigned get the operator of the corresponding category that has the least assigned reports 
       // (maybe should change it to include in the number not only assigned reports, but also in_progress reports)
