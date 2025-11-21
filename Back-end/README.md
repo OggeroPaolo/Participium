@@ -123,7 +123,7 @@ Authorization: Bearer <firebase-token>
 
 ```json
 {
-  "error": "Forbidden: admin access required"
+  "error": "Forbidden: insufficient permissions"
 }
 ```
 
@@ -257,7 +257,7 @@ Returned when no valid authentication token is provided.
 Returned when the authenticated user is not an admin.
 ```json
 {
-  "error": "Forbidden: admin access required"
+  "error": "Forbidden: insufficient permissions"
 }
 ```
 
@@ -321,7 +321,7 @@ Authorization: Bearer <firebase-token>
 * **Error Response (403 Forbidden):**
 ```json
 {
-  "error": "Forbidden: admin access required"
+  "error": "Forbidden: insufficient permissions"
 }
 ```
 
@@ -377,11 +377,11 @@ Authorization: Bearer <firebase-token>
 
 * **Field Usage Notes:**
 
-| Field      | When Required                                                                             | Types                                                                               |
-| ---------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| status     | Always required                                                                           | ["pending_approval", "assigned", "in_progress", "suspended", "rejected" "resolved"] |
-| note       | Required when `status` is `rejected`; Optional for `resolved`; ignored for other statuses | string                                                                              |
-| categoryId | Optional for Municipal_public_relations_officer ; ignored for technical officers          | integer                                                                             |
+| Field      | When Required                        | Types                    |
+| ---------- | ------------------------------------ | ------------------------ |
+| status     | Always required                      | ["assigned", "rejected"] |
+| note       | Required when `status` is `rejected` | string                   |
+| categoryId | Optional                             | integer                  |
 
 * **Success Response (200 OK):**
 
@@ -409,11 +409,11 @@ Authorization: Bearer <firebase-token>
 ```
 
 * **Error Response (403 Forbidden):**
-  Returned when the authenticated user doesn't have the correct role to change the status (ex. a Municipal Public Relation Officer cannot change the status from assigned to in_progress).
+  Returned when the authenticated user is not a public relations officer.
 
 ```json
 {
-  "error": "You are not allowed to change status from assigned to pending_approval"
+  "error": "Forbidden: insufficient permissions"
 }
 ```
 
