@@ -13,18 +13,18 @@ const reportDAO = new ReportDAO();
 const operatorDAO = new OperatorDAO();
 
 // Patches the status of a report optionally attaching a rejection note
-router.patch("/reports/:reportId",
+router.patch("/pub_relations/reports/:reportId",
   [
     param("reportId").isInt().withMessage("Report ID must be a valid integer"),
 
-    body("status").isIn(["pending_approval", "assigned", "in_progress", "suspended", "rejected", "resolved"])
-      .withMessage("Status must be one of: pending_approval, assigned, in_progress, suspended, rejected, resolved"),
+    body("status").isIn(["assigned", "rejected"])
+      .withMessage("Status must be one of: assigned, rejected"),
 
     body("note").if(body("status").equals("rejected")).notEmpty()
       .withMessage("A note is required when report is rejected"),
     body("categoryId").optional({ nullable: true }).isInt().withMessage("categoryId must be an integer if passed")
   ],
-  verifyFirebaseToken([ROLES.OPERATOR]),
+  verifyFirebaseToken([ROLES.PUB_RELATIONS]),
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -34,12 +34,12 @@ router.patch("/reports/:reportId",
     try {
       let { status, note, categoryId } = req.body;
 
-      //if status to be changed is not rejected or resolved set note to null so it won't be changed in the sql query (note is required for rejection and optional for resolved)  
-      if (status === "rejected" || status === "resolved") {
-        note = note? note : null;
-      } else {
-        note = null;
-      }
+      // //if status to be changed is not rejected set note to null so it won't be changed in the sql query
+      // if (status === "rejected") {
+      //   note = note? note : null;
+      // } else {
+      //   note = null;
+      // }
 
       // category is always optional (probably not needed to set it to null but i dont know)
       // categoryId = categoryId? categoryId : null;
@@ -53,27 +53,13 @@ router.patch("/reports/:reportId",
       const currentStatus = report.status;
       const categoryIdFinal = categoryId? categoryId : report.category_id;
 
-      // if operator is a public relations officer he can only modify if current status is pending_approval and to be status is assigned or rejected
+      // A public relations officer can only modify if the current status is pending_approval
       const userRole = user.role_name;
-      if (userRole === "Municipal_public_relations_officer" && (currentStatus !== "pending_approval" || (status !== "assigned" && status !== "rejected"))) {
+      if (currentStatus !== "pending_approval") {
         return res.status(403).json({
-          error: `You are not allowed to change status from ${currentStatus} to ${status}`
+          error: `You are not allowed to change status of a form which is not in the pending_approval status`
         });
       }
-
-      // if opperator is a technical officer then he can only change a report if it is in the status ["assigned", "in_progress", "suspended"] and he can only change it to ["resolved", "in_progress", "suspended"]
-      /*****************************************************************************************
-       * TO DO: check if the officer modifying the status is the one the report is assigned to *
-       *****************************************************************************************/
-      if (userRole !== "Municipal_public_relations_officer" && (!["assigned", "in_progress", "suspended"].includes(currentStatus) || !["resolved", "in_progress", "suspended"].includes(status))) {
-        return res.status(403).json({
-          error: `You are not allowed to change status from ${currentStatus} to ${status}`
-        });
-      }
-
-      /*******************************************************************************************************************************************
-       * TO DO: set categoryId to null if userRole !== "Municipal_public_relations_officer" since a technical officer cannot modify the category *
-       *******************************************************************************************************************************************/
 
       // if status to be is assigned get the operator of the corresponding category that has the least assigned reports 
       // (maybe should change it to include in the number not only assigned reports, but also in_progress reports)
