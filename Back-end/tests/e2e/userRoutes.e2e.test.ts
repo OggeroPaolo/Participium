@@ -3,7 +3,7 @@ import { Express } from "express";
 import { describe, it, expect, beforeAll, afterEach, vi } from "vitest";
 import userRouter from "../../src/routes/user.routes.js";
 import { makeTestApp } from "../setup/tests_util.js";
-import { initTestDB, resetTestDB } from "../setup/tests_util.js"; 
+import { initTestDB, resetTestDB } from "../setup/tests_util.js";
 
 // Mock firebase token verification middleware
 vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
@@ -14,7 +14,7 @@ describe("GET /users/:firebaseUid (E2E)", () => {
   let app: Express;
 
   // One of the default users seeded in seedDefaultData()
-  const seededFirebaseUid = "uid_citizen";
+  const seededFirebaseUid = "QBUqptp5sYa46a2ALU3t8QXRIHz2";
 
   beforeAll(async () => {
     await initTestDB();
@@ -27,14 +27,15 @@ describe("GET /users/:firebaseUid (E2E)", () => {
 
   it("should return user data for an existing firebaseUid", async () => {
     const res = await request(app).get(`/users/${seededFirebaseUid}`);
-
     expect(res.status).toBe(200);
     expect(res.body.user).toMatchObject({
       firebase_uid: seededFirebaseUid,
+      email: "citizen@example.com",
+      username: "JohnDoe",
       first_name: "John",
       last_name: "Doe",
-      email: "citizen@example.com",
-      username: "citizen_user",
+      role_name: 'Citizen',
+      role_type: 'citizen',
     });
   });
 

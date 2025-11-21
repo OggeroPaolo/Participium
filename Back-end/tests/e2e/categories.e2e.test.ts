@@ -13,12 +13,12 @@ describe("GET /categories (E2E)", () => {
   let app: Express;
 
   beforeEach(async () => {
-    await initTestDB();                   // fresh DB for each test
-    app = makeTestApp(categoriesRouter);  // fresh Express instance
+    await initTestDB();                   
+    app = makeTestApp(categoriesRouter);  
   });
 
   afterEach(async () => {
-    await resetTestDB();                  // wipe DB
+    await resetTestDB();                  
   });
 
   it("should return all seeded categories with 200", async () => {

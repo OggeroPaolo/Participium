@@ -21,11 +21,10 @@ export const initializeDatabase = async (): Promise<void> => {
     if (fs.existsSync(schemaPath)) {
       const schema = fs.readFileSync(schemaPath, "utf-8").trim();
       
-      // Only execute if schema file has content
       if (schema.length > 0) {
         await execSQL(schema);
         logger.info("Database schema initialized successfully");
-        
+
         // Seed default data
         await seedDefaultData();
       } else {
@@ -44,19 +43,15 @@ export const initializeDatabase = async (): Promise<void> => {
 /**
  * Seed default data for the application
  */
-const seedDefaultData = async (): Promise<void> => {
+export const seedDefaultData = async (): Promise<void> => {
   try {
-    // Check if we already have roles
     const result = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM roles");
     
     if (result && result.count === 0) {
-      logger.info("Seeding default roles...");
-
-      // Insert default roles
       const roles = [
         { name: "Citizen", type: "citizen" },
         { name: "Municipal_public_relations_officer", type: "pub_relations" },
-        { name: "Technical_office_staff_member", type: "tech_officer"},
+        { name: "Technical_office_staff_member", type: "tech_officer" },
         { name: "Water_utility_officer", type: "tech_officer" },
         { name: "Sewer_system_officer", type: "tech_officer" },
         { name: "Admin", type: "admin" }
@@ -69,33 +64,84 @@ const seedDefaultData = async (): Promise<void> => {
         );
       }
 
-      logger.info("Default roles seeded successfully");
-
-      // Seed default categories
       await seedDefaultCategories();
-
-      // Seed default users
       await seedDefaultUsers();
-      
+      logger.info("Default data seeded successfully");
+
     } else {
       logger.info("Database already contains data, skipping seed");
     }
+    
   } catch (error) {
     logger.error({ error }, "Failed to seed default data");
-    // Don't throw error, as seeding is optional
+  }
+};
+
+/**
+ * Seed default categories
+ */
+export const seedDefaultCategories = async (): Promise<void> => {
+  try {
+    
+    const categories = [
+      {
+        name: "Water Supply – Drinking Water",
+        description: "Issues related to drinking water supply and quality"
+      },
+      {
+        name: "Architectural Barriers",
+        description: "Accessibility issues and architectural barriers"
+      },
+      {
+        name: "Sewer System",
+        description: "Sewer system and drainage issues"
+      },
+      {
+        name: "Public Lighting",
+        description: "Street lights and public lighting problems"
+      },
+      {
+        name: "Waste",
+        description: "Waste management and collection issues"
+      },
+      {
+        name: "Road Signs and Traffic Lights",
+        description: "Traffic signs, signals, and traffic light problems"
+      },
+      {
+        name: "Roads and Urban Furnishings",
+        description: "Road conditions, potholes, and urban furniture"
+      },
+      {
+        name: "Public Green Areas and Playgrounds",
+        description: "Parks, green spaces, and playground maintenance"
+      },
+      {
+        name: "Other",
+        description: "Other issues not covered by specific categories"
+      }
+    ];
+
+    for (const category of categories) {
+      await runQuery(
+        `INSERT INTO categories (name, description) VALUES (?, ?)`,
+        [category.name, category.description]
+      );
+    }
+  } catch (error) {
+    logger.error({ error }, "Failed to seed default categories");
   }
 };
 
 /**
  * Seed default users
  */
-const seedDefaultUsers = async (): Promise<void> => {
+export const seedDefaultUsers = async (): Promise<void> => {
   try {
-    logger.info("Seeding default users...");
-
     // Get role IDs dynamically
     const roles = await getAll<{ id: number; name: string }>("SELECT id, name FROM roles");
     const roleMap: Record<string, number> = {};
+
     roles.forEach(r => {
       roleMap[r.name] = r.id;
     });
@@ -143,68 +189,8 @@ const seedDefaultUsers = async (): Promise<void> => {
       );
     }
 
-    logger.info("Default users seeded successfully");
   } catch (error) {
     logger.error({ error }, "Failed to seed default users");
-  }
-};
-
-/**
- * Seed default categories
- */
-const seedDefaultCategories = async (): Promise<void> => {
-  try {
-    logger.info("Seeding default categories...");
-    
-    const categories = [
-      {
-        name: "Water Supply – Drinking Water",
-        description: "Issues related to drinking water supply and quality"
-      },
-      {
-        name: "Architectural Barriers",
-        description: "Accessibility issues and architectural barriers"
-      },
-      {
-        name: "Sewer System",
-        description: "Sewer system and drainage issues"
-      },
-      {
-        name: "Public Lighting",
-        description: "Street lights and public lighting problems"
-      },
-      {
-        name: "Waste",
-        description: "Waste management and collection issues"
-      },
-      {
-        name: "Road Signs and Traffic Lights",
-        description: "Traffic signs, signals, and traffic light problems"
-      },
-      {
-        name: "Roads and Urban Furnishings",
-        description: "Road conditions, potholes, and urban furniture"
-      },
-      {
-        name: "Public Green Areas and Playgrounds",
-        description: "Parks, green spaces, and playground maintenance"
-      },
-      {
-        name: "Other",
-        description: "Other issues not covered by specific categories"
-      }
-    ];
-
-    for (const category of categories) {
-      await runQuery(
-        `INSERT INTO categories (name, description) VALUES (?, ?)`,
-        [category.name, category.description]
-      );
-    }
-
-    logger.info("Default categories seeded successfully");
-  } catch (error) {
-    logger.error({ error }, "Failed to seed default categories");
   }
 };
 

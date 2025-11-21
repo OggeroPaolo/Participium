@@ -2,22 +2,11 @@ import request from "supertest";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { makeTestApp } from "../../setup/tests_util.js";
 import router from "../../../src/routes/operator.routes.js";
-import {
-  createUserWithFirebase,
-  EmailOrUsernameConflictError,
-  UserAlreadyExistsError,
-} from "../../../src/services/userService.js";
+import * as userService from "../../../src/services/userService.js";
 
-// Mock firebase token verification middleware
+// Mock firebase middleware
 vi.mock("../../../src/middlewares/verifyFirebaseToken.js", () => ({
   verifyFirebaseToken: (_roles: string[]) => (_req: any, _res: any, next: any) => next(),
-}));
-
-// Mock userService to isolate integration tests
-vi.mock("../../../src/services/userService.js", () => ({
-  createUserWithFirebase: vi.fn(),
-  EmailOrUsernameConflictError: class EmailOrUsernameConflictError extends Error {},
-  UserAlreadyExistsError: class UserAlreadyExistsError extends Error {},
 }));
 
 let app: any;
@@ -27,9 +16,19 @@ beforeEach(() => {
   app = makeTestApp(router);
 });
 
-describe("POST /operator-registrations", () => {
+describe("POST /operator-registrations (spyOn version)", () => {
+
   it("should create a new operator successfully", async () => {
-    (createUserWithFirebase as any).mockResolvedValue({ id: 100 });
+    vi.spyOn(userService, "createUserWithFirebase").mockResolvedValue({
+      id: 100,
+      firebase_uid: "firebaseUid",
+      email: "alice@example.com",
+      username: "aliceop",
+      first_name: "Alice",
+      last_name: "Operator",
+      role_name: "Citizen",
+      role_type: "citizen",
+    });
 
     const res = await request(app)
       .post("/operator-registrations")
@@ -39,7 +38,7 @@ describe("POST /operator-registrations", () => {
         username: "aliceop",
         email: "alice@example.com",
         password: "password123",
-        role_id: 2, // valid operator role
+        role_id: 2,
       });
 
     expect(res.status).toBe(201);
@@ -71,7 +70,7 @@ describe("POST /operator-registrations", () => {
         username: "bobadmin",
         email: "bob@example.com",
         password: "pass123",
-        role_id: 4, // admin
+        role_id: 4,
       });
 
     expect(resAdmin.status).toBe(422);
@@ -87,7 +86,7 @@ describe("POST /operator-registrations", () => {
         username: "charlie",
         email: "charlie@example.com",
         password: "pass123",
-        role_id: 1, // citizen
+        role_id: 1,
       });
 
     expect(resCitizen.status).toBe(422);
@@ -97,9 +96,8 @@ describe("POST /operator-registrations", () => {
   });
 
   it("should return 422 if EmailOrUsernameConflictError is thrown", async () => {
-    (createUserWithFirebase as any).mockRejectedValue(
-      new EmailOrUsernameConflictError("Email or username already in use")
-    );
+    vi.spyOn(userService, "createUserWithFirebase")
+      .mockRejectedValue(new userService.EmailOrUsernameConflictError("Email or username already in use"));
 
     const res = await request(app)
       .post("/operator-registrations")
@@ -117,9 +115,8 @@ describe("POST /operator-registrations", () => {
   });
 
   it("should return 409 if UserAlreadyExistsError is thrown", async () => {
-    (createUserWithFirebase as any).mockRejectedValue(
-      new UserAlreadyExistsError("User already registered")
-    );
+    vi.spyOn(userService, "createUserWithFirebase")
+      .mockRejectedValue(new userService.UserAlreadyExistsError("User already registered"));
 
     const res = await request(app)
       .post("/operator-registrations")
@@ -137,7 +134,8 @@ describe("POST /operator-registrations", () => {
   });
 
   it("should return 500 for unknown errors", async () => {
-    (createUserWithFirebase as any).mockRejectedValue(new Error("Unexpected failure"));
+    vi.spyOn(userService, "createUserWithFirebase")
+      .mockRejectedValue(new Error("Unexpected failure"));
 
     const res = await request(app)
       .post("/operator-registrations")
@@ -153,4 +151,5 @@ describe("POST /operator-registrations", () => {
     expect(res.status).toBe(500);
     expect(res.body).toEqual({ error: "Internal server error" });
   });
+
 });

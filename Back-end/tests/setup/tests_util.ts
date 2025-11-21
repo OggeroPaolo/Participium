@@ -2,13 +2,9 @@ import fs from "fs";
 import path from "path";
 import { config as loadEnv } from "dotenv";
 import express, { Router } from "express";
-import {
-  getDatabase,
-  execSQL,
-  runQuery,
-  getAll,
-  getOne,
-} from "../../src/config/database.js";
+import {getDatabase,execSQL,runQuery,getAll,getOne} from "../../src/config/database.js";
+
+import {seedDefaultData} from "../../src/db/init.js";
 
 let dbInitialized = false;
 let originalDbPath: string | undefined;
@@ -33,7 +29,7 @@ export function setupTestEnv() {
   loadEnv({ path: TEST_ENV_PATH });
 
   originalDbPath = process.env.DB_PATH;
-  process.env.DB_PATH = ":memory:";
+  process.env.DB_PATH = ":memory:"; // in-memory DB for tests
 }
 
 export function teardownTestEnv() {
@@ -47,7 +43,7 @@ export function teardownTestEnv() {
 }
 
 // ----------------------------------
-// LOAD REAL SCHEMA (WITHOUT TRIGGERS)
+// LOAD REAL SCHEMA WITHOUT TRIGGERS
 // ----------------------------------
 async function loadSchema() {
   const schemaPath = path.resolve(__dirname, "../../src/db/schema.sql");
@@ -58,7 +54,7 @@ async function loadSchema() {
   // remove SQL comments
   raw = raw.replace(/--.*$/gm, "");
 
-  // remove triggers safely
+  // remove triggers
   raw = raw.replace(/CREATE\s+TRIGGER[\s\S]*?END\s*;/gi, "");
 
   const statements = raw
@@ -72,119 +68,26 @@ async function loadSchema() {
 }
 
 // ----------------------------------
-// DEFAULT SEED DATA 
-// ----------------------------------
-async function seedDefaultData() {
-  // roles
-  const roles = [
-    { name: "citizen", type: "user" },
-    { name: "org_office_operator", type: "operator" },
-    { name: "technical_office_operator", type: "operator" },
-    { name: "admin", type: "admin" },
-  ];
-
-  for (const r of roles) {
-    try {
-      await runQuery(
-        `INSERT INTO roles (name, type) VALUES (?, ?)`,
-        [r.name, r.type]
-      );
-    } catch (err) {
-      console.error("Error inserting role:", r, err);
-      throw err;
-    }
-  }
-
-  // categories
-  const categories = [
-    { name: "Water Supply – Drinking Water", description: "Issues related to drinking water supply and quality" },
-    { name: "Architectural Barriers", description: "Accessibility issues and architectural barriers" },
-    { name: "Sewer System", description: "Sewer system and drainage issues" },
-    { name: "Public Lighting", description: "Street lights and public lighting problems" },
-    { name: "Waste", description: "Waste management and collection issues" },
-    { name: "Road Signs and Traffic Lights", description: "Traffic signs, signals, and traffic light problems" },
-    { name: "Roads and Urban Furnishings", description: "Road conditions, potholes, and urban furniture" },
-    { name: "Public Green Areas and Playgrounds", description: "Parks, green spaces, and playground maintenance" },
-    { name: "Other", description: "Other issues not covered by specific categories" },
-  ];
-
-  for (const c of categories) {
-    try {
-      await runQuery(
-        `INSERT INTO categories (name, description) VALUES (?, ?)`,
-        [c.name, c.description]
-      );
-    } catch (err) {
-      console.error("Error inserting category:", c, err);
-      throw err;
-    }
-  }
-
-  // users
-  const rolesMap = Object.fromEntries(
-    (await getAll<{ id: number; name: string }>("SELECT id, name FROM roles"))
-      .map(r => [r.name, r.id])
-  );
-
-  const users = [
-    {
-      firebase_uid: "uid_citizen",
-      email: "citizen@example.com",
-      username: "citizen_user",
-      first_name: "John",
-      last_name: "Doe",
-      role_id: rolesMap["citizen"],
-    },
-    {
-      firebase_uid: "uid_operator",
-      email: "operator@example.com",
-      username: "operator_user",
-      first_name: "Jane",
-      last_name: "Smith",
-      role_id: rolesMap["org_office_operator"],
-    },
-    {
-      firebase_uid: "admin_uid",
-      email: "admin@example.com",
-      username: "admin_user",
-      first_name: "Alice",
-      last_name: "Admin",
-      role_id: rolesMap["admin"],
-    },
-  ];
-
-  for (const u of users) {
-    try {
-      await runQuery(
-        `INSERT INTO users (firebase_uid, email, username, first_name, last_name, role_id)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [u.firebase_uid, u.email, u.username, u.first_name, u.last_name, u.role_id]
-      );
-    } catch (err) {
-      console.error("Error inserting user:", u, err);
-      throw err;
-    }
-  }
-}
-
-
-// ----------------------------------
-// INIT TEST DB
+// INIT TEST DB (CLEAN + SEED WITH APP LOGIC)
 // ----------------------------------
 export async function initTestDB(): Promise<void> {
   if (!dbInitialized) {
     setupTestEnv();
     await getDatabase();
     await loadSchema();
+
+    // Use your new real application seeding.
     await seedDefaultData();
+
     dbInitialized = true;
   }
 }
 
 // ----------------------------------
-// RESET TEST DB (CLEAR + RESEED)
+// RESET TEST DB
 // ----------------------------------
 export async function resetTestDB(): Promise<void> {
+  // Clear all tables
   const tables = await getAll<{ name: string }>(
     "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
   );
@@ -193,6 +96,7 @@ export async function resetTestDB(): Promise<void> {
     await runQuery(`DELETE FROM ${name}`);
   }
 
+  // Reset autoincrement
   const seqExists = await getOne<{ count: number }>(
     `SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='sqlite_sequence'`
   );
@@ -201,7 +105,7 @@ export async function resetTestDB(): Promise<void> {
     await runQuery("DELETE FROM sqlite_sequence");
   }
 
-  // Insert defaults again
+  // Re-seed using your real seed logic
   await seedDefaultData();
 }
 
