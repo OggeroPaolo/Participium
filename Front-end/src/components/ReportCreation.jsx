@@ -1,15 +1,24 @@
-import { useState, useEffect, useActionState } from "react";
+import { useState, useEffect, useActionState, useRef } from "react";
 import { Form, Button, Container, Alert } from "react-bootstrap";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { getCategories, createReport } from "../API/API.js";
+import L from "leaflet";
 
 function ReportCreation() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const initialLat = location.state?.lat || 45.0703;
+  const initialLng = location.state?.lng || 7.6869;
 
   const [categories, setCategories] = useState([]);
   const [isFormLoading, setIsFormLoading] = useState(false);
   const [previewImages, setPreviewImages] = useState([]);
   const [pics, setPics] = useState([]);
+
+  const [pinpoint, setPinpoint] = useState({
+    lat: initialLat.toFixed(5),
+    lng: initialLng.toFixed(5),
+  });
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -41,11 +50,15 @@ function ReportCreation() {
       title: formData.get("title"),
       description: formData.get("description"),
       category: formData.get("category"),
-      photos: formData.get("photos"),
+      photos: formData.getAll("photos"),
     };
 
     try {
-      await createReport(attributes);
+      if (attributes.photos[0].size === 0) {
+        throw new Error("Please upload at least one photo.");
+      }
+
+      await createReport(attributes, pinpoint.lat, pinpoint.lng);
       setTimeout(() => {
         navigate("/");
       }, 2500);
@@ -88,9 +101,14 @@ function ReportCreation() {
         className='mt-3 ms-1 me-1 d-flex justify-content-center body-font'
       >
         <Container className='p-4' style={{ maxWidth: "800px" }}>
-          <h3>
+          <h3 className='mb-3'>
             <b>Create a new report</b>
           </h3>
+          <MapReport
+            propLat={pinpoint.lat}
+            propLng={pinpoint.lng}
+            setPinpoint={setPinpoint}
+          />
           <Form action={formAction}>
             <Form.Group controlId='title' className='mb-3 mt-4'>
               <Form.Label>
@@ -173,6 +191,74 @@ function ReportCreation() {
         </Container>
       </Container>
     </>
+  );
+}
+
+function MapReport(props) {
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markerRef = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current || mapInstanceRef.current) return;
+
+    // initialize map
+    const map = L.map(mapRef.current).setView(
+      [props.propLat, props.propLng],
+      16
+    );
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+
+    // starting marker
+    const marker = L.marker([props.propLat, props.propLng], {
+      icon: L.icon({
+        iconUrl: "/icons/selected-location-icon.png",
+        iconSize: [48, 48],
+        iconAnchor: [24, 40],
+      }),
+    }).addTo(map);
+
+    markerRef.current = marker;
+    mapInstanceRef.current = map;
+
+    // allow user to modify location
+    map.on("click", (e) => {
+      const { lat, lng } = e.latlng;
+
+      props.setPinpoint({ lat: lat.toFixed(5), lng: lng.toFixed(5) });
+
+      if (markerRef.current) {
+        markerRef.current.setLatLng([lat, lng]);
+      }
+    });
+  }, []);
+
+  return (
+    <div style={{ position: "relative", width: "100%" }}>
+      <div ref={mapRef} style={{ height: "400px", width: "100%" }} />
+
+      <div
+        style={{
+          position: "absolute",
+          top: "10px",
+          right: "10px",
+          padding: "10px",
+          background: "#fff",
+          borderRadius: "8px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+          zIndex: 1000,
+          fontSize: "14px",
+        }}
+      >
+        <strong>Selected location:</strong>
+        <div>Lat: {props.propLat}</div>
+        <div>Lng: {props.propLng}</div>
+      </div>
+    </div>
   );
 }
 

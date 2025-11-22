@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useNavigate } from "react-router";
-import 'leaflet.markercluster';
-import 'leaflet.markercluster/dist/MarkerCluster.css';
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import "leaflet.markercluster";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
 // Fix for default marker icons in Leaflet with React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -28,45 +28,176 @@ function Map({ center = [45.0703, 7.6869], zoom = 13 }) {
 
   let approvedReports = [
     { id: 1, title: "Broken Road", username: "Alice", lat: 45.067, lng: 7.682 },
-    { id: 2, title: "Street Flooding", username: "Bob", lat: 45.071, lng: 7.688 },
+    {
+      id: 2,
+      title: "Street Flooding",
+      username: "Bob",
+      lat: 45.071,
+      lng: 7.688,
+    },
 
     // Central Turin - Centro, Porta Nuova, Quadrilatero
-    { id: 3, title: "Damaged Traffic Light", username: "Carla", lat: 45.070, lng: 7.686 },
-    { id: 4, title: "Potholes in Street", username: "Davide", lat: 45.073, lng: 7.678 },
-    { id: 5, title: "Trash Overflowing", username: "Elena", lat: 45.074, lng: 7.692 },
-    { id: 6, title: "Illegal Street Vendors", username: "Giulia", lat: 45.071, lng: 7.686 },
+    {
+      id: 3,
+      title: "Damaged Traffic Light",
+      username: "Carla",
+      lat: 45.07,
+      lng: 7.686,
+    },
+    {
+      id: 4,
+      title: "Potholes in Street",
+      username: "Davide",
+      lat: 45.073,
+      lng: 7.678,
+    },
+    {
+      id: 5,
+      title: "Trash Overflowing",
+      username: "Elena",
+      lat: 45.074,
+      lng: 7.692,
+    },
+    {
+      id: 6,
+      title: "Illegal Street Vendors",
+      username: "Giulia",
+      lat: 45.071,
+      lng: 7.686,
+    },
 
     // San Salvario / Valentino Park
-    { id: 7, title: "Graffiti on Wall", username: "Marco", lat: 45.056, lng: 7.682 },
-    { id: 8, title: "Fallen Tree Branch", username: "Luca", lat: 45.055, lng: 7.690 },
+    {
+      id: 7,
+      title: "Graffiti on Wall",
+      username: "Marco",
+      lat: 45.056,
+      lng: 7.682,
+    },
+    {
+      id: 8,
+      title: "Fallen Tree Branch",
+      username: "Luca",
+      lat: 45.055,
+      lng: 7.69,
+    },
     { id: 9, title: "Broken Bench", username: "Sara", lat: 45.058, lng: 7.684 },
 
     // Lingotto / Nizza Millefonti
-    { id: 10, title: "Heavy Traffic", username: "Paolo", lat: 45.033, lng: 7.666 },
-    { id: 11, title: "Blocked Drain", username: "Valentina", lat: 45.030, lng: 7.673 },
-    { id: 12, title: "Abandoned Scooter", username: "Roberto", lat: 45.037, lng: 7.678 },
+    {
+      id: 10,
+      title: "Heavy Traffic",
+      username: "Paolo",
+      lat: 45.033,
+      lng: 7.666,
+    },
+    {
+      id: 11,
+      title: "Blocked Drain",
+      username: "Valentina",
+      lat: 45.03,
+      lng: 7.673,
+    },
+    {
+      id: 12,
+      title: "Abandoned Scooter",
+      username: "Roberto",
+      lat: 45.037,
+      lng: 7.678,
+    },
 
     // Mirafiori / Santa Rita
-    { id: 13, title: "Broken Streetlight", username: "Francesca", lat: 45.023, lng: 7.641 },
-    { id: 14, title: "Abandoned Vehicle", username: "Anna", lat: 45.028, lng: 7.650 },
-    { id: 15, title: "Noise Complaint", username: "Stefano", lat: 45.025, lng: 7.664 },
+    {
+      id: 13,
+      title: "Broken Streetlight",
+      username: "Francesca",
+      lat: 45.023,
+      lng: 7.641,
+    },
+    {
+      id: 14,
+      title: "Abandoned Vehicle",
+      username: "Anna",
+      lat: 45.028,
+      lng: 7.65,
+    },
+    {
+      id: 15,
+      title: "Noise Complaint",
+      username: "Stefano",
+      lat: 45.025,
+      lng: 7.664,
+    },
 
     // Aurora / Borgo Dora
-    { id: 16, title: "Public Disturbance", username: "Enrico", lat: 45.084, lng: 7.691 },
-    { id: 17, title: "Illegal Dumping", username: "Carolina", lat: 45.087, lng: 7.692 },
-    { id: 18, title: "Street Light Flickering", username: "Fabio", lat: 45.082, lng: 7.703 },
+    {
+      id: 16,
+      title: "Public Disturbance",
+      username: "Enrico",
+      lat: 45.084,
+      lng: 7.691,
+    },
+    {
+      id: 17,
+      title: "Illegal Dumping",
+      username: "Carolina",
+      lat: 45.087,
+      lng: 7.692,
+    },
+    {
+      id: 18,
+      title: "Street Light Flickering",
+      username: "Fabio",
+      lat: 45.082,
+      lng: 7.703,
+    },
 
     // Vanchiglia / University Area
-    { id: 19, title: "Crowded Sidewalk", username: "Irene", lat: 45.076, lng: 7.708 },
-    { id: 20, title: "Loud Construction Noise", username: "Tommaso", lat: 45.079, lng: 7.713 },
-    { id: 21, title: "Dangerous Crosswalk", username: "Chiara", lat: 45.075, lng: 7.704 },
+    {
+      id: 19,
+      title: "Crowded Sidewalk",
+      username: "Irene",
+      lat: 45.076,
+      lng: 7.708,
+    },
+    {
+      id: 20,
+      title: "Loud Construction Noise",
+      username: "Tommaso",
+      lat: 45.079,
+      lng: 7.713,
+    },
+    {
+      id: 21,
+      title: "Dangerous Crosswalk",
+      username: "Chiara",
+      lat: 45.075,
+      lng: 7.704,
+    },
 
     // Crocetta / Politecnico Area
-    { id: 22, title: "Overflowing Trash Bin", username: "Massimo", lat: 45.063, lng: 7.656 },
-    { id: 23, title: "Roadwork Issue", username: "Alessia", lat: 45.062, lng: 7.661 },
-    { id: 24, title: "Sidewalk Damage", username: "Matteo", lat: 45.064, lng: 7.668 }
+    {
+      id: 22,
+      title: "Overflowing Trash Bin",
+      username: "Massimo",
+      lat: 45.063,
+      lng: 7.656,
+    },
+    {
+      id: 23,
+      title: "Roadwork Issue",
+      username: "Alessia",
+      lat: 45.062,
+      lng: 7.661,
+    },
+    {
+      id: 24,
+      title: "Sidewalk Damage",
+      username: "Matteo",
+      lat: 45.064,
+      lng: 7.668,
+    },
   ];
-
 
   // useEffect(() => {
   //   const loadApprovedReports = async () => {
@@ -99,7 +230,7 @@ function Map({ center = [45.0703, 7.6869], zoom = 13 }) {
           return zoom < 10 ? 200 : 120;
         },
         spiderfyOnMaxZoom: true,
-        disableClusteringAtZoom: 17
+        disableClusteringAtZoom: 17,
       });
       clusterGroupRef.current = clusterGroup;
       mapInstance.addLayer(clusterGroup);
@@ -117,14 +248,16 @@ function Map({ center = [45.0703, 7.6869], zoom = 13 }) {
         }
 
         const reportIcon = L.icon({
-          iconUrl: '/icons/selected-location-icon.png',
+          iconUrl: "/icons/selected-location-icon.png",
           iconSize: [48, 48],
           iconAnchor: [24, 40],
-          popupAnchor: [0, -24]
+          popupAnchor: [0, -24],
         });
 
         // Add new marker
-        const newMarker = L.marker([lat, lng], { icon: reportIcon }).addTo(mapInstance);
+        const newMarker = L.marker([lat, lng], { icon: reportIcon }).addTo(
+          mapInstance
+        );
         newMarker.bindPopup(
           `<div class="body-font">
             <b>Selected Point</b><br>
@@ -138,7 +271,9 @@ function Map({ center = [45.0703, 7.6869], zoom = 13 }) {
           const popupNode = e.popup.getElement();
           const btn = popupNode.querySelector(".report-btn");
 
-          L.DomEvent.on(btn, "click", () => navigate("/create-report"));
+          L.DomEvent.on(btn, "click", () =>
+            navigate("/create-report", { state: { lat, lng } })
+          );
         });
 
         newMarker.openPopup();
@@ -178,27 +313,28 @@ function Map({ center = [45.0703, 7.6869], zoom = 13 }) {
       if (!report.lat || !report.lng) return;
 
       const reportIcon = L.icon({
-        iconUrl: '/icons/location-icon.png',
+        iconUrl: "/icons/location-icon.png",
         iconSize: [48, 48],
         iconAnchor: [24, 40],
-        popupAnchor: [0, -24]
+        popupAnchor: [0, -24],
       });
-      
-      const marker = L.marker([report.lat, report.lng], { icon: reportIcon })
-        .bindPopup(
-          `<div class="body-font">
+
+      const marker = L.marker([report.lat, report.lng], {
+        icon: reportIcon,
+      }).bindPopup(
+        `<div class="body-font">
             <p class="my-1"><b>${report.title}</b></p>
             <p class="my-1 d-inline reporte-by-size" >Reported by: </p><p class="my-1 d-inline" >${report.username}</p>
             <button class="map-button report-btn">View full report</button>
             </div>`
-        );
+      );
 
       marker.on("popupopen", (e) => {
-          const popupNode = e.popup.getElement();
-          const btn = popupNode.querySelector(".report-btn");
+        const popupNode = e.popup.getElement();
+        const btn = popupNode.querySelector(".report-btn");
 
-          L.DomEvent.on(btn, "click", () => navigate(`/report/${report.id}`));
-        });
+        L.DomEvent.on(btn, "click", () => navigate(`/report/${report.id}`));
+      });
 
       clusterGroup.addLayer(marker);
     });
