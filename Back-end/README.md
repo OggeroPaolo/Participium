@@ -169,7 +169,7 @@ Authorization: Bearer <firebase-token>
 
 ```json
 {
-  "error": "Forbidden: admin access required"
+  "error": "Forbidden: insufficient permissions"
 }
 ```
 
@@ -303,7 +303,7 @@ Returned when no valid authentication token is provided.
 Returned when the authenticated user is not an admin.
 ```json
 {
-  "error": "Forbidden: admin access required"
+  "error": "Forbidden: insufficient permissions"
 }
 ```
 
@@ -367,7 +367,7 @@ Authorization: Bearer <firebase-token>
 * **Error Response (403 Forbidden):**
 ```json
 {
-  "error": "Forbidden: admin access required"
+  "error": "Forbidden: insufficient permissions"
 }
 ```
 
@@ -398,6 +398,87 @@ Authorization: Bearer <firebase-token>
   "error": "Internal server error"
 }
 ```
+
+**PATCH `/reports/{reportId}`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:**
+
+  - reportId: integer
+
+* **Request Body:**
+
+```json
+{
+  "status": "rejected",
+  "note": "Insufficient details",
+  "categoryId": 3
+}
+```
+
+* **Field Usage Notes:**
+
+| Field      | When Required                        | Types                    |
+| ---------- | ------------------------------------ | ------------------------ |
+| status     | Always required                      | ["assigned", "rejected"] |
+| note       | Required when `status` is `rejected` | string                   |
+| categoryId | Optional                             | integer                  |
+
+* **Success Response (200 OK):**
+
+```json
+{
+  "message": "Report status updated successfully"
+}
+```
+
+* **Error Response (400 Bad Request):**
+
+```json
+{
+  "errors": "Invalid request data"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+  Returned when no valid authentication token is provided.
+
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+* **Error Response (403 Forbidden):**
+  Returned when the authenticated user is not a public relations officer.
+
+```json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+
+* **Error Response (404 Not Found):**
+
+```json
+{
+  "error": "Report not found"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server error"
+}
+```
+
 
 ## Project Structure
 

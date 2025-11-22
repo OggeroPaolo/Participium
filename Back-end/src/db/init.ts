@@ -14,13 +14,12 @@ export const initializeDatabase = async (): Promise<void> => {
   try {
     // Initialize database connection
     getDatabase();
-    
+
     // Read the schema SQL file
     const schemaPath = path.join(__dirname, "schema.sql");
-    
+
     if (fs.existsSync(schemaPath)) {
       const schema = fs.readFileSync(schemaPath, "utf-8").trim();
-      
       if (schema.length > 0) {
         await execSQL(schema);
         logger.info("Database schema initialized successfully");
@@ -33,7 +32,7 @@ export const initializeDatabase = async (): Promise<void> => {
     } else {
       logger.warn("Schema file not found, database initialized without schema");
     }
-    
+
   } catch (error) {
     logger.error({ error }, "Failed to initialize database");
     throw error;
@@ -46,7 +45,6 @@ export const initializeDatabase = async (): Promise<void> => {
 export const seedDefaultData = async (): Promise<void> => {
   try {
     const result = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM roles");
-    
     if (result && result.count === 0) {
       const roles = [
         { name: "Citizen", type: "citizen" },
@@ -66,12 +64,12 @@ export const seedDefaultData = async (): Promise<void> => {
 
       await seedDefaultCategories();
       await seedDefaultUsers();
+      await seedDefaultReports();
       logger.info("Default data seeded successfully");
 
     } else {
       logger.info("Database already contains data, skipping seed");
     }
-    
   } catch (error) {
     logger.error({ error }, "Failed to seed default data");
   }
@@ -82,7 +80,6 @@ export const seedDefaultData = async (): Promise<void> => {
  */
 export const seedDefaultCategories = async (): Promise<void> => {
   try {
-    
     const categories = [
       {
         name: "Water Supply – Drinking Water",
@@ -192,6 +189,85 @@ export const seedDefaultUsers = async (): Promise<void> => {
   } catch (error) {
     logger.error({ error }, "Failed to seed default users");
   }
+
 };
+
+/**
+ * Seed default reports
+ */
+export const seedDefaultReports = async (): Promise<void> => {
+  try {
+    const reportCount = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM reports");
+    if (reportCount?.count && reportCount.count > 0) {
+      logger.info("Reports already exist, skipping seed");
+      return;
+    }
+
+    // Get users and categories
+    const users = await getAll<{ id: number }>("SELECT id FROM users");
+    const categories = await getAll<{ id: number; name: string }>("SELECT id, name FROM categories");
+
+    if (!users.length || !categories.length) {
+      logger.warn("Cannot seed reports: no users or categories found");
+      return;
+    }
+
+    // Use first user and category as fallback
+    const firstUser = users[0] ?? { id: 1 };
+    const firstCategory = categories[0] ?? { id: 1 };
+
+    const reports = [
+      {
+        title: "Broken street light",
+        description: "The street light on 5th avenue is broken and needs repair.",
+        user_id: firstUser.id,
+        category_id: categories.find(c => c.name.includes("Public Lighting"))?.id ?? firstCategory.id,
+        position_lat: 40.712776,
+        position_lng: -74.005974,
+        status: "pending_approval"
+      },
+      {
+        title: "Potholes on Main Street",
+        description: "Several potholes are damaging vehicles on Main Street.",
+        user_id: firstUser.id,
+        category_id: categories.find(c => c.name.includes("Roads"))?.id ?? firstCategory.id,
+        position_lat: 40.713776,
+        position_lng: -74.004974,
+        status: "pending_approval"
+      },
+      {
+        title: "Water leakage in neighborhood",
+        description: "A broken water pipe is causing flooding in the area.",
+        user_id: users[1]?.id ?? firstUser.id, // fallback to first user
+        category_id: categories.find(c => c.name.includes("Water Supply"))?.id ?? firstCategory.id,
+        position_lat: 40.714776,
+        position_lng: -74.003974,
+        status: "in_progress"
+      }
+    ];
+
+    for (const report of reports) {
+      await runQuery(
+        `INSERT INTO reports 
+         (title, description, user_id, category_id, position_lat, position_lng, status) 
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          report.title,
+          report.description,
+          report.user_id,
+          report.category_id,
+          report.position_lat,
+          report.position_lng,
+          report.status
+        ]
+      );
+    }
+  } catch (error) {
+    logger.error({ error }, "Failed to seed default reports");
+  }
+};
+
+
+
 
 export default initializeDatabase;
