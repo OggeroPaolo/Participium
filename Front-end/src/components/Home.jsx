@@ -1,9 +1,21 @@
 import { Container, Row, Col } from "react-bootstrap";
+import { useEffect, useState } from "react";
 import useUserStore from "../store/userStore";
 import Map from "./Map";
+import { getApprovedReports } from "../API/API.js"
 
 function Home() {
   const { user, isAuthenticated } = useUserStore();
+  const [approvedReports, setapprovedReports] = useState(null);
+
+  useEffect(() => {
+    const loadApprovedReports = async () => {
+      const reportList = await getApprovedReports();
+      setapprovedReports(reportList);
+    };
+
+    loadApprovedReports();
+  }, []);
 
   return (
     <>
@@ -11,7 +23,7 @@ function Home() {
         user?.role_type === 'citizen' ? (
           <Container fluid style={{ padding: '20px' }} className='body-font'>
             <div style={{ height: 'calc(100vh - 120px)' }}>
-              <Map center={[45.0703, 7.6869]} zoom={13} />
+              <Map center={[45.0703, 7.6869]} zoom={13} approvedReports={approvedReports} />
             </div>
           </Container>
         ) : (

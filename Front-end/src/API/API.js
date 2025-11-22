@@ -143,6 +143,26 @@ async function getCategories() {
   }
 }
 
+// Get list of approved reports in the short format
+async function getApprovedReports() {
+  try {
+    const response = await fetch(URI + "/reports/map", {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+    if (response.ok) {
+      const approvedReports = await response.json();
+      return approvedReports.reports;
+    } else {
+      throw new Error("Failed to fetch categories");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
 // Create a new report
 async function createReport(reportData) {}
 
@@ -153,5 +173,6 @@ export {
   getInternalUsers,
   getUserData,
   getCategories,
-  createReport,
+  getApprovedReports,
+  createReport
 };
