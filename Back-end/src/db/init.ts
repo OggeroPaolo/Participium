@@ -215,8 +215,8 @@ export const seedDefaultReports = async (): Promise<void> => {
     }
 
     // Use first user and category as fallback
-    const firstUser = users[0] ?? { id: 1 };       
-    const firstCategory = categories[0] ?? { id: 1 }; 
+    const firstUser = users[0] ?? { id: 1 };
+    const firstCategory = categories[0] ?? { id: 1 };
 
     const reports = [
       {

@@ -57,7 +57,7 @@ router.patch("/pub_relations/reports/:reportId",
 
       // //if status to be changed is not rejected set note to null so it won't be changed in the sql query
       if (status === "rejected") {
-        note = note? note : null;
+        note = note ? note : null;
       } else {
         note = null;
       }
@@ -72,7 +72,7 @@ router.patch("/pub_relations/reports/:reportId",
       if (!report) return res.status(404).json({ error: "Report not found" });
 
       const currentStatus = report.status;
-      const categoryIdFinal = categoryId? categoryId : report.category_id;
+      const categoryIdFinal = categoryId ? categoryId : report.category_id;
 
       // A public relations officer can only modify if the current status is pending_approval
       const userRole = user.role_name;
