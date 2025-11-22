@@ -12,6 +12,11 @@ router.get("/reports/map",
         try {
             const rawReports: ReportMap[] = await reportDAO.getMapReports();
             const reports: ReportMapDTO[] = rawReports.map(mapToDTO);
+            
+            if (Array.isArray(reports) && reports.length === 0) {
+                return res.status(204).send();
+            }
+            
             return res.status(200)
                 .json({ reports });
         } catch (error: any) {

@@ -72,6 +72,52 @@ The database is automatically seeded with:
 
 - **GET** `/health` - Returns the health status of the server
 
+### Reports
+
+**GET `/reports/map`**
+
+* **Request Headers:** None
+
+* **Request Parameters:** None
+
+* **Success Response (200 OK):**
+```json
+"reports": [
+        {
+            "id": 1,
+            "title": "Problem with street illumination",
+            "reporterName": "John Doe",
+            "position": {
+                "lat": 45.4642,
+                "lng": 9.19
+            }
+        },
+        {
+            "id": 2,
+            "title": "Holes in the street",
+            "reporterName": "Jane Smith",
+            "position": {
+                "lat": 45.465,
+                "lng": 9.191
+            }
+        }
+]
+```
+
+* **No Content Response (204 No Content):**
+
+```json
+// Empty response body
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server Error"
+}
+```
+
 ### Roles
 
 **GET `/roles`**
