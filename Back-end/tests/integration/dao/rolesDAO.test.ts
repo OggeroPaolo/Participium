@@ -20,8 +20,8 @@ describe("RolesDao Integration Test Suite", () => {
   describe("getRoles", () => {
     it("returns all operators", async () => {
       const mockRoles = [
-        { id: 1, name: "Operator 1" },
-        { id: 2, name: "Operatorn 2" },
+        { name: "Citizen", type: "citizen" },
+        { name: "Admin", type: "admin" },
       ];
 
       // Mock getAll to return mockRoles
@@ -31,9 +31,7 @@ describe("RolesDao Integration Test Suite", () => {
 
       expect(result).toEqual(mockRoles);
       expect(getAllMock).toHaveBeenCalledTimes(1);
-      expect(getAllMock).toHaveBeenCalledWith(
-        "SELECT * FROM roles WHERE name != 'admin' AND name != 'citizen'"
-      );
+      expect(getAllMock).toHaveBeenCalledWith("SELECT * FROM roles WHERE type != \'admin\' AND name != \'citizen\'");
     });
 
     it("returns empty array if no roles found", async () => {

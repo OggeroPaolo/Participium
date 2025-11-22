@@ -2,22 +2,12 @@ import request from "supertest";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { makeTestApp } from "../../setup/tests_util.js";
 import router from "../../../src/routes/operator.routes.js";
-import {
-  createUserWithFirebase,
-  EmailOrUsernameConflictError,
-  UserAlreadyExistsError,
-} from "../../../src/services/userService.js";
+import * as userService from "../../../src/services/userService.js";
+import OperatorDAO from "../../../src/dao/OperatorDAO.js";
 
-// Mock firebase token verification middleware
+// Mock firebase middleware
 vi.mock("../../../src/middlewares/verifyFirebaseToken.js", () => ({
   verifyFirebaseToken: (_roles: string[]) => (_req: any, _res: any, next: any) => next(),
-}));
-
-// Mock userService to isolate integration tests
-vi.mock("../../../src/services/userService.js", () => ({
-  createUserWithFirebase: vi.fn(),
-  EmailOrUsernameConflictError: class EmailOrUsernameConflictError extends Error {},
-  UserAlreadyExistsError: class UserAlreadyExistsError extends Error {},
 }));
 
 let app: any;
@@ -27,9 +17,72 @@ beforeEach(() => {
   app = makeTestApp(router);
 });
 
+describe("GET /operators", () => {
+  it("should return 200 with a list of operators", async () => {
+    const mockOperators = [
+      {
+        id: 1,
+        firebase_uid: "uid1",
+        email: "operator1@example.com",
+        username: "op1",
+        first_name: "Alice",
+        last_name: "Doe",
+        role_name: "Operator",
+        role_type: "tech_officer",
+      },
+      {
+        id: 2,
+        firebase_uid: "uid2",
+        email: "operator2@example.com",
+        username: "op2",
+        first_name: "Bob",
+        last_name: "Smith",
+        role_name: "Municipal_public_relations_officer",
+        role_type: "pub_relations",
+      },
+    ];
+
+    const getOperatorsSpy = vi
+      .spyOn(OperatorDAO.prototype, "getOperators")
+      .mockResolvedValueOnce(mockOperators);
+
+    const res = await request(app).get("/operators");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(mockOperators);
+    expect(getOperatorsSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("should return 204 if no operators exist", async () => {
+    vi.spyOn(OperatorDAO.prototype, "getOperators").mockResolvedValueOnce([]);
+
+    const res = await request(app).get("/operators");
+
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
+  });
+
+  it("should return 500 if DAO throws an error", async () => {
+    vi.spyOn(OperatorDAO.prototype, "getOperators").mockRejectedValueOnce(new Error("Database error"));
+
+    const res = await request(app).get("/operators");
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: "Database error" });
+  });
+});
 describe("POST /operator-registrations", () => {
   it("should create a new operator successfully", async () => {
-    (createUserWithFirebase as any).mockResolvedValue({ id: 100 });
+    vi.spyOn(userService, "createUserWithFirebase").mockResolvedValue({
+      id: 100,
+      firebase_uid: "firebaseUid",
+      email: "alice@example.com",
+      username: "aliceop",
+      first_name: "Alice",
+      last_name: "Operator",
+      role_name: "Citizen",
+      role_type: "citizen",
+    });
 
     const res = await request(app)
       .post("/operator-registrations")
@@ -39,7 +92,7 @@ describe("POST /operator-registrations", () => {
         username: "aliceop",
         email: "alice@example.com",
         password: "password123",
-        role_id: 2, // valid operator role
+        role_id: 2,
       });
 
     expect(res.status).toBe(201);
@@ -71,7 +124,7 @@ describe("POST /operator-registrations", () => {
         username: "bobadmin",
         email: "bob@example.com",
         password: "pass123",
-        role_id: 4, // admin
+        role_id: 4,
       });
 
     expect(resAdmin.status).toBe(422);
@@ -87,7 +140,7 @@ describe("POST /operator-registrations", () => {
         username: "charlie",
         email: "charlie@example.com",
         password: "pass123",
-        role_id: 1, // citizen
+        role_id: 1,
       });
 
     expect(resCitizen.status).toBe(422);
@@ -97,9 +150,8 @@ describe("POST /operator-registrations", () => {
   });
 
   it("should return 422 if EmailOrUsernameConflictError is thrown", async () => {
-    (createUserWithFirebase as any).mockRejectedValue(
-      new EmailOrUsernameConflictError("Email or username already in use")
-    );
+    vi.spyOn(userService, "createUserWithFirebase")
+      .mockRejectedValue(new userService.EmailOrUsernameConflictError("Email or username already in use"));
 
     const res = await request(app)
       .post("/operator-registrations")
@@ -117,9 +169,8 @@ describe("POST /operator-registrations", () => {
   });
 
   it("should return 409 if UserAlreadyExistsError is thrown", async () => {
-    (createUserWithFirebase as any).mockRejectedValue(
-      new UserAlreadyExistsError("User already registered")
-    );
+    vi.spyOn(userService, "createUserWithFirebase")
+      .mockRejectedValue(new userService.UserAlreadyExistsError("User already registered"));
 
     const res = await request(app)
       .post("/operator-registrations")
@@ -137,7 +188,8 @@ describe("POST /operator-registrations", () => {
   });
 
   it("should return 500 for unknown errors", async () => {
-    (createUserWithFirebase as any).mockRejectedValue(new Error("Unexpected failure"));
+    vi.spyOn(userService, "createUserWithFirebase")
+      .mockRejectedValue(new Error("Unexpected failure"));
 
     const res = await request(app)
       .post("/operator-registrations")
@@ -153,4 +205,5 @@ describe("POST /operator-registrations", () => {
     expect(res.status).toBe(500);
     expect(res.body).toEqual({ error: "Internal server error" });
   });
+
 });

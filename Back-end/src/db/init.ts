@@ -14,18 +14,17 @@ export const initializeDatabase = async (): Promise<void> => {
   try {
     // Initialize database connection
     getDatabase();
-    
+
     // Read the schema SQL file
     const schemaPath = path.join(__dirname, "schema.sql");
-    
+
     if (fs.existsSync(schemaPath)) {
       const schema = fs.readFileSync(schemaPath, "utf-8").trim();
-      
-      // Only execute if schema file has content
+
       if (schema.length > 0) {
         await execSQL(schema);
         logger.info("Database schema initialized successfully");
-        
+
         // Seed default data
         await seedDefaultData();
       } else {
@@ -34,7 +33,7 @@ export const initializeDatabase = async (): Promise<void> => {
     } else {
       logger.warn("Schema file not found, database initialized without schema");
     }
-    
+
   } catch (error) {
     logger.error({ error }, "Failed to initialize database");
     throw error;
@@ -44,19 +43,15 @@ export const initializeDatabase = async (): Promise<void> => {
 /**
  * Seed default data for the application
  */
-const seedDefaultData = async (): Promise<void> => {
+export const seedDefaultData = async (): Promise<void> => {
   try {
-    // Check if we already have roles
     const result = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM roles");
-    
-    if (result && result.count === 0) {
-      logger.info("Seeding default roles...");
 
-      // Insert default roles
+    if (result && result.count === 0) {
       const roles = [
         { name: "Citizen", type: "citizen" },
         { name: "Municipal_public_relations_officer", type: "pub_relations" },
-        { name: "Technical_office_staff_member", type: "tech_officer"},
+        { name: "Technical_office_staff_member", type: "tech_officer" },
         { name: "Water_utility_officer", type: "tech_officer" },
         { name: "Sewer_system_officer", type: "tech_officer" },
         { name: "Admin", type: "admin" }
@@ -69,33 +64,85 @@ const seedDefaultData = async (): Promise<void> => {
         );
       }
 
-      logger.info("Default roles seeded successfully");
-
-      // Seed default categories
       await seedDefaultCategories();
-
-      // Seed default users
       await seedDefaultUsers();
-      
+      await seedDefaultReports();
+      logger.info("Default data seeded successfully");
+
     } else {
       logger.info("Database already contains data, skipping seed");
     }
+
   } catch (error) {
     logger.error({ error }, "Failed to seed default data");
-    // Don't throw error, as seeding is optional
+  }
+};
+
+/**
+ * Seed default categories
+ */
+export const seedDefaultCategories = async (): Promise<void> => {
+  try {
+
+    const categories = [
+      {
+        name: "Water Supply – Drinking Water",
+        description: "Issues related to drinking water supply and quality"
+      },
+      {
+        name: "Architectural Barriers",
+        description: "Accessibility issues and architectural barriers"
+      },
+      {
+        name: "Sewer System",
+        description: "Sewer system and drainage issues"
+      },
+      {
+        name: "Public Lighting",
+        description: "Street lights and public lighting problems"
+      },
+      {
+        name: "Waste",
+        description: "Waste management and collection issues"
+      },
+      {
+        name: "Road Signs and Traffic Lights",
+        description: "Traffic signs, signals, and traffic light problems"
+      },
+      {
+        name: "Roads and Urban Furnishings",
+        description: "Road conditions, potholes, and urban furniture"
+      },
+      {
+        name: "Public Green Areas and Playgrounds",
+        description: "Parks, green spaces, and playground maintenance"
+      },
+      {
+        name: "Other",
+        description: "Other issues not covered by specific categories"
+      }
+    ];
+
+    for (const category of categories) {
+      await runQuery(
+        `INSERT INTO categories (name, description) VALUES (?, ?)`,
+        [category.name, category.description]
+      );
+    }
+  } catch (error) {
+    logger.error({ error }, "Failed to seed default categories");
   }
 };
 
 /**
  * Seed default users
  */
-const seedDefaultUsers = async (): Promise<void> => {
+export const seedDefaultUsers = async (): Promise<void> => {
   try {
-    logger.info("Seeding default users...");
-
     // Get role IDs dynamically
     const roles = await getAll<{ id: number; name: string }>("SELECT id, name FROM roles");
     const roleMap: Record<string, number> = {};
+
     roles.forEach(r => {
       roleMap[r.name] = r.id;
     });
@@ -143,69 +190,88 @@ const seedDefaultUsers = async (): Promise<void> => {
       );
     }
 
-    logger.info("Default users seeded successfully");
   } catch (error) {
     logger.error({ error }, "Failed to seed default users");
   }
+
 };
 
 /**
- * Seed default categories
+ * Seed default reports
  */
-const seedDefaultCategories = async (): Promise<void> => {
+export const seedDefaultReports = async (): Promise<void> => {
   try {
-    logger.info("Seeding default categories...");
-    
-    const categories = [
+    const reportCount = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM reports");
+    if (reportCount?.count && reportCount.count > 0) {
+      logger.info("Reports already exist, skipping seed");
+      return;
+    }
+
+    // Get users and categories
+    const users = await getAll<{ id: number }>("SELECT id FROM users");
+    const categories = await getAll<{ id: number; name: string }>("SELECT id, name FROM categories");
+
+    if (!users.length || !categories.length) {
+      logger.warn("Cannot seed reports: no users or categories found");
+      return;
+    }
+
+    // Use first user and category as fallback
+    const firstUser = users[0] ?? { id: 1 };       
+    const firstCategory = categories[0] ?? { id: 1 }; 
+
+    const reports = [
       {
-        name: "Water Supply – Drinking Water",
-        description: "Issues related to drinking water supply and quality"
+        title: "Broken street light",
+        description: "The street light on 5th avenue is broken and needs repair.",
+        user_id: firstUser.id,
+        category_id: categories.find(c => c.name.includes("Public Lighting"))?.id ?? firstCategory.id,
+        position_lat: 40.712776,
+        position_lng: -74.005974,
+        status: "pending_approval"
       },
       {
-        name: "Architectural Barriers",
-        description: "Accessibility issues and architectural barriers"
+        title: "Potholes on Main Street",
+        description: "Several potholes are damaging vehicles on Main Street.",
+        user_id: firstUser.id,
+        category_id: categories.find(c => c.name.includes("Roads"))?.id ?? firstCategory.id,
+        position_lat: 40.713776,
+        position_lng: -74.004974,
+        status: "pending_approval"
       },
       {
-        name: "Sewer System",
-        description: "Sewer system and drainage issues"
-      },
-      {
-        name: "Public Lighting",
-        description: "Street lights and public lighting problems"
-      },
-      {
-        name: "Waste",
-        description: "Waste management and collection issues"
-      },
-      {
-        name: "Road Signs and Traffic Lights",
-        description: "Traffic signs, signals, and traffic light problems"
-      },
-      {
-        name: "Roads and Urban Furnishings",
-        description: "Road conditions, potholes, and urban furniture"
-      },
-      {
-        name: "Public Green Areas and Playgrounds",
-        description: "Parks, green spaces, and playground maintenance"
-      },
-      {
-        name: "Other",
-        description: "Other issues not covered by specific categories"
+        title: "Water leakage in neighborhood",
+        description: "A broken water pipe is causing flooding in the area.",
+        user_id: users[1]?.id ?? firstUser.id, // fallback to first user
+        category_id: categories.find(c => c.name.includes("Water Supply"))?.id ?? firstCategory.id,
+        position_lat: 40.714776,
+        position_lng: -74.003974,
+        status: "in_progress"
       }
     ];
 
-    for (const category of categories) {
+    for (const report of reports) {
       await runQuery(
-        `INSERT INTO categories (name, description) VALUES (?, ?)`,
-        [category.name, category.description]
+        `INSERT INTO reports 
+         (title, description, user_id, category_id, position_lat, position_lng, status) 
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          report.title,
+          report.description,
+          report.user_id,
+          report.category_id,
+          report.position_lat,
+          report.position_lng,
+          report.status
+        ]
       );
     }
-
-    logger.info("Default categories seeded successfully");
   } catch (error) {
-    logger.error({ error }, "Failed to seed default categories");
+    logger.error({ error }, "Failed to seed default reports");
   }
 };
+
+
+
 
 export default initializeDatabase;

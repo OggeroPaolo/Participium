@@ -13,6 +13,7 @@ export default class OperatorDao {
     return operators;
   }
 
+  // Return the Id of the operator with the least assigned reports in a given category
   async getAssigneeId(categoryId: number): Promise<number> {
     const query = `
       SELECT u.id, COUNT(rep.id) AS assigned_report_count

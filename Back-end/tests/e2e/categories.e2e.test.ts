@@ -13,12 +13,12 @@ describe("GET /categories (E2E)", () => {
   let app: Express;
 
   beforeEach(async () => {
-    await initTestDB();                   // fresh DB for each test
-    app = makeTestApp(categoriesRouter);  // fresh Express instance
+    await initTestDB();                   
+    app = makeTestApp(categoriesRouter);  
   });
 
   afterEach(async () => {
-    await resetTestDB();                  // wipe DB
+    await resetTestDB();                  
   });
 
   it("should return all seeded categories with 200", async () => {
@@ -36,12 +36,11 @@ describe("GET /categories (E2E)", () => {
 it("should return 204 if no categories exist", async () => {
   const { runQuery } = await import("../../src/config/database.js");
 
-  // Clear dependent data first
-  await runQuery("DELETE FROM reports");
-  await runQuery("DELETE FROM offices");
 
-  // Clear categories
+  //Clearing categories table (bypass foreign key constraints)
+  await runQuery("PRAGMA foreign_keys = OFF");
   await runQuery("DELETE FROM categories");
+  await runQuery("PRAGMA foreign_keys = ON");
 
   const res = await request(app).get("/categories");
   expect(res.status).toBe(204);

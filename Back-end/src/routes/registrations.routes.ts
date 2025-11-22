@@ -19,7 +19,6 @@ router.post("/user-registrations",
     async (req: Request, res: Response) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            console.log(errors)
             return res.status(400).json({ error: "Invalid request data" });
         }
 
@@ -44,7 +43,6 @@ router.post("/user-registrations",
             if (error.code === "auth/email-already-exists") {
                 return res.status(422).json({ error: error.message });
             }
-            console.error(error);
             return res.status(500).json({ error: "Internal server error" });
         }
     }

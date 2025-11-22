@@ -1,6 +1,6 @@
 
 import request from "supertest";
-import express, { Router } from "express";
+import express from "express";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { notFound, errorHandler, AppError } from "../../../src/middlewares/error.js";
 import { logger } from "../../../src/config/logger.js";

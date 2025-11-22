@@ -5,19 +5,11 @@ import firebaseAdmin from "../../../src/config/firebaseAdmin.js";
 import UserDAO from "../../../src/dao/UserDAO.js";
 import type { User } from "../../../src/models/user.js";
 
-// ---------------------------
 // Extend Request locally for testing
-// ---------------------------
 interface TestRequest extends Request {
   uid?: string;
   user?: User;
 }
-
-// ---------------------------
-// Mock Firebase Admin
-// ---------------------------
-const mockVerifyIdToken = vi.fn();
-(firebaseAdmin.auth as any) = () => ({ verifyIdToken: mockVerifyIdToken });
 
 // ---------------------------
 // Reset mocks before each test
@@ -57,9 +49,13 @@ const mockUser: User = {
   last_name: "Doe",
   role_name: "admin",
   role_type: "admin",
-  profile_photo_url: null,
-  telegram_username: null,
 };
+
+// ---------------------------
+// Mock Firebase Admin
+// ---------------------------
+const mockVerifyIdToken = vi.fn();
+vi.spyOn(firebaseAdmin, "auth").mockReturnValue({ verifyIdToken: mockVerifyIdToken } as any);
 
 // ---------------------------
 // Tests
@@ -85,6 +81,18 @@ describe("verifyFirebaseToken middleware", () => {
 
   it("should return 401 if Authorization header is missing", async () => {
     const req = mockReq();
+    const res = mockRes();
+
+    const middleware = verifyFirebaseToken(["admin"]);
+    await middleware(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("should return 401 if Authorization header is 'Bearer ' with no token", async () => {
+    const req = mockReq("Bearer ");
     const res = mockRes();
 
     const middleware = verifyFirebaseToken(["admin"]);
