@@ -123,10 +123,35 @@ async function getUserData(uid) {
   }
 }
 
+// Get list of categories
+async function getCategories() {
+  try {
+    const response = await fetch(URI + "/categories", {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+    if (response.ok) {
+      const categories = await response.json();
+      return categories;
+    } else {
+      throw new Error("Failed to fetch categories");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
+// Create a new report
+async function createReport(reportData) {}
+
 export {
   handleSignup,
   createInternalUser,
   getUserRoles,
   getInternalUsers,
   getUserData,
+  getCategories,
+  createReport,
 };
