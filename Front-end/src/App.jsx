@@ -11,6 +11,7 @@ import { logout } from "./firebaseService.js";
 import UserList from "./components/UserList.jsx";
 import { useAuthSync } from "./hooks/useAuthSync.js";
 import useUserStore from "./store/userStore.js";
+import ReportCreation from "./components/ReportCreation.jsx";
 
 function App() {
   // Sync Zustand store with Firebase auth state
@@ -63,7 +64,7 @@ function App() {
             path='login'
             element={
               isAuthenticated ? (
-                user?.role_type === "admin" ? (
+                user?.role_name === "Admin" ? (
                   <Navigate replace to='/user-list' />
                 ) : (
                   <Navigate replace to='/' />
@@ -78,7 +79,7 @@ function App() {
           <Route
             path='/user-creation'
             element={
-              user?.role_type === "admin" ? (
+              user?.role_name === "Admin" ? (
                 <UserCreation />
               ) : (
                 <Navigate replace to='/' />
@@ -88,8 +89,20 @@ function App() {
           <Route
             path='/user-list'
             element={
-              user?.role_type === "admin" ? (
+              user?.role_name === "Admin" ? (
                 <UserList />
+              ) : (
+                <Navigate replace to='/' />
+              )
+            }
+          />
+
+          {/* User specific routes */}
+          <Route
+            path='/create-report'
+            element={
+              user?.role_name === "Citizen" ? (
+                <ReportCreation />
               ) : (
                 <Navigate replace to='/' />
               )

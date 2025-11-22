@@ -67,6 +67,26 @@ html {
   background-color: #023a82 !important;
 }
 
+.img-preview {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #eff0f0;
+}
+
+.select-ph-btn {
+  background-color: #eff0f0 !important;
+  color: black !important;
+  border-color: #d6d7d7 !important;
+  font-size: small !important;
+}
+
+.select-ph-btn:hover,
+.select-ph-btn:focus {
+  background-color: #d6d7d7 !important;
+}
+
 /* Responsive scaling for larger screens */
 @media (min-width: 768px) {
   /* Tablet and up: slightly bigger */
