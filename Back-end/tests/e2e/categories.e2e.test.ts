@@ -33,13 +33,19 @@ describe("GET /categories (E2E)", () => {
     expect(names).toContain("Other");
   });
 
-  it("should return 204 if no categories exist", async () => {
-    const { runQuery } = await import("../../src/config/database.js");
-    await runQuery("DELETE FROM categories");
+it("should return 204 if no categories exist", async () => {
+  const { runQuery } = await import("../../src/config/database.js");
 
-    const res = await request(app).get("/categories");
-    expect(res.status).toBe(204);
-  });
+
+  //Clearing categories table (bypass foreign key constraints)
+  await runQuery("PRAGMA foreign_keys = OFF");
+  await runQuery("DELETE FROM categories");
+  await runQuery("PRAGMA foreign_keys = ON");
+
+  const res = await request(app).get("/categories");
+  expect(res.status).toBe(204);
+});
+
 
   it("should return 500 if DAO throws an error", async () => {
     const CategoriesDao = (await import("../../src/dao/CategoriesDAO.js")).default;

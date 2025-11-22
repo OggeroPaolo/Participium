@@ -87,27 +87,38 @@ export async function initTestDB(): Promise<void> {
 // RESET TEST DB
 // ----------------------------------
 export async function resetTestDB(): Promise<void> {
-  // Clear all tables
-  const tables = await getAll<{ name: string }>(
-    "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
-  );
+  try {
+    // Disable foreign key checks
+    await runQuery("PRAGMA foreign_keys = OFF");
 
-  for (const { name } of tables) {
-    await runQuery(`DELETE FROM ${name}`);
+    // Clear all tables
+    const tables = await getAll<{ name: string }>(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+    );
+
+    for (const { name } of tables) {
+      await runQuery(`DELETE FROM ${name}`);
+    }
+
+    // Reset autoincrement
+    const seqExists = await getOne<{ count: number }>(
+      "SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='sqlite_sequence'"
+    );
+    if (seqExists?.count) {
+      await runQuery("DELETE FROM sqlite_sequence");
+    }
+
+    // Re-enable foreign key checks
+    await runQuery("PRAGMA foreign_keys = ON");
+
+    // Re-seed
+    await seedDefaultData();
+  } catch (error) {
+    console.error("Error resetting test database:", error);
+    throw error;
   }
-
-  // Reset autoincrement
-  const seqExists = await getOne<{ count: number }>(
-    `SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='sqlite_sequence'`
-  );
-
-  if (seqExists?.count) {
-    await runQuery("DELETE FROM sqlite_sequence");
-  }
-
-  // Re-seed using your real seed logic
-  await seedDefaultData();
 }
+
 
 // ----------------------------------
 // EXPRESS TEST APP

@@ -31,11 +31,7 @@ describe("CategoriesDao Unit Test Suite", () => {
 
       expect(result).toEqual(mockCategories);
       expect(getAllMock).toHaveBeenCalledTimes(1);
-      expect(getAllMock).toHaveBeenCalledWith(
-        `
-      SELECT * FROM categories
-    `
-      );
+      expect(getAllMock).toHaveBeenCalledWith(`SELECT * FROM categories`);
     });
 
     it("returns empty array if no categories found", async () => {

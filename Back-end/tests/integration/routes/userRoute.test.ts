@@ -47,8 +47,8 @@ describe("GET /users/:firebaseUid", () => {
     expect(res.body).toEqual({ error: "User not found" });
   });
 
-  it("should return 400 if firebaseUid is missing", async () => {
-    const res = await request(app).get("/users/"); // invalid path, Express will handle as 404
+  it("should return 400 if firebaseUid param is missing", async () => {
+    const res = await request(app).get("/users/"); 
     expect([400, 404]).toContain(res.status);
   });
 

@@ -4,25 +4,17 @@ import path from "path";
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
-
   test: {
     globals: true,
     environment: "node",
-
-    // Include test files
     include: ["tests/**/*.test.ts", "tests/**/*.spec.ts"],
-
-    // Exclude unwanted files/folders
     exclude: ["node_modules", "dist", "coverage"],
+    globalSetup: path.resolve(__dirname, "tests/setup/globalEnvSetup.ts"),
 
-    // Optional: global setup file
-    globalSetup: [path.resolve(__dirname, "tests/setup/globalEnvSetup.ts")],
-
-    // Coverage configuration for SonarQube
     coverage: {
-      provider: "v8", // Fast V8 coverage
-      reporter: ["text", "lcov", "html"], // LCOV for SonarQube
-      reportsDirectory: "./coverage",
+      provider: "v8",
+      reporter: ["text", "lcov", "html"],
+      reportsDirectory: "./tests/coverage",
       exclude: [
         "node_modules/",
         "tests/",
@@ -34,7 +26,7 @@ export default defineConfig({
         "src/server.ts",
         "vitest.config.ts",
       ],
-      all: true, // Include all files, even if not tested
+      all: true,
       thresholds: {
         lines: 80,
         functions: 80,
