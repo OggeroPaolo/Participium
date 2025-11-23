@@ -6,6 +6,8 @@ import "leaflet.markercluster";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
+// TODO: see if selection can work with clusters and change icon for selected reports
+
 // Fix for default marker icons in Leaflet with React
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -17,13 +19,35 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-function Map({ center = [45.0703, 7.6869], zoom = 13, approvedReports }) {
+function Map({
+  center = [45.0703, 7.6869],
+  zoom = 13,
+  approvedReports,
+  selectedReportID,
+  onMarkerSelect,
+}) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const currentMarkerRef = useRef(null);
   const clusterGroupRef = useRef(null);
   const [selectedPoint, setSelectedPoint] = useState(null);
+  const markersRef = useRef({});
+  const selectedLayerRef = useRef(L.layerGroup());
   const navigate = useNavigate();
+
+  const reportIcon = L.icon({
+    iconUrl: "/icons/location-icon.png",
+    iconSize: [48, 48],
+    iconAnchor: [24, 40],
+    popupAnchor: [0, -24],
+  });
+
+  const highlightedIcon = L.icon({
+    iconUrl: "/icons/selected-location-icon.png",
+    iconSize: [58, 58],
+    iconAnchor: [29, 48],
+    popupAnchor: [0, -30],
+  });
 
   // let approvedReports = [
   //   { id: 1, title: "Broken Road", username: "Alice", lat: 45.067, lng: 7.682 },
@@ -213,6 +237,9 @@ function Map({ center = [45.0703, 7.6869], zoom = 13, approvedReports }) {
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(mapInstance);
 
+      // add layer for new report selection
+      selectedLayerRef.current.addTo(mapInstance);
+
       // cluster initialization
       const clusterGroup = L.markerClusterGroup({
         maxClusterRadius: function (zoom) {
@@ -233,9 +260,7 @@ function Map({ center = [45.0703, 7.6869], zoom = 13, approvedReports }) {
         setSelectedPoint({ lat: lat.toFixed(5), lng: lng.toFixed(5) });
 
         // Remove previous marker
-        if (currentMarkerRef.current) {
-          mapInstance.removeLayer(currentMarkerRef.current);
-        }
+        selectedLayerRef.current.clearLayers();
 
         const reportIcon = L.icon({
           iconUrl: "/icons/selected-location-icon.png",
@@ -245,9 +270,9 @@ function Map({ center = [45.0703, 7.6869], zoom = 13, approvedReports }) {
         });
 
         // Add new marker
-        const newMarker = L.marker([lat, lng], { icon: reportIcon }).addTo(
-          mapInstance
-        );
+        const newMarker = L.marker([lat, lng], { icon: reportIcon });
+        selectedLayerRef.current.addLayer(newMarker);
+
         newMarker.bindPopup(
           `<div class="body-font">
             <b>Selected Point</b><br>
@@ -282,12 +307,12 @@ function Map({ center = [45.0703, 7.6869], zoom = 13, approvedReports }) {
     }
 
     // Cleanup on unmount
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-    };
+    // return () => {
+    //   if (mapInstanceRef.current) {
+    //     mapInstanceRef.current.remove();
+    //     mapInstanceRef.current = null;
+    //   }
+    // };
   }, [center, zoom]);
 
   // add reports to cluster
@@ -298,16 +323,10 @@ function Map({ center = [45.0703, 7.6869], zoom = 13, approvedReports }) {
 
     // Clear old markers before adding new ones
     clusterGroup.clearLayers();
+    markersRef.current = {};
 
     approvedReports.forEach((report) => {
-      if (!report.position.lat || !report.position.lng) return;
-
-      const reportIcon = L.icon({
-        iconUrl: "/icons/location-icon.png",
-        iconSize: [48, 48],
-        iconAnchor: [24, 40],
-        popupAnchor: [0, -24],
-      });
+      if (!report.position?.lat || !report.position?.lng) return;
 
       const marker = L.marker([report.position.lat, report.position.lng], {
         icon: reportIcon,
@@ -319,6 +338,10 @@ function Map({ center = [45.0703, 7.6869], zoom = 13, approvedReports }) {
             </div>`
       );
 
+      marker.on("click", () => {
+        if (onMarkerSelect) onMarkerSelect(report.id);
+      });
+
       marker.on("popupopen", (e) => {
         const popupNode = e.popup.getElement();
         const btn = popupNode.querySelector(".report-btn");
@@ -326,9 +349,39 @@ function Map({ center = [45.0703, 7.6869], zoom = 13, approvedReports }) {
         L.DomEvent.on(btn, "click", () => navigate(`/reports/${report.id}`));
       });
 
+      markersRef.current[report.id] = marker;
+
       clusterGroup.addLayer(marker);
     });
   }, [approvedReports]);
+
+  // highlight / un-highlight markers when selectedReportID changes
+  useEffect(() => {
+    if (!markersRef.current || !clusterGroupRef.current) return;
+
+    // Remove temporary "new report" marker
+    if (currentMarkerRef.current) {
+      mapInstanceRef.current.removeLayer(currentMarkerRef.current);
+      currentMarkerRef.current = null;
+      setSelectedPoint(null);
+    }
+
+    // reset all to default icon
+    Object.entries(markersRef.current).forEach(([id, marker]) => {
+      marker.setIcon(
+        id === String(selectedReportID) ? highlightedIcon : reportIcon
+      );
+    });
+
+    // center map and open popup on selected marker
+    if (selectedReportID && markersRef.current[selectedReportID]) {
+      const marker = markersRef.current[selectedReportID];
+      const map = mapInstanceRef.current;
+
+      map.panTo(marker.getLatLng());
+      marker.openPopup();
+    }
+  }, [selectedReportID]);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>

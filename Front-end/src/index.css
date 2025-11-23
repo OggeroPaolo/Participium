@@ -87,6 +87,16 @@ html {
   background-color: #d6d7d7 !important;
 }
 
+.report-card {
+  transition: all 0.2s ease;
+}
+
+.report-card.selected {
+  border: 1px solid #023a82 !important;
+  background-color: #e4f4fb !important;
+  transform: scale(1.02);
+}
+
 /* Responsive scaling for larger screens */
 @media (min-width: 768px) {
   /* Tablet and up: slightly bigger */

@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Map from "./Map";
 import { getApprovedReports } from "../API/API";
 import { Container, Col, Row, Card } from "react-bootstrap";
 
 function CitHomepage(props) {
   const [reports, setReports] = useState([]);
+  const [selectedReportID, setSelectedReportID] = useState(0);
+  const reportRefs = useRef({});
 
   useEffect(() => {
     const loadReports = async () => {
@@ -52,6 +54,19 @@ function CitHomepage(props) {
     loadReports();
   }, []);
 
+  // handle selection from list or map
+  const handleSelectReport = (id) => {
+    setSelectedReportID(id);
+
+    // autoscroll
+    if (reportRefs.current[id]) {
+      reportRefs.current[id].scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  };
+
   return (
     <>
       <div style={{ height: "calc(100vh - 120px)", overflow: "hidden" }}>
@@ -73,7 +88,15 @@ function CitHomepage(props) {
                   <>
                     {reports.map((r) => {
                       return (
-                        <Card key={r.id} className='mt-2 shadow-sm'>
+                        <Card
+                          key={r.id}
+                          ref={(el) => (reportRefs.current[r.id] = el)}
+                          className={`mt-2 shadow-sm report-card ${
+                            selectedReportID === r.id ? "selected" : ""
+                          }`}
+                          onClick={() => handleSelectReport(r.id)}
+                          style={{ cursor: "pointer" }}
+                        >
                           <Card.Body>
                             <strong>{r.title}</strong>
                             <div className='text-muted small'>
@@ -110,7 +133,9 @@ function CitHomepage(props) {
                 <Map
                   center={[45.0703, 7.6869]}
                   zoom={13}
-                  approvedReports={props.approvedReports}
+                  approvedReports={reports}
+                  selectedReportID={selectedReportID}
+                  onMarkerSelect={handleSelectReport}
                 />
               </div>
             </Col>
