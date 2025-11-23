@@ -1,52 +1,52 @@
 import { useEffect, useState } from "react";
 import Map from "./Map";
-import { getReportBasics } from "../API/API";
-import { Container, Col, Row, Card, Badge } from "react-bootstrap";
+import { getApprovedReports } from "../API/API";
+import { Container, Col, Row, Card } from "react-bootstrap";
 
-function CitHomepage() {
+function CitHomepage(props) {
   const [reports, setReports] = useState([]);
 
   useEffect(() => {
     const loadReports = async () => {
-      //const reportList = await getReportBasics();
-      const reportList = [
-        {
-          id: 1,
-          title: "Pothole on Main St",
-          reporterName: "johndoe",
-          position: { lat: 45.0705, lng: 7.686 },
-        },
-        {
-          id: 2,
-          title: "Broken streetlight",
-          reporterName: "janedoe",
-          position: { lat: 45.071, lng: 7.687 },
-        },
-        {
-          id: 1,
-          title: "Pothole on Main St",
-          reporterName: "johndoe",
-          position: { lat: 45.0705, lng: 7.686 },
-        },
-        {
-          id: 2,
-          title: "Broken streetlight",
-          reporterName: "janedoe",
-          position: { lat: 45.071, lng: 7.687 },
-        },
-        {
-          id: 1,
-          title: "Pothole on Main St",
-          reporterName: "johndoe",
-          position: { lat: 45.0705, lng: 7.686 },
-        },
-        {
-          id: 2,
-          title: "Broken streetlight",
-          reporterName: "janedoe",
-          position: { lat: 45.071, lng: 7.687 },
-        },
-      ];
+      const reportList = await getApprovedReports();
+      //   const reportList = [
+      //     {
+      //       id: 1,
+      //       title: "Pothole on Main St",
+      //       reporterName: "johndoe",
+      //       position: { lat: 45.0705, lng: 7.686 },
+      //     },
+      //     {
+      //       id: 2,
+      //       title: "Broken streetlight",
+      //       reporterName: "janedoe",
+      //       position: { lat: 45.071, lng: 7.687 },
+      //     },
+      //     {
+      //       id: 1,
+      //       title: "Pothole on Main St",
+      //       reporterName: "johndoe",
+      //       position: { lat: 45.0705, lng: 7.686 },
+      //     },
+      //     {
+      //       id: 2,
+      //       title: "Broken streetlight",
+      //       reporterName: "janedoe",
+      //       position: { lat: 45.071, lng: 7.687 },
+      //     },
+      //     {
+      //       id: 1,
+      //       title: "Pothole on Main St",
+      //       reporterName: "johndoe",
+      //       position: { lat: 45.0705, lng: 7.686 },
+      //     },
+      //     {
+      //       id: 2,
+      //       title: "Broken streetlight",
+      //       reporterName: "janedoe",
+      //       position: { lat: 45.071, lng: 7.687 },
+      //     },
+      //   ];
       setReports(reportList);
     };
     loadReports();
@@ -107,7 +107,11 @@ function CitHomepage() {
             {/* Map */}
             <Col lg={9} className='p-0'>
               <div style={{ height: "calc(100vh - 120px)" }}>
-                <Map center={[45.0703, 7.6869]} zoom={13} />
+                <Map
+                  center={[45.0703, 7.6869]}
+                  zoom={13}
+                  approvedReports={props.approvedReports}
+                />
               </div>
             </Col>
           </Row>

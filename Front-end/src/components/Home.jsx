@@ -22,7 +22,7 @@ function Home() {
       {isAuthenticated ? (
         user?.role_type === "citizen" ? (
           <Container fluid style={{ padding: "20px" }} className='body-font'>
-            <CitHomepage />
+            <CitHomepage approvedReports={approvedReports} />
           </Container>
         ) : (
           <Container fluid className='mt-5 body-font'>
