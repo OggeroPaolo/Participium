@@ -5,8 +5,8 @@ import { useNavigate } from "react-router";
 import "leaflet.markercluster";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
-
-// TODO: see if selection can work with clusters and change icon for selected reports
+import "leaflet.awesome-markers/dist/leaflet.awesome-markers.css";
+import "leaflet.awesome-markers/dist/leaflet.awesome-markers.js";
 
 // Fix for default marker icons in Leaflet with React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -47,6 +47,12 @@ function Map({
     iconSize: [58, 58],
     iconAnchor: [29, 48],
     popupAnchor: [0, -30],
+  });
+
+  const newReportIcon = L.AwesomeMarkers.icon({
+    icon: "plus",
+    markerColor: "cadetblue",
+    prefix: "fa",
   });
 
   // let approvedReports = [
@@ -262,15 +268,8 @@ function Map({
         // Remove previous marker
         selectedLayerRef.current.clearLayers();
 
-        const reportIcon = L.icon({
-          iconUrl: "/icons/selected-location-icon.png",
-          iconSize: [48, 48],
-          iconAnchor: [24, 40],
-          popupAnchor: [0, -24],
-        });
-
         // Add new marker
-        const newMarker = L.marker([lat, lng], { icon: reportIcon });
+        const newMarker = L.marker([lat, lng], { icon: newReportIcon });
         selectedLayerRef.current.addLayer(newMarker);
 
         newMarker.bindPopup(
@@ -377,9 +376,12 @@ function Map({
     if (selectedReportID && markersRef.current[selectedReportID]) {
       const marker = markersRef.current[selectedReportID];
       const map = mapInstanceRef.current;
+      const clusterGroup = clusterGroupRef.current;
 
-      map.panTo(marker.getLatLng());
-      marker.openPopup();
+      clusterGroup.zoomToShowLayer(marker, () => {
+        map.panTo(marker.getLatLng());
+        marker.openPopup();
+      });
     }
   }, [selectedReportID]);
 
