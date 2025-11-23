@@ -1,9 +1,21 @@
 import { Container, Row, Col } from "react-bootstrap";
+import { useEffect, useState } from "react";
 import useUserStore from "../store/userStore";
 import CitHomepage from "./CitHomepage";
+import { getApprovedReports } from "../API/API.js";
 
 function Home() {
   const { user, isAuthenticated } = useUserStore();
+  const [approvedReports, setapprovedReports] = useState(null);
+
+  useEffect(() => {
+    const loadApprovedReports = async () => {
+      const reportList = await getApprovedReports();
+      setapprovedReports(reportList);
+    };
+
+    loadApprovedReports();
+  }, []);
 
   return (
     <>

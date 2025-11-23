@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { makeTestApp } from "../../setup/tests_util.js";
 import router from "../../../src/routes/operator.routes.js";
 import * as userService from "../../../src/services/userService.js";
+import OperatorDAO from "../../../src/dao/OperatorDAO.js";
 
 // Mock firebase middleware
 vi.mock("../../../src/middlewares/verifyFirebaseToken.js", () => ({
@@ -16,8 +17,61 @@ beforeEach(() => {
   app = makeTestApp(router);
 });
 
-describe("POST /operator-registrations (spyOn version)", () => {
+describe("GET /operators", () => {
+  it("should return 200 with a list of operators", async () => {
+    const mockOperators = [
+      {
+        id: 1,
+        firebase_uid: "uid1",
+        email: "operator1@example.com",
+        username: "op1",
+        first_name: "Alice",
+        last_name: "Doe",
+        role_name: "Operator",
+        role_type: "tech_officer",
+      },
+      {
+        id: 2,
+        firebase_uid: "uid2",
+        email: "operator2@example.com",
+        username: "op2",
+        first_name: "Bob",
+        last_name: "Smith",
+        role_name: "Municipal_public_relations_officer",
+        role_type: "pub_relations",
+      },
+    ];
 
+    const getOperatorsSpy = vi
+      .spyOn(OperatorDAO.prototype, "getOperators")
+      .mockResolvedValueOnce(mockOperators);
+
+    const res = await request(app).get("/operators");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(mockOperators);
+    expect(getOperatorsSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("should return 204 if no operators exist", async () => {
+    vi.spyOn(OperatorDAO.prototype, "getOperators").mockResolvedValueOnce([]);
+
+    const res = await request(app).get("/operators");
+
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
+  });
+
+  it("should return 500 if DAO throws an error", async () => {
+    vi.spyOn(OperatorDAO.prototype, "getOperators").mockRejectedValueOnce(new Error("Database error"));
+
+    const res = await request(app).get("/operators");
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: "Database error" });
+  });
+});
+describe("POST /operator-registrations", () => {
   it("should create a new operator successfully", async () => {
     vi.spyOn(userService, "createUserWithFirebase").mockResolvedValue({
       id: 100,

@@ -72,6 +72,52 @@ The database is automatically seeded with:
 
 - **GET** `/health` - Returns the health status of the server
 
+### Reports
+
+**GET `/reports/map`**
+
+* **Request Headers:** None
+
+* **Request Parameters:** None
+
+* **Success Response (200 OK):**
+```json
+"reports": [
+        {
+            "id": 1,
+            "title": "Problem with street illumination",
+            "reporterName": "John Doe",
+            "position": {
+                "lat": 45.4642,
+                "lng": 9.19
+            }
+        },
+        {
+            "id": 2,
+            "title": "Holes in the street",
+            "reporterName": "Jane Smith",
+            "position": {
+                "lat": 45.465,
+                "lng": 9.191
+            }
+        }
+]
+```
+
+* **No Content Response (204 No Content):**
+
+```json
+// Empty response body
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server Error"
+}
+```
+
 ### Roles
 
 **GET `/roles`**
@@ -123,7 +169,7 @@ Authorization: Bearer <firebase-token>
 
 ```json
 {
-  "error": "Forbidden: admin access required"
+  "error": "Forbidden: insufficient permissions"
 }
 ```
 
@@ -257,7 +303,7 @@ Returned when no valid authentication token is provided.
 Returned when the authenticated user is not an admin.
 ```json
 {
-  "error": "Forbidden: admin access required"
+  "error": "Forbidden: insufficient permissions"
 }
 ```
 
@@ -321,7 +367,7 @@ Authorization: Bearer <firebase-token>
 * **Error Response (403 Forbidden):**
 ```json
 {
-  "error": "Forbidden: admin access required"
+  "error": "Forbidden: insufficient permissions"
 }
 ```
 
@@ -352,6 +398,87 @@ Authorization: Bearer <firebase-token>
   "error": "Internal server error"
 }
 ```
+
+**PATCH `/reports/{reportId}`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:**
+
+  - reportId: integer
+
+* **Request Body:**
+
+```json
+{
+  "status": "rejected",
+  "note": "Insufficient details",
+  "categoryId": 3
+}
+```
+
+* **Field Usage Notes:**
+
+| Field      | When Required                        | Types                    |
+| ---------- | ------------------------------------ | ------------------------ |
+| status     | Always required                      | ["assigned", "rejected"] |
+| note       | Required when `status` is `rejected` | string                   |
+| categoryId | Optional                             | integer                  |
+
+* **Success Response (200 OK):**
+
+```json
+{
+  "message": "Report status updated successfully"
+}
+```
+
+* **Error Response (400 Bad Request):**
+
+```json
+{
+  "errors": "Invalid request data"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+  Returned when no valid authentication token is provided.
+
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+* **Error Response (403 Forbidden):**
+  Returned when the authenticated user is not a public relations officer.
+
+```json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+
+* **Error Response (404 Not Found):**
+
+```json
+{
+  "error": "Report not found"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server error"
+}
+```
+
 
 ## Project Structure
 

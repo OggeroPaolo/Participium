@@ -4,6 +4,7 @@ import { describe, it, expect, beforeAll, afterEach, vi } from "vitest";
 import userRouter from "../../src/routes/user.routes.js";
 import { makeTestApp } from "../setup/tests_util.js";
 import { initTestDB, resetTestDB } from "../setup/tests_util.js";
+import UserDAO from "../../src/dao/UserDAO.js";
 
 // Mock firebase token verification middleware
 vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
@@ -23,6 +24,7 @@ describe("GET /users/:firebaseUid (E2E)", () => {
 
   afterEach(async () => {
     await resetTestDB();
+    vi.restoreAllMocks();
   });
 
   it("should return user data for an existing firebaseUid", async () => {
@@ -48,5 +50,13 @@ describe("GET /users/:firebaseUid (E2E)", () => {
   it("should return 400 or 404 if Firebase UID is missing (route not matched)", async () => {
     const res = await request(app).get("/users/");
     expect([400, 404]).toContain(res.status);
+  });
+
+  it("should return 500 if the DAO throws an unexpected error", async () => {
+    vi.spyOn(UserDAO.prototype, "findUserByUid").mockRejectedValue(new Error("DB failure"));
+
+    const res = await request(app).get(`/users/${seededFirebaseUid}`);
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: "Internal server error" });
   });
 });

@@ -1,142 +1,212 @@
 import request from "supertest";
 import { Express } from "express";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import userRouter from "../../src/routes/registrations.routes.js"; 
+import operatorRouter from "../../src/routes/operator.routes.js";
+import OperatorDAO from "../../src/dao/OperatorDAO.js";
 import * as userService from "../../src/services/userService.js";
 import UserDAO from "../../src/dao/UserDAO.js";
 import { makeTestApp } from "../setup/tests_util.js";
 
-describe("POST /user-registrations (E2E)", () => {
+// Mock Firebase auth middleware
+vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
+  verifyFirebaseToken: (_roles: string[]) => (_req: any, _res: any, next: any) => next(),
+}));
+
+describe("Operator Routes E2E", () => {
   let app: Express;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    app = makeTestApp(userRouter);
+    app = makeTestApp(operatorRouter);
   });
 
-  it("should create a new user successfully", async () => {
-    const mockUser = {
-      id: "12345",
-      firebase_uid: "firebase123",
-      email: "john@example.com",
-      username: "johndoe",
-      first_name: "John",
-      last_name: "Doe",
-    } as any;
+  // ----------------------------
+  // GET /operators
+  // ----------------------------
+  describe("GET /operators", () => {
+    it("should return a list of operators successfully", async () => {
+      const mockOperators = [
+        {
+          id: 1,
+          firebase_uid: "uid1",
+          email: "alice@example.com",
+          username: "alice",
+          first_name: "Alice",
+          last_name: "Smith",
+          role_name: "Operator",
+          role_type: "tech_officer"
+        },
+      ];
 
-    const spy = vi
-      .spyOn(userService, "createUserWithFirebase")
-      .mockResolvedValue(mockUser);
+      const getOperatorsSpy = vi
+        .spyOn(OperatorDAO.prototype, "getOperators")
+        .mockResolvedValue(mockOperators);
 
-    const response = await request(app)
-      .post("/user-registrations")
-      .send({
-        firstName: "John",
-        lastName: "Doe",
-        username: "johndoe",
-        email: "john@example.com",
-        password: "password123",
-      });
+      const res = await request(app).get("/operators");
 
-    expect(response.status).toBe(201);
-    expect(response.body).toEqual({
-      message: "User data saved successfully",
-      userId: "12345",
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(mockOperators);
+      expect(getOperatorsSpy).toHaveBeenCalledTimes(1);
     });
 
-    expect(spy).toHaveBeenCalledWith(
-      {
-        firstName: "John",
-        lastName: "Doe",
-        username: "johndoe",
-        email: "john@example.com",
-        password: "password123",
-      },
-      expect.any(UserDAO)
-    );
+    it("should return 204 if no operators exist", async () => {
+      vi.spyOn(OperatorDAO.prototype, "getOperators").mockResolvedValue([]);
 
-    spy.mockRestore();
+      const res = await request(app).get("/operators");
+
+      expect(res.status).toBe(204);
+      expect(res.body).toEqual({});
+    });
+
+    it("should return 500 if database error occurs", async () => {
+      vi.spyOn(OperatorDAO.prototype, "getOperators").mockRejectedValue(new Error("DB error"));
+
+      const res = await request(app).get("/operators");
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: "DB error" });
+    });
   });
 
-  it("should return 400 for invalid input", async () => {
-    const response = await request(app)
-      .post("/user-registrations")
-      .send({
-        firstName: "",
-        lastName: "Doe",
-        username: "jd",
-        email: "not-an-email",
-        password: "",
-      });
-
-    expect(response.status).toBe(400);
-    expect(response.body).toHaveProperty("error", "Invalid request data");
-  });
-
-  it("should return 422 if username/email conflict occurs", async () => {
-    const spy = vi
-      .spyOn(userService, "createUserWithFirebase")
-      .mockRejectedValue(
-        new userService.EmailOrUsernameConflictError("Username or email already taken")
-      );
-
-    const response = await request(app)
-      .post("/user-registrations")
-      .send({
-        firstName: "Alice",
-        lastName: "Smith",
-        username: "alicesmith",
+  // ----------------------------
+  // POST /operator-registrations
+  // ----------------------------
+  describe("POST /operator-registrations", () => {
+    it("should create a new operator successfully", async () => {
+      const mockUser = {
+        id: 100,
+        firebase_uid: "firebaseUid",
         email: "alice@example.com",
-        password: "password123",
+        username: "aliceop",
+        first_name: "Alice",
+        last_name: "Operator",
+        role_name: "Operator",
+        role_type: "tech_officer",
+      };
+
+      vi.spyOn(userService, "createUserWithFirebase").mockResolvedValue(mockUser);
+
+      const res = await request(app)
+        .post("/operator-registrations")
+        .send({
+          firstName: "Alice",
+          lastName: "Operator",
+          username: "aliceop",
+          email: "alice@example.com",
+          password: "password123",
+          role_id: 2,
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body).toEqual({ message: "User created successfully", userId: 100 });
+    });
+
+    it("should return 400 for invalid request data", async () => {
+      const res = await request(app)
+        .post("/operator-registrations")
+        .send({
+          firstName: "",
+          lastName: "Operator",
+          email: "not-an-email",
+          role_id: "abc",
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({ error: "Invalid request data" });
+    });
+
+    it("should return 422 if role_id is invalid (admin or citizen)", async () => {
+      const resAdmin = await request(app)
+        .post("/operator-registrations")
+        .send({
+          firstName: "Bob",
+          lastName: "Admin",
+          username: "bobadmin",
+          email: "bob@example.com",
+          password: "pass123",
+          role_id: 4,
+        });
+
+      expect(resAdmin.status).toBe(422);
+      expect(resAdmin.body).toEqual({
+        error: "Invalid role data, cannot assign admin or citizen",
       });
 
-    expect(response.status).toBe(422);
-    expect(response.body).toEqual({ error: "Username or email already taken" });
+      const resCitizen = await request(app)
+        .post("/operator-registrations")
+        .send({
+          firstName: "Charlie",
+          lastName: "Citizen",
+          username: "charlie",
+          email: "charlie@example.com",
+          password: "pass123",
+          role_id: 1,
+        });
 
-    spy.mockRestore();
-  });
+      expect(resCitizen.status).toBe(422);
+      expect(resCitizen.body).toEqual({
+        error: "Invalid role data, cannot assign admin or citizen",
+      });
+    });
 
-  it("should return 409 if user already exists", async () => {
-    const spy = vi
-      .spyOn(userService, "createUserWithFirebase")
-      .mockRejectedValue(
-        new userService.UserAlreadyExistsError("User already exists in Firebase")
+    it("should return 422 if EmailOrUsernameConflictError is thrown", async () => {
+      vi.spyOn(userService, "createUserWithFirebase").mockRejectedValue(
+        new userService.EmailOrUsernameConflictError("Email or username already in use")
       );
 
-    const response = await request(app)
-      .post("/user-registrations")
-      .send({
-        firstName: "Bob",
-        lastName: "Jones",
-        username: "bobjones",
-        email: "bob@example.com",
-        password: "password123",
-      });
+      const res = await request(app)
+        .post("/operator-registrations")
+        .send({
+          firstName: "Dana",
+          lastName: "Operator",
+          username: "danaop",
+          email: "dana@example.com",
+          password: "password123",
+          role_id: 2,
+        });
 
-    expect(response.status).toBe(409);
-    expect(response.body).toEqual({ error: "User already exists in Firebase" });
+      expect(res.status).toBe(422);
+      expect(res.body).toEqual({ error: "Email or username already in use" });
+    });
 
-    spy.mockRestore();
-  });
+    it("should return 409 if UserAlreadyExistsError is thrown", async () => {
+      vi.spyOn(userService, "createUserWithFirebase").mockRejectedValue(
+        new userService.UserAlreadyExistsError("User already registered")
+      );
 
-  it("should return 500 for unexpected errors", async () => {
-    const spy = vi
-      .spyOn(userService, "createUserWithFirebase")
-      .mockRejectedValue(new Error("Unexpected error"));
+      const res = await request(app)
+        .post("/operator-registrations")
+        .send({
+          firstName: "Eve",
+          lastName: "Operator",
+          username: "eveop",
+          email: "eve@example.com",
+          password: "password123",
+          role_id: 2,
+        });
 
-    const response = await request(app)
-      .post("/user-registrations")
-      .send({
-        firstName: "Eve",
-        lastName: "Brown",
-        username: "evebrown",
-        email: "eve@example.com",
-        password: "password123",
-      });
+      expect(res.status).toBe(409);
+      expect(res.body).toEqual({ error: "User already registered" });
+    });
 
-    expect(response.status).toBe(500);
-    expect(response.body).toEqual({ error: "Internal server error" });
+    it("should return 500 for unknown errors", async () => {
+      vi.spyOn(userService, "createUserWithFirebase").mockRejectedValue(
+        new Error("Unexpected failure")
+      );
 
-    spy.mockRestore();
+      const res = await request(app)
+        .post("/operator-registrations")
+        .send({
+          firstName: "Frank",
+          lastName: "Operator",
+          username: "frankop",
+          email: "frank@example.com",
+          password: "password123",
+          role_id: 2,
+        });
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: "Internal server error" });
+    });
   });
 });

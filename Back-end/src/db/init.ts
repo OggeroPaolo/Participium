@@ -14,13 +14,13 @@ export const initializeDatabase = async (): Promise<void> => {
   try {
     // Initialize database connection
     getDatabase();
-    
+
     // Read the schema SQL file
     const schemaPath = path.join(__dirname, "schema.sql");
-    
+
     if (fs.existsSync(schemaPath)) {
       const schema = fs.readFileSync(schemaPath, "utf-8").trim();
-      
+
       if (schema.length > 0) {
         await execSQL(schema);
         logger.info("Database schema initialized successfully");
@@ -33,7 +33,7 @@ export const initializeDatabase = async (): Promise<void> => {
     } else {
       logger.warn("Schema file not found, database initialized without schema");
     }
-    
+
   } catch (error) {
     logger.error({ error }, "Failed to initialize database");
     throw error;
@@ -46,32 +46,19 @@ export const initializeDatabase = async (): Promise<void> => {
 export const seedDefaultData = async (): Promise<void> => {
   try {
     const result = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM roles");
-    
-    if (result && result.count === 0) {
-      const roles = [
-        { name: "Citizen", type: "citizen" },
-        { name: "Municipal_public_relations_officer", type: "pub_relations" },
-        { name: "Technical_office_staff_member", type: "tech_officer" },
-        { name: "Water_utility_officer", type: "tech_officer" },
-        { name: "Sewer_system_officer", type: "tech_officer" },
-        { name: "Admin", type: "admin" }
-      ];
 
-      for (const role of roles) {
-        await runQuery(
-          `INSERT INTO roles (name, type) VALUES (?, ?)`,
-          [role.name, role.type]
-        );
-      }
+    if (result && result.count === 0) {
 
       await seedDefaultCategories();
+      await seedDefaultOffices();
+      await seedDefaultRoles();
       await seedDefaultUsers();
+      await seedDefaultReports();
       logger.info("Default data seeded successfully");
 
     } else {
       logger.info("Database already contains data, skipping seed");
     }
-    
   } catch (error) {
     logger.error({ error }, "Failed to seed default data");
   }
@@ -82,54 +69,114 @@ export const seedDefaultData = async (): Promise<void> => {
  */
 export const seedDefaultCategories = async (): Promise<void> => {
   try {
-    
     const categories = [
-      {
-        name: "Water Supply – Drinking Water",
-        description: "Issues related to drinking water supply and quality"
-      },
-      {
-        name: "Architectural Barriers",
-        description: "Accessibility issues and architectural barriers"
-      },
-      {
-        name: "Sewer System",
-        description: "Sewer system and drainage issues"
-      },
-      {
-        name: "Public Lighting",
-        description: "Street lights and public lighting problems"
-      },
-      {
-        name: "Waste",
-        description: "Waste management and collection issues"
-      },
-      {
-        name: "Road Signs and Traffic Lights",
-        description: "Traffic signs, signals, and traffic light problems"
-      },
-      {
-        name: "Roads and Urban Furnishings",
-        description: "Road conditions, potholes, and urban furniture"
-      },
-      {
-        name: "Public Green Areas and Playgrounds",
-        description: "Parks, green spaces, and playground maintenance"
-      },
-      {
-        name: "Other",
-        description: "Other issues not covered by specific categories"
-      }
+      { name: "Water Supply – Drinking Water", description: "Issues related to drinking water supply and quality" },
+      { name: "Architectural Barriers", description: "Accessibility issues and architectural barriers" },
+      { name: "Sewer System", description: "Sewer system and drainage issues" },
+      { name: "Public Lighting", description: "Street lights and public lighting problems" },
+      { name: "Waste", description: "Waste management and collection issues" },
+      { name: "Road Signs and Traffic Lights", description: "Traffic signs, signals, and traffic light problems" },
+      { name: "Roads and Urban Furnishings", description: "Road conditions, potholes, and urban furniture" },
+      { name: "Public Green Areas and Playgrounds", description: "Parks, green spaces, and playground maintenance" },
+      { name: "Other", description: "Other issues not covered by specific categories" }
     ];
 
     for (const category of categories) {
-      await runQuery(
-        `INSERT INTO categories (name, description) VALUES (?, ?)`,
-        [category.name, category.description]
-      );
+      // Skip if category already exists
+      const existing = await getOne<{ id: number }>("SELECT id FROM categories WHERE name = ?", [category.name]);
+      if (!existing) {
+        await runQuery(
+          `INSERT INTO categories (name, description) VALUES (?, ?)`,
+          [category.name, category.description]
+        );
+      }
     }
   } catch (error) {
     logger.error({ error }, "Failed to seed default categories");
+  }
+};
+
+/**
+ * Seed default offices
+ */
+export const seedDefaultOffices = async (): Promise<void> => {
+  try {
+    const officeCount = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM offices");
+    if (officeCount?.count && officeCount.count > 0) {
+      logger.info("Offices already exist, skipping seed");
+      return;
+    }
+
+    const categories = await getAll<{ id: number; name: string }>("SELECT id, name FROM categories");
+
+    // One office per category
+    for (const category of categories) {
+      const result = await runQuery(
+        `INSERT INTO offices (name, category_id, type) VALUES (?, ?, ?)`,
+        [`${category.name} Office`, category.id, "technical"]
+      );
+    }
+
+    const orgResult = await runQuery(
+      `INSERT INTO offices (name, type) VALUES (?, ?)`,
+      ["Organization Office", "organization"]
+    );
+
+    logger.info("Default offices seeded successfully");
+  } catch (error) {
+    logger.error({ error }, "Failed to seed default offices");
+  }
+};
+
+/**
+ * Seed default roles
+ */
+export const seedDefaultRoles = async (): Promise<void> => {
+  try {
+    const roleCount = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM roles");
+    if (roleCount?.count && roleCount.count > 0) {
+      logger.info("Roles already exist, skipping seed");
+      return;
+    }
+
+    const categories = await getAll<{ id: number; name: string }>("SELECT id, name FROM categories");
+    if (!categories.length) {
+      logger.warn("No categories found, skipping roles seeding");
+      return;
+    }
+
+    const firstCategory: { id: number; name: string } = categories[0]!;
+
+    // Get office IDs
+    const offices = await getAll<{ id: number; name: string }>("SELECT id, name FROM offices");
+    const officeMap: Record<string, number> = {};
+    offices.forEach(o => { officeMap[o.name] = o.id; });
+
+    const getOfficeIdForCategory = (categoryNamePart: string): number => {
+      const category = categories.find(c => c.name.includes(categoryNamePart));
+      return category ? officeMap[`${category.name} Office`]! : officeMap[`${firstCategory.name} Office`]!;
+    };
+
+    const roles: { name: string; type: string; office_id: number | null }[] = [
+      { name: "Citizen", type: "citizen", office_id: null },
+      { name: "Municipal_public_relations_officer", type: "pub_relations", office_id: officeMap["Organization Office"]! },
+      { name: "Water_utility_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Water Supply")! },
+      { name: "Sewer_system_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Sewer")! },
+      { name: "Admin", type: "admin", office_id: officeMap["Organization Office"]! }
+    ];
+    for (const role of roles) {
+      const existing = await getOne<{ id: number }>("SELECT id FROM roles WHERE name = ?", [role.name]);
+      if (!existing) {
+        await runQuery(
+          `INSERT INTO roles (name, type, office_id) VALUES (?, ?, ?)`,
+          [role.name, role.type, role.office_id]
+        );
+      }
+    }
+
+    logger.info("Roles and offices seeded successfully");
+  } catch (error) {
+    logger.error({ error }, "Failed to seed roles and offices");
   }
 };
 
@@ -138,13 +185,9 @@ export const seedDefaultCategories = async (): Promise<void> => {
  */
 export const seedDefaultUsers = async (): Promise<void> => {
   try {
-    // Get role IDs dynamically
     const roles = await getAll<{ id: number; name: string }>("SELECT id, name FROM roles");
     const roleMap: Record<string, number> = {};
-
-    roles.forEach(r => {
-      roleMap[r.name] = r.id;
-    });
+    roles.forEach(r => { roleMap[r.name] = r.id; });
 
     const users = [
       {
@@ -164,6 +207,38 @@ export const seedDefaultUsers = async (): Promise<void> => {
         role_id: roleMap["Municipal_public_relations_officer"]
       },
       {
+        firebase_uid: "Qyo5a7u15JcU2E6z7yaOgwMvYKy2",
+        email: "pub-relations@example.com",
+        username: "pub-relations",
+        first_name: "Daniel",
+        last_name: "Hartman",
+        role_id: roleMap["Municipal_public_relations_officer"]
+      },
+      {
+        firebase_uid: "8tgYd6X1zfVYOIJUNOIDonFwUTx2",
+        email: "operator-sewer@example.com",
+        username: "operator-sewer",
+        first_name: "Lena",
+        last_name: "Alvarez",
+        role_id: roleMap["Sewer_system_officer"]
+      },
+      {
+        firebase_uid: "jm7oNq1RdYMjOA1S23VJopQYVrR2",
+        email: "operator-water@example.com",
+        username: "operator-water",
+        first_name: "Ethan",
+        last_name: "Caldwell",
+        role_id: roleMap["Water_utility_officer"]
+      },
+      {
+        firebase_uid: "nclvO1Kk2fYQXcNUH4iIr9CLIip1",
+        email: "operator-water2@example.com",
+        username: "operator-water2",
+        first_name: "Marcus",
+        last_name: "Bennett",
+        role_id: roleMap["Water_utility_officer"]
+      },
+      {
         firebase_uid: "CV0ZG2bmDva06EHVdSwcF4rz18F3",
         email: "admin@example.com",
         username: "EmilyCarter",
@@ -174,23 +249,166 @@ export const seedDefaultUsers = async (): Promise<void> => {
     ];
 
     for (const user of users) {
-      await runQuery(
-        `INSERT INTO users 
-          (firebase_uid, email, username, first_name, last_name, role_id)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          user.firebase_uid,
-          user.email,
-          user.username,
-          user.first_name,
-          user.last_name,
-          user.role_id
-        ]
-      );
+      const existing = await getOne<{ id: number }>("SELECT id FROM users WHERE email = ?", [user.email]);
+      if (!existing) {
+        await runQuery(
+          `INSERT INTO users (firebase_uid, email, username, first_name, last_name, role_id)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [user.firebase_uid, user.email, user.username, user.first_name, user.last_name, user.role_id]
+        );
+      }
     }
-
   } catch (error) {
     logger.error({ error }, "Failed to seed default users");
+  }
+};
+
+/**
+ * Seed default reports
+ */
+export const seedDefaultReports = async (): Promise<void> => {
+  try {
+    const reportCount = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM reports");
+    if (reportCount?.count && reportCount.count > 0) {
+      logger.info("Reports already exist, skipping seed");
+      return;
+    }
+
+    const users = await getAll<{ id: number }>("SELECT id FROM users");
+    const categories = await getAll<{ id: number; name: string }>("SELECT id, name FROM categories");
+
+    if (!users.length || !categories.length) {
+      logger.warn("Cannot seed reports: no users or categories found");
+      return;
+    }
+
+    // Use first user and category as fallback
+    const firstUser = users[0] ?? { id: 1 };
+    const firstCategory = categories[0] ?? { id: 1 };
+
+    const reports = [
+      /********************************
+       * REAL REPORT ABOUT PORTA NUOVA*
+       ********************************/
+      {
+        title: "Neglected street corner",
+        description: "This area near Porta Nuova has been neglected and many people use it as a urinal, can something be done about it.",
+        user_id: firstUser.id,
+        category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
+        position_lat: 45.06080,
+        position_lng: 7.67613,
+        status: "pending_approval"
+      },
+
+      // THE REST ARE GENERATED
+      {
+        title: "Broken street light",
+        description: "The street light on 5th avenue is broken and needs repair.",
+        user_id: firstUser.id,
+        category_id: categories.find(c => c.name.includes("Public Lighting"))?.id ?? firstCategory.id,
+        position_lat: 45.0632,
+        position_lng: 7.6835,
+        status: "pending_approval"
+      },
+      {
+        title: "Potholes on Main Street",
+        description: "Several potholes are damaging vehicles on Main Street.",
+        user_id: firstUser.id,
+        category_id: categories.find(c => c.name.includes("Roads"))?.id ?? firstCategory.id,
+        position_lat: 45.0781,
+        position_lng: 7.6982,
+        status: "pending_approval"
+      },
+      {
+        title: "Water supply pending approval",
+        description: "Pending review for a water supply issue.",
+        user_id: users[1]?.id ?? firstUser.id,
+        category_id: categories.find(c => c.name.includes("Water Supply"))?.id ?? firstCategory.id,
+        position_lat: 45.0658,
+        position_lng: 7.6917,
+        status: "pending_approval"
+      },
+      {
+        title: "Water supply assigned",
+        description: "Assigned to a technician for water supply issue.",
+        user_id: users[1]?.id ?? firstUser.id,
+        category_id: categories.find(c => c.name.includes("Water Supply"))?.id ?? firstCategory.id,
+        position_lat: 45.0725,
+        position_lng: 7.6824,
+        status: "assigned",
+        reviewed_by: 3,
+        assigned_to: 6
+      },
+      {
+        title: "Water leakage in neighborhood",
+        description: "A broken water pipe is causing flooding in the area.",
+        user_id: users[1]?.id ?? firstUser.id,
+        category_id: categories.find(c => c.name.includes("Water Supply"))?.id ?? firstCategory.id,
+        position_lat: 45.0619,
+        position_lng: 7.6860,
+        status: "in_progress",
+        reviewed_by: 3,
+        assigned_to: 6
+      },
+      {
+        title: "Water supply suspended",
+        description: "Water supply work has been suspended temporarily.",
+        user_id: users[1]?.id ?? firstUser.id,
+        category_id: categories.find(c => c.name.includes("Water Supply"))?.id ?? firstCategory.id,
+        position_lat: 45.0793,
+        position_lng: 7.6954,
+        status: "suspended",
+        reviewed_by: 3,
+        assigned_to: 6
+      },
+      {
+        title: "Water supply rejected",
+        description: "Water supply report rejected for review errors.",
+        user_id: users[1]?.id ?? firstUser.id,
+        category_id: categories.find(c => c.name.includes("Water Supply"))?.id ?? firstCategory.id,
+        position_lat: 45.0667,
+        position_lng: 7.6841,
+        status: "rejected",
+        note: "this is a rejection note",
+        reviewed_by: 3
+      },
+      {
+        title: "Water supply resolved",
+        description: "Water supply issue resolved successfully.",
+        user_id: users[1]?.id ?? firstUser.id,
+        category_id: categories.find(c => c.name.includes("Water Supply"))?.id ?? firstCategory.id,
+        position_lat: 45.0759,
+        position_lng: 7.6899,
+        status: "resolved",
+        reviewed_by: 3,
+        assigned_to: 6
+      }
+    ];
+
+    for (const report of reports) {
+      const existing = await getOne<{ id: number }>("SELECT id FROM reports WHERE title = ?", [report.title]);
+      if (!existing) {
+        await runQuery(
+          ` INSERT INTO reports 
+            (title, description, user_id, category_id, position_lat, position_lng, status, note, assigned_to, reviewed_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            report.title,
+            report.description,
+            report.user_id,
+            report.category_id,
+            report.position_lat,
+            report.position_lng,
+            report.status,
+            report.note ?? null,
+            report.assigned_to ?? null,
+            report.reviewed_by ?? null
+          ]
+        );
+      }
+    }
+  } catch (error) {
+    logger.error({ error }, "Failed to seed default reports");
   }
 };
 
