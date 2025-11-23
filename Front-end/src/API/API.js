@@ -146,6 +146,28 @@ async function getCategories() {
 // Create a new report
 async function createReport(reportData) {}
 
+// Get list of basic information of reports
+async function getReportBasics() {
+  try {
+    const response = await fetch(URI + "/reports/map", {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+
+    if (response.ok) {
+      const reports = await response.json();
+      console.log(reports);
+      return Array.isArray(reports) ? reports : [];
+    } else {
+      throw new Error("Failed to fetch reports");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
 export {
   handleSignup,
   createInternalUser,
@@ -154,4 +176,5 @@ export {
   getUserData,
   getCategories,
   createReport,
+  getReportBasics,
 };
