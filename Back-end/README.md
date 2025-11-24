@@ -191,8 +191,12 @@ Authorization: Bearer <firebase-token>
   "category_id": 2,
   "title": "Broken streetlight",
   "description": "The streetlight near 5th avenue is out for several days.",
+  "is_anonymous": false,
   "position_lat": 45.12345,
   "position_lng": 9.12345,
+  "photos": [
+    "/path"
+  ]
 }
 ```  
 * **Success Response (201 Created):**
@@ -200,19 +204,28 @@ Authorization: Bearer <firebase-token>
 ```json
 {
   "report": {
-    "id": 15,
-    "user_id": 1,
-    "category_id": 2,
-    "title": "Broken streetlight",
-    "description": "The streetlight near 5th avenue is out for several days.",
-    "position_lat": 45.12345,
-    "position_lng": 9.12345,
-    "status": "pending_approval",
-    "assigned_to": null,
-    "note": null,
-    "created_at": "2025-11-24T11:00:00Z",
-    "updated_at": "2025-11-24T11:00:00Z"
-  }
+        "id": 10,
+        "user_id": 1,
+        "category_id": 2,
+        "title": "\"Broken street light on 5th avenue\"",
+        "description": "\"The street light on 5th avenue is broken and needs urgent repair.\"",
+        "status": "pending_approval",
+        "assigned_to": null,
+        "reviewed_by": null,
+        "reviewed_at": null,
+        "note": null,
+        "is_anonymous": false,
+        "position_lat": 45.0632,
+        "position_lng": 7.6835,
+        "created_at": "2025-11-24 18:10:20",
+        "updated_at": "2025-11-24 18:10:20",
+        "photos": [
+            {
+                "url": "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764007820/Participium/izvuzpkmk2yybjfxphwb",
+                "ordering": 1
+            }
+        ]
+    }
 }
 ```
 
