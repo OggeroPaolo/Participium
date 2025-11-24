@@ -8,7 +8,7 @@ import type { ReportMap } from "../models/reportMap.js";
 import OperatorDAO from "../dao/OperatorDAO.js";
 import { ROLES } from "../models/userRoles.js";
 import type { User } from "../models/user.js"
-import { validateCreateReport } from "../middlewares/reportValidation.js";
+import { validateCreateReport, validateGetReport } from "../middlewares/reportValidation.js";
 
 const router = Router();
 const reportDAO = new ReportDAO();
@@ -28,6 +28,27 @@ router.get("/reports/map/accepted",
             return res.status(200)
                 .json({ reports });
         } catch (error: any) {
+            console.error(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
+
+//GET /reports/:reportId
+router.get("/reports/:reportId",
+    verifyFirebaseToken([ROLES.CITIZEN, ROLES.PUB_RELATIONS, ROLES.TECH_OFFICER]),
+    validateGetReport,
+    async (req: Request, res: Response) => {
+        try {
+            const reportId = Number(req.params.reportId);
+            const report = await reportDAO.getReportById(reportId);
+            if (!report) {
+                return res.status(404).json({ error: "Report not found" });
+            }
+
+            return res.status(200).json({ report });
+
+        } catch (error) {
             console.error(error);
             return res.status(500).json({ error: "Internal server error" });
         }
