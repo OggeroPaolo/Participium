@@ -39,16 +39,16 @@ router.post("/reports",
     verifyFirebaseToken([ROLES.CITIZEN]),
     validateCreateReport,
     async (req: Request, res: Response) => {
-    try {
-        const data: CreateReportDTO = req.body;
-        const createdReport = await reportDAO.createReport(data);
-        return res.status(201).json({ report: createdReport });
+        try {
+            const data: CreateReportDTO = req.body;
+            const createdReport = await reportDAO.createReport(data);
+            return res.status(201).json({ report: createdReport });
 
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: "Internal server error" });
-    }
-});
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    });
 
 // Patches the status of a report optionally attaching a rejection note
 router.patch("/pub_relations/reports/:reportId",
@@ -66,17 +66,17 @@ router.patch("/pub_relations/reports/:reportId",
     async (req: Request, res: Response) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            console.log(errors)
-            return res.status(400).json({ errors: "Invalid request data" });
+            //Extract the validation error messages 
+            const extractedErrors = errors.array().map(err => err.msg);
+            return res.status(400).json({ errors: extractedErrors });
         }
+
 
         try {
             let { status, note, categoryId } = req.body;
 
-            // //if status to be changed is not rejected set note to null so it won't be changed in the sql query
-            if (status === "rejected") {
-                note = note ? note : null;
-            } else {
+            // if status to be changed is not rejected set note to null so it won't be changed in the sql query
+            if (status != "rejected") {
                 note = null;
             }
 
@@ -93,10 +93,9 @@ router.patch("/pub_relations/reports/:reportId",
             const categoryIdFinal = categoryId ? categoryId : report.category_id;
 
             // A public relations officer can only modify if the current status is pending_approval
-            const userRole = user.role_name;
             if (currentStatus !== "pending_approval") {
                 return res.status(403).json({
-                    error: `You are not allowed to change status of a form which is not in the pending_approval status`
+                    error: `You are not allowed to change status of a form which is not in the pending approval status`
                 });
             }
 

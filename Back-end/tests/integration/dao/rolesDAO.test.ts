@@ -31,7 +31,7 @@ describe("RolesDao Integration Test Suite", () => {
 
       expect(result).toEqual(mockRoles);
       expect(getAllMock).toHaveBeenCalledTimes(1);
-      expect(getAllMock).toHaveBeenCalledWith("SELECT * FROM roles WHERE type != \'admin\' AND name != \'citizen\'");
+      expect(getAllMock).toHaveBeenCalledWith("SELECT * FROM roles WHERE type != \'admin\' AND type != \'citizen\'");
     });
 
     it("returns empty array if no roles found", async () => {

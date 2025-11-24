@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import ReportDao, { ReportNotFoundError } from "../../../src/dao/ReportDao.js";
+import ReportDao from "../../../src/dao/ReportDao.js";
 import * as db from "../../../src/config/database.js";
 import type { Report } from "../../../src/models/report.js";
 
@@ -28,6 +28,53 @@ describe("ReportDao", () => {
         updated_at: new Date().toISOString(),
     };
 
+    describe("getMapReports", () => {
+        it("should return an array of mapped report data", async () => {
+            const mockMapReports = [
+                {
+                    id: 1,
+                    title: "Sample report",
+                    first_name: "John",
+                    last_name: "Doe",
+                    position_lat: 40.0,
+                    position_lng: -70.0
+                },
+                {
+                    id: 2,
+                    title: "Sample report 2",
+                    first_name: "John",
+                    last_name: "Doe",
+                    position_lat: 50.0,
+                    position_lng: 80.0
+                },
+            ];
+
+            const getAllSpy = vi
+                .spyOn(db, "getAll")
+                .mockResolvedValue(mockMapReports);
+
+            const result = await dao.getMapReports();
+
+            expect(result).toEqual(mockMapReports);
+            expect(getAllSpy).toHaveBeenCalledWith(
+                expect.stringContaining("SELECT r.id")
+            );
+        });
+        it("should return an empty array when no reports exist", async () => {
+            const getAllSpy = vi
+                .spyOn(db, "getAll")
+                .mockResolvedValue([]); 
+
+            const result = await dao.getMapReports();
+
+            expect(result).toEqual([]);
+            expect(getAllSpy).toHaveBeenCalledWith(
+                expect.stringContaining("SELECT r.id")
+            );
+        });
+    });
+
+
     describe("updateReportStatusAndAssign", () => {
         it("should update report with all fields", async () => {
             const updateSpy = vi
@@ -40,7 +87,7 @@ describe("ReportDao", () => {
             expect(updateSpy).toHaveBeenCalledWith(expect.stringContaining("UPDATE reports"), ["resolved", 99, "Reviewed note", 5, 10, 1]);
         });
 
-        it("should retain existing fields if optional parameters are undefined (COALESCE)", async () => {
+        it("should retain existing fields if optional parameters are undefined", async () => {
             const updateSpy = vi.spyOn(db, "Update").mockResolvedValue({ changes: 1 });
 
             //No optional params provided
