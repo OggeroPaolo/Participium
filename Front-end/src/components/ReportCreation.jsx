@@ -216,7 +216,7 @@ function MapReport(props) {
     // starting marker
     const marker = L.marker([props.propLat, props.propLng], {
       icon: L.icon({
-        iconUrl: "/icons/selected-location-icon.png",
+        iconUrl: "/icons/red-plus-icon.png",
         iconSize: [48, 48],
         iconAnchor: [24, 40],
       }),
