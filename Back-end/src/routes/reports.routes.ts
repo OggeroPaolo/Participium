@@ -11,7 +11,8 @@ import type { User } from "../models/user.js"
 import { validateCreateReport, validateGetReport } from "../middlewares/reportValidation.js";
 import { upload } from "../config/multer.js";
 import cloudinary from "../config/cloudinary.js";
-import { unlink } from "fs/promises";
+import { unlink, rename } from "fs/promises";
+import path from 'path';
 
 const router = Router();
 const reportDAO = new ReportDAO();
@@ -73,7 +74,11 @@ router.post("/reports",
             }
 
             for (const file of files) {
-                const result = await cloudinary.uploader.upload(file.path, {
+                const newPath = file.path + path.extname(file.originalname); // add extension
+                await rename(file.path, newPath);
+
+                console.log(newPath)
+                const result = await cloudinary.uploader.upload(newPath, {
                     folder: 'Participium',
                     resource_type: 'raw',
                 });
@@ -83,7 +88,7 @@ router.post("/reports",
                 uploadedUrls.push(url);
 
                 // Elimina file temporaneo locale
-                await unlink(file.path);
+                await unlink(newPath);
             }
 
 
@@ -117,7 +122,6 @@ router.post("/reports",
                 } catch (delErr) {
                     console.error("Error deleting image during rollback:", delErr);
                 }
-
                 return res.status(500).json({ error: "Internal server error" });
             }
         }
