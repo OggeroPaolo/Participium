@@ -146,7 +146,7 @@ async function getCategories() {
 // Get list of approved reports in the short format
 async function getApprovedReports() {
   try {
-    const response = await fetch(URI + "/reports/map", {
+    const response = await fetch(URI + "/reports/map/accepted", {
       method: "GET",
       headers: {
         Authorization: `${await getBearerToken()}`,

@@ -36,23 +36,24 @@ function Map({
   const navigate = useNavigate();
 
   const reportIcon = L.icon({
-    iconUrl: "/icons/location-icon.png",
+    iconUrl: "/icons/light-blue-location-icon.png",
     iconSize: [48, 48],
     iconAnchor: [24, 40],
     popupAnchor: [0, -24],
   });
 
   const highlightedIcon = L.icon({
-    iconUrl: "/icons/selected-location-icon.png",
+    iconUrl: "/icons/dark-blue-location-icon.png",
     iconSize: [58, 58],
     iconAnchor: [29, 48],
     popupAnchor: [0, -30],
   });
 
-  const newReportIcon = L.AwesomeMarkers.icon({
-    icon: "plus",
-    markerColor: "cadetblue",
-    prefix: "fa",
+  const newReportIcon = L.icon({
+    iconUrl: "/icons/red-plus-icon.png",
+    iconSize: [58, 58],
+    iconAnchor: [29, 48],
+    popupAnchor: [0, -30],
   });
 
   // let approvedReports = [
@@ -339,6 +340,11 @@ function Map({
 
       marker.on("click", () => {
         if (onMarkerSelect) onMarkerSelect(report.id);
+
+        //when a report is clicked on the map remove the selected point icon
+        selectedLayerRef.current.clearLayers();
+        currentMarkerRef.current = null;
+        setSelectedPoint(null);
       });
 
       marker.on("popupopen", (e) => {
@@ -357,13 +363,6 @@ function Map({
   // highlight / un-highlight markers when selectedReportID changes
   useEffect(() => {
     if (!markersRef.current || !clusterGroupRef.current) return;
-
-    // Remove temporary "new report" marker
-    if (currentMarkerRef.current) {
-      mapInstanceRef.current.removeLayer(currentMarkerRef.current);
-      currentMarkerRef.current = null;
-      setSelectedPoint(null);
-    }
 
     // reset all to default icon
     Object.entries(markersRef.current).forEach(([id, marker]) => {
