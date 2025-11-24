@@ -209,4 +209,26 @@ describe("Operator Routes E2E", () => {
       expect(res.body).toEqual({ error: "Internal server error" });
     });
   });
+
+  it("should return 422 if Firebase auth/email-already-exists error is thrown", async () => {
+    vi.spyOn(userService, "createUserWithFirebase").mockRejectedValue({
+      code: "auth/email-already-exists",
+      message: "Firebase email already exists",
+    });
+
+    const res = await request(app)
+      .post("/operator-registrations")
+      .send({
+        firstName: "George",
+        lastName: "Operator",
+        username: "georgeop",
+        email: "george@example.com",
+        password: "password123",
+        role_id: 2,
+      });
+
+    expect(res.status).toBe(422);
+    expect(res.body).toEqual({ error: "Firebase email already exists" });
+  });
+
 });
