@@ -1,0 +1,19 @@
+import {body, validationResult} from 'express-validator';
+import type { Request, Response, NextFunction} from 'express';
+
+export const validateCreateReport = [
+  body("user_id").isInt().withMessage("user_id must be an integer"),
+  body("category_id").isInt().withMessage("category_id must be an integer"),
+  body("title").isString().notEmpty().withMessage("title is required"),
+  body("description").isString().notEmpty().withMessage("description is required"),
+  body("position_lat").isFloat().withMessage("position_lat must be a number"),
+  body("position_lng").isFloat().withMessage("position_lng must be a number"),
+  body("is_anonymous").isBoolean().withMessage("is_anonymous must be a boolean"),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  }
+];
