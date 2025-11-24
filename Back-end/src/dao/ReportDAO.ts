@@ -6,7 +6,7 @@ import type { CreateReportDTO } from '../dto/CreateReportDTO.js';
 export default class ReportDao {
   async getAcceptedReportsForMap(): Promise<ReportMap[]> {
     const sql = `
-      SELECT r.id, r.title, u.first_name, u.last_name, r.position_lat, r.position_lng
+      SELECT r.id, r.title, u.first_name, u.last_name, u.username, r.position_lat, r.position_lng
       FROM reports r
       JOIN users u ON r.user_id = u.id
       WHERE r.status != 'pending_approval'

@@ -87,6 +87,7 @@ The database is automatically seeded with:
             "id": 1,
             "title": "Problem with street illumination",
             "reporterName": "John Doe",
+            "reporterUsername": "johndoee",
             "position": {
                 "lat": 45.4642,
                 "lng": 9.19
@@ -96,6 +97,7 @@ The database is automatically seeded with:
             "id": 2,
             "title": "Holes in the street",
             "reporterName": "Jane Smith",
+            "reporterUsername": "janesmithh",
             "position": {
                 "lat": 45.465,
                 "lng": 9.191
