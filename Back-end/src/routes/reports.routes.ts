@@ -9,6 +9,9 @@ import OperatorDAO from "../dao/OperatorDAO.js";
 import { ROLES } from "../models/userRoles.js";
 import type { User } from "../models/user.js"
 import { validateCreateReport, validateGetReport } from "../middlewares/reportValidation.js";
+import { upload } from "../config/multer.js";
+import cloudinary from "../config/cloudinary.js";
+import { unlink } from "fs/promises";
 
 const router = Router();
 const reportDAO = new ReportDAO();
@@ -58,16 +61,65 @@ router.get("/reports/:reportId",
 //POST /reports
 router.post("/reports",
     verifyFirebaseToken([ROLES.CITIZEN]),
+    upload.array('photos', 3),
     validateCreateReport,
     async (req: Request, res: Response) => {
+        const uploadedUrls: string[] = [];
+
         try {
-            const data: CreateReportDTO = req.body;
+            const files = req.files as Express.Multer.File[];
+            if (!files || files.length === 0) {
+                return res.status(400).json({ error: "At least one photo is required" });
+            }
+
+            for (const file of files) {
+                const result = await cloudinary.uploader.upload(file.path, {
+                    folder: 'Participium',
+                    resource_type: 'raw',
+                });
+
+                // URL con trasformazione richiesta
+                const url = result.secure_url
+                uploadedUrls.push(url);
+
+                // Elimina file temporaneo locale
+                await unlink(file.path);
+            }
+
+
+            const data: CreateReportDTO = {
+                user_id: Number(req.body.user_id),
+                category_id: Number(req.body.category_id),
+                title: req.body.title,
+                description: req.body.description,
+                is_anonymous: req.body.is_anonymous === 'true' || req.body.is_anonymous === true,
+                position_lat: Number(req.body.position_lat),
+                position_lng: Number(req.body.position_lng),
+                photos: uploadedUrls
+            };
             const createdReport = await reportDAO.createReport(data);
+
             return res.status(201).json({ report: createdReport });
 
         } catch (error) {
-            console.error(error);
-            return res.status(500).json({ error: "Internal server error" });
+            console.error("Error in /reports:", error);
+            // Rollback: Delete already updloaded images from Cloudinary
+            for (const url of uploadedUrls) {
+                try {
+                    // Get public_id from url (after /upload/ and before the extensioon)
+                    const matches = url.match(/\/upload\/(?:v\d+\/)?(.+?)\.[^/.]+$/);
+                    const publicId = matches ? matches[1] : null;
+
+                    if (publicId) {
+                        await cloudinary.uploader.destroy(publicId);
+                    }
+
+                } catch (delErr) {
+                    console.error("Error deleting image during rollback:", delErr);
+                }
+
+                return res.status(500).json({ error: "Internal server error" });
+            }
         }
     });
 

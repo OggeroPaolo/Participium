@@ -144,5 +144,55 @@ export const closeDatabase = (): Promise<void> => {
   });
 };
 
+/**
+ * Begins a transaction
+ */
+export const beginTransaction = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (db) {
+      db.run("BEGIN TRANSACTION", (err: Error | null) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    } else {
+      resolve();
+    }
+
+  });
+};
+
+/**
+ * Commits of the transaction
+ */
+export const commitTransaction = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (db) {
+      db.run("COMMIT", (err: Error | null) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    } else {
+      resolve();
+    }
+
+  });
+};
+
+/**
+ * Rollback of the transaction
+ */
+export const rollbackTransaction = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (db) {
+      db.run("ROLLBACK", (err: Error | null) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    } else {
+      resolve();
+    }
+  });
+};
+
 export default getDatabase;
 
