@@ -77,7 +77,6 @@ router.post("/reports",
                 const newPath = file.path + path.extname(file.originalname); // add extension
                 await rename(file.path, newPath);
 
-                console.log(newPath)
                 const result = await cloudinary.uploader.upload(newPath, {
                     folder: 'Participium',
                     resource_type: 'raw',
