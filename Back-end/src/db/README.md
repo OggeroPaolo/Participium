@@ -52,8 +52,8 @@ This directory contains database-related files for the Participium project.
 | • reviewed_at        |                    │ (many-to-one)                      │
 | • created_at         |                    │                                    │
 | • updated_at         |                    │                                    │
+| • is_anonymous       |                    │                                    │
 └──────────────────────┘                    │                                    │
-                                            │                                    │
                                             ▼                                    │
 ┌──────────────────────┐              ┌──────────────────────────────┐           │
 │     offices          │              │        categories            │           │
@@ -110,7 +110,7 @@ Report categories with default routing:
 #### reports
 Stores user-submitted reports for issues, tracking their status and review process
 - **Foreign Keys**: user_id (FK -> users.id), reviewed_by (FK -> users.id), assigned_to (FK -> users.id) category_id (FK -> categories.id)
-- **Main fields**: title, description (report content)
+- **Main fields**: title, description (report content), is_anonymous (boolean)
 - **Status**:
 - `pending_approval`  - The report has been created and is awaiting review by an officer
 - `assigned` - The report has been assigned to a specific user for handling.
