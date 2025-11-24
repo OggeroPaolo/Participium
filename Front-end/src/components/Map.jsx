@@ -7,6 +7,7 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.awesome-markers/dist/leaflet.awesome-markers.css";
 import "leaflet.awesome-markers/dist/leaflet.awesome-markers.js";
+import { reverseGeocode } from "../utils/geocoding";
 
 // Fix for default marker icons in Leaflet with React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -31,6 +32,8 @@ function Map({
   const currentMarkerRef = useRef(null);
   const clusterGroupRef = useRef(null);
   const [selectedPoint, setSelectedPoint] = useState(null);
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const markersRef = useRef({});
   const selectedLayerRef = useRef(L.layerGroup());
   const navigate = useNavigate();
@@ -260,11 +263,13 @@ function Map({
       mapInstance.addLayer(clusterGroup);
 
       // Click handler for map
-      mapInstance.on("click", function (e) {
+      mapInstance.on("click", async function (e) {
         const { lat, lng } = e.latlng;
 
-        // Update selected point state
+        // Store coordinates (for internal use)
         setSelectedPoint({ lat: lat.toFixed(5), lng: lng.toFixed(5) });
+        setIsGeocoding(true);
+        setSelectedAddress('Loading address...');
 
         // Remove previous marker
         selectedLayerRef.current.clearLayers();
@@ -273,11 +278,11 @@ function Map({
         const newMarker = L.marker([lat, lng], { icon: newReportIcon });
         selectedLayerRef.current.addLayer(newMarker);
 
+        // Initial popup with loading state
         newMarker.bindPopup(
           `<div class="body-font">
-            <b>Selected Point</b><br>
-            Lat: ${lat.toFixed(5)}<br>
-            Lng: ${lng.toFixed(5)}<br>
+            <b>Selected Location</b><br>
+            <span id="address-text">Getting address...</span><br>
             <button class="map-button report-btn">Create a new report</button>
             </div>`
         );
@@ -287,13 +292,47 @@ function Map({
           const btn = popupNode.querySelector(".report-btn");
 
           L.DomEvent.on(btn, "click", () =>
-            navigate("/create-report", { state: { lat, lng } })
+            navigate("/create-report", { state: { lat, lng } })//we are still sending the lat long not readable adress
           );
         });
 
         newMarker.openPopup();
-
         currentMarkerRef.current = newMarker;
+
+        // Get human-readable address
+        try {
+          const address = await reverseGeocode(lat, lng);
+          setSelectedAddress(address);
+          setIsGeocoding(false);
+
+          // Update popup with address
+          if (newMarker.getPopup()) {
+            newMarker.setPopupContent(
+              `<div class="body-font">
+                <b>Selected Location</b><br>
+                ${address}<br>
+                <button class="map-button report-btn">Create a new report</button>
+                </div>`
+            );
+
+            // Re-attach button listener
+            setTimeout(() => {
+              const popupNode = newMarker.getPopup().getElement();
+              if (popupNode) {
+                const btn = popupNode.querySelector(".report-btn");
+                if (btn) {
+                  L.DomEvent.on(btn, "click", () =>
+                    navigate("/create-report", { state: { lat, lng } })
+                  );
+                }
+              }
+            }, 100);
+          }
+        } catch (error) {
+          console.error('Geocoding failed:', error);
+          setSelectedAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+          setIsGeocoding(false);
+        }
       });
 
       mapInstanceRef.current = mapInstance;
@@ -409,11 +448,23 @@ function Map({
             boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
             zIndex: 1000,
             fontSize: "14px",
+            maxWidth: "250px",
           }}
         >
           <strong>Selected Location:</strong>
-          <div>Lat: {selectedPoint.lat}</div>
-          <div>Lng: {selectedPoint.lng}</div>
+          <div style={{ marginTop: "5px", color: "#555" }}>
+            {isGeocoding ? (
+              <span>
+                <i className="spinner-border spinner-border-sm me-2"></i>
+                Loading address...
+              </span>
+            ) : (
+              selectedAddress || 'Unknown location'
+            )}
+          </div>
+          <div style={{ fontSize: "11px", color: "#999", marginTop: "5px" }}>
+            {selectedPoint.lat}, {selectedPoint.lng}
+          </div>
         </div>
       )}
     </div>
