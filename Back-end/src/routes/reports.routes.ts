@@ -78,11 +78,11 @@ router.post("/reports",
                 const newPath = file.path + path.extname(file.originalname); // add extension
 
                 await sharp(file.path)
-                .resize(1200, 1200, {   // 1200 max height or width
-                  fit: 'inside',   // Keep original aspect ration
-                  withoutEnlargement: true // Don't enlarge smaller pictures
-                })
-                .toFile(newPath);
+                    .resize(1200, 1200, {   // 1200 max height or width
+                        fit: 'inside',   // Keep original aspect ration
+                        withoutEnlargement: true // Don't enlarge smaller pictures
+                    })
+                    .toFile(newPath);
 
                 const result = await cloudinary.uploader.upload(newPath, {
                     folder: 'Participium',
@@ -113,25 +113,25 @@ router.post("/reports",
 
             return res.status(201).json({ report: createdReport });
 
-        } catch (error) {
+        }
+        catch (error) {
             console.error("Error in /reports:", error);
-            // Rollback: Delete already updloaded images from Cloudinary
+
             for (const url of uploadedUrls) {
                 try {
-                    // Get public_id from url (after /upload/ and before the extensioon)
                     const matches = url.match(/\/upload\/(?:v\d+\/)?(.+?)\.[^/.]+$/);
                     const publicId = matches ? matches[1] : null;
 
                     if (publicId) {
                         await cloudinary.uploader.destroy(publicId);
                     }
-
                 } catch (delErr) {
                     console.error("Error deleting image during rollback:", delErr);
                 }
-                return res.status(500).json({ error: "Internal server error" });
             }
+            return res.status(500).json({ error: "Internal server error" });
         }
+
     });
 
 // Patches the status of a report optionally attaching a rejection note

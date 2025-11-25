@@ -54,6 +54,7 @@ export const seedDefaultData = async (): Promise<void> => {
       await seedDefaultRoles();
       await seedDefaultUsers();
       await seedDefaultReports();
+      await seedDefaultPhotos();
       logger.info("Default data seeded successfully");
 
     } else {
@@ -121,8 +122,6 @@ export const seedDefaultOffices = async (): Promise<void> => {
       `INSERT INTO offices (name, type) VALUES (?, ?)`,
       ["Organization Office", "organization"]
     );
-
-    logger.info("Default offices seeded successfully");
   } catch (error) {
     logger.error({ error }, "Failed to seed default offices");
   }
@@ -411,5 +410,73 @@ export const seedDefaultReports = async (): Promise<void> => {
     logger.error({ error }, "Failed to seed default reports");
   }
 };
+
+/**
+ * Seed default photos
+ */
+export const seedDefaultPhotos = async (): Promise<void> => {
+  try {
+    const photoCount = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM photos");
+    if (photoCount?.count && photoCount.count > 0) {
+      logger.info("Photos already exist, skipping seed");
+      return;
+    }
+
+    const reports = await getAll<{ id: number; title: string }>("SELECT id, title FROM reports");
+    if (!reports.length) {
+      logger.warn("No reports found, skipping photo seeding");
+      return;
+    }
+
+    // For each report, add up to 3 photos
+    const photos = [
+      // Report 1
+      {
+        report_id: 1,
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764060549/Participium/tmkf2j2elg3atji2hnuo.jpg",
+        ordering: 1
+      },
+      {
+        report_id: 1,
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764060548/Participium/amskcrxkkk18u0jpsein.jpg",
+        ordering: 2
+      },
+      {
+        report_id: 1,
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764060461/Participium/bllx6qjarpftuegop7ax.jpg",
+        ordering: 3
+      },
+
+      // Report 2
+      {
+        report_id: 2,
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764060419/Participium/hz8m8p1lgdgirgtehsuz.jpg",
+        ordering: 1
+      },
+      {
+        report_id: 2,
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764060404/Participium/gjm6zmcd13q4rfrqbuqm.png",
+        ordering: 2
+      },
+      // Report 3
+      {
+        report_id: 3,
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764060294/Participium/lq8plvcerligafjegjo1.png",
+        ordering: 1
+      }
+    ];
+
+
+    for (const photo of photos) {
+      await runQuery(
+        `INSERT INTO photos (report_id, url, ordering) VALUES (?, ?, ?)`,
+        [photo.report_id, photo.url, photo.ordering]
+      );
+    }
+  } catch (error) {
+    logger.error({ error }, "Failed to seed default photos");
+  }
+};
+
 
 export default initializeDatabase;
