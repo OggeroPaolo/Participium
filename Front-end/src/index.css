@@ -97,6 +97,7 @@ html {
   transform: scale(1.02);
 }
 
+
 .report-car {
   height: 360px;
   width: 100%;
@@ -106,6 +107,132 @@ html {
 
 .car.itm {
   height: 360px;
+}
+/* CitHomepage styles */
+.cit-homepage-wrapper {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 160px);
+}
+
+.cit-map-container {
+  width: 100%;
+  height: 100%;
+}
+
+.cit-desktop-layout {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  height: 100%;
+}
+
+.cit-map-section {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+
+.cit-reports-section {
+  width: 350px;
+  overflow-y: auto;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.cit-reports-header {
+  font-weight: 600;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  color: #0350b5;
+}
+
+.cit-map-overlay {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(34, 34, 34, 0.8);
+  padding: 10px 20px;
+  border-radius: 8px;
+  color: #333;
+  font-size: 0.9rem;
+  pointer-events: none;
+  z-index: 1000;
+  animation: blink 2s ease-in-out infinite;
+}
+
+/* Mobile styles */
+@media (max-width: 991px) {
+  .cit-desktop-layout {
+    padding: 0;
+  }
+
+  .cit-map-section {
+    width: 100%;
+  }
+
+  .cit-reports-section {
+    display: none;
+  }
+
+  .cit-mobile-toggle-btn {
+    position: fixed;
+    bottom: 20px;
+    right: calc(50vw - 52px);
+    z-index: 1001;
+    background: #0350b5;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  .cit-mobile-overlay-backdrop {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1001;
+  }
+
+  .cit-mobile-reports-overlay {
+    position: fixed;
+    top: 70px;
+    right: 0;
+    width: 100%;
+    max-width: 350px;
+    height: calc(100vh - 70px);
+    background: white;
+    box-shadow: -2px 0 8px rgba(0,0,0,0.15);
+    z-index: 1002;
+    overflow-y: auto;
+    padding: 1rem;
+    animation: slideIn 0.3s ease;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Blink animation for map overlay */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+
 }
 
 /* Responsive scaling for larger screens */
