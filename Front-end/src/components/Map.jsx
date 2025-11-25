@@ -259,6 +259,12 @@ function Map({
       clusterGroupRef.current = clusterGroup;
       mapInstance.addLayer(clusterGroup);
 
+      clusterGroup.on("clusterclick", () => {
+        selectedLayerRef.current.clearLayers();
+        currentMarkerRef.current = null;
+        setSelectedPoint(null);
+      });
+
       // Click handler for map
       mapInstance.on("click", function (e) {
         const { lat, lng } = e.latlng;
