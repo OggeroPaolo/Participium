@@ -1,5 +1,6 @@
 import { body, param, validationResult } from 'express-validator';
 import type { Request, Response, NextFunction } from 'express';
+import { ReportStatus } from '../models/reportStatus.js';
 
 export const validateCreateReport = [
     body("user_id").isInt().withMessage("user_id must be an integer"),
@@ -35,6 +36,28 @@ export const validateGetReport = [
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
+        }
+        next();
+    }
+];
+
+export const validateOfficersGetReports = [
+    param("officerId").isInt().withMessage("officerId must be a valid integer"),
+    (req: Request, res: Response, next: NextFunction) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        next();
+    }
+];
+
+
+export const validateGetReports = [
+    (req: Request, res: Response, next: NextFunction) => {
+        const status = req.query.status as string | undefined;
+        if (status && !Object.values(ReportStatus).includes(status as ReportStatus)) {
+            return res.status(400).json({ error: `Invalid status filter: ${status}` });
         }
         next();
     }

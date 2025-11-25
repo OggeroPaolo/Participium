@@ -8,12 +8,14 @@ import type { ReportMap } from "../models/reportMap.js";
 import OperatorDAO from "../dao/OperatorDAO.js";
 import { ROLES } from "../models/userRoles.js";
 import type { User } from "../models/user.js"
-import { validateCreateReport, validateGetReport } from "../middlewares/reportValidation.js";
+import { validateCreateReport, validateGetReport, validateGetReports, validateOfficersGetReports } from "../middlewares/reportValidation.js";
 import { upload } from "../config/multer.js";
 import cloudinary from "../config/cloudinary.js";
 import { unlink, rename } from "fs/promises";
 import path from 'path';
 import sharp from 'sharp';
+import type { ReportFilters } from "../dao/ReportDAO.js";
+import { ReportStatus } from "../models/reportStatus.js";
 
 const router = Router();
 const reportDAO = new ReportDAO();
@@ -60,6 +62,63 @@ router.get("/reports/:reportId",
     }
 );
 
+//GET /officers/:officerId/reports
+router.get("/officers/:officerId/reports",
+    verifyFirebaseToken([ROLES.TECH_OFFICER]),
+    validateOfficersGetReports,
+    async (req: Request, res: Response) => {
+        try {
+            //TODO: Verification on params
+            const officerId = Number(req.params.officerId);
+            const filters: ReportFilters = { officerId: officerId };
+
+            const reports = await reportDAO.getReportsByFilters(filters);
+
+            if (Array.isArray(reports) && reports.length === 0) {
+                return res.status(204).send();
+            }
+
+            return res.status(200).json({ reports });
+
+
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
+
+//GET /reports?status=pending_approval
+router.get("/reports",
+    verifyFirebaseToken([ROLES.PUB_RELATIONS]),
+    validateGetReports,
+    async (req: Request, res: Response) => {
+        try {
+            const status = req.query.status as string | undefined;
+
+            if (status && !Object.values(ReportStatus).includes(status as ReportStatus)) {
+                return res.status(400).json({ error: "Invalid status filter" });
+            }
+
+            const filters: ReportFilters = {};
+            if (status) {
+                filters.status = status;
+            }
+            const reports = await reportDAO.getReportsByFilters(filters);
+
+            if (Array.isArray(reports) && reports.length === 0) {
+                return res.status(204).send();
+            }
+
+            return res.status(200).json({ reports });
+
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+)
+
 //POST /reports
 router.post("/reports",
     verifyFirebaseToken([ROLES.CITIZEN]),
@@ -78,11 +137,11 @@ router.post("/reports",
                 const newPath = file.path + path.extname(file.originalname); // add extension
 
                 await sharp(file.path)
-                .resize(1200, 1200, {   // 1200 max height or width
-                  fit: 'inside',   // Keep original aspect ration
-                  withoutEnlargement: true // Don't enlarge smaller pictures
-                })
-                .toFile(newPath);
+                    .resize(1200, 1200, {   // 1200 max height or width
+                        fit: 'inside',   // Keep original aspect ration
+                        withoutEnlargement: true // Don't enlarge smaller pictures
+                    })
+                    .toFile(newPath);
 
                 const result = await cloudinary.uploader.upload(newPath, {
                     folder: 'Participium',

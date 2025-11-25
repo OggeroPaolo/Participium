@@ -4,7 +4,43 @@ import type { Report } from "../models/report.js"
 import type { CreateReportDTO } from '../dto/CreateReportDTO.js';
 import type { PhotoDTO, ReportWithPhotosDTO } from '../dto/ReportWithPhotosDTO.js';
 
+export interface ReportFilters {
+  status?: string;
+  officerId?: number;
+  userId?: number;
+}
+
 export default class ReportDao {
+
+  
+
+  async getReportsByFilters(filters: ReportFilters): Promise<Report[]> {
+    const conditions: string[] = [];
+    const params: any[] = [];
+
+    if (filters.status) {
+      conditions.push("status = ?");
+      params.push(filters.status);
+    }
+    if (typeof filters.officerId === "number") {
+      conditions.push("assigned_to = ?");
+      params.push(filters.officerId);
+    }
+    if (typeof filters.userId === "number") {
+      conditions.push("user_id = ?");
+      params.push(filters.userId);
+    }
+    
+    let query = "SELECT * FROM reports";
+    if (conditions.length > 0) {
+      query += " WHERE " + conditions.join(" AND ");
+    }
+
+    const results = await getAll<Report>(query, params);
+
+    return results;
+  }
+
   async getAcceptedReportsForMap(): Promise<ReportMap[]> {
     const sql = `
       SELECT r.id, r.title, u.first_name, u.last_name, u.username, r.position_lat, r.position_lng
