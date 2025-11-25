@@ -2,10 +2,13 @@ import { useEffect, useState, useRef } from "react";
 import Map from "./Map";
 import { getApprovedReports } from "../API/API";
 import { Container, Col, Row, Card } from "react-bootstrap";
+import { reverseGeocode } from "../utils/geocoding";
 
 function CitHomepage(props) {
   const [reports, setReports] = useState([]);
   const [selectedReportID, setSelectedReportID] = useState(0);
+  const [reportAddresses, setReportAddresses] = useState({});
+  const [showMapOverlay, setShowMapOverlay] = useState(true);
   const reportRefs = useRef({});
 
   useEffect(() => {
@@ -50,6 +53,21 @@ function CitHomepage(props) {
       //     },
       //   ];
       setReports(reportList);
+      
+      // Fetch addresses for all reports
+      const addresses = {};
+      for (const report of reportList) {
+        if (report.position?.lat && report.position?.lng) {
+          try {
+            const address = await reverseGeocode(report.position.lat, report.position.lng);
+            addresses[report.id] = address;
+          } catch (error) {
+            console.error(`Failed to geocode report ${report.id}:`, error);
+            addresses[report.id] = `${report.position.lat}, ${report.position.lng}`;
+          }
+        }
+      }
+      setReportAddresses(addresses);
     };
     loadReports();
   }, []);
@@ -104,7 +122,7 @@ function CitHomepage(props) {
                             </div>
                             <div className='small mt-2'>
                               <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
-                              {r.position.lat}, {r.position.lng}
+                              {reportAddresses[r.id] || 'Loading address...'}
                             </div>
                           </Card.Body>
                         </Card>
@@ -129,7 +147,11 @@ function CitHomepage(props) {
 
             {/* Map */}
             <Col lg={9} className='p-0'>
-              <div style={{ height: "calc(100vh - 120px)" }}>
+              <div 
+                style={{ height: "calc(100vh - 120px)", position: "relative" }}
+                onMouseDown={() => setShowMapOverlay(false)}
+                onTouchStart={() => setShowMapOverlay(false)}
+              >
                 <Map
                   center={[45.0703, 7.6869]}
                   zoom={13}
@@ -137,6 +159,41 @@ function CitHomepage(props) {
                   selectedReportID={selectedReportID}
                   onMarkerSelect={handleSelectReport}
                 />
+                
+                {/* Interactive Overlay */}
+                {showMapOverlay && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: "20px",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      zIndex: 999,
+                      cursor: "pointer",
+                    }}
+                    onClick={() => setShowMapOverlay(false)}
+                  >
+                    <div
+                      style={{
+                        background: "rgba(34, 34, 34, 0.74)",
+                        padding: "15px 25px",
+                        borderRadius: "12px",
+                        textAlign: "center",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                        border: "1px solid rgba(200, 200, 200, 0.3)",
+                        animation: "blink 2s ease-in-out infinite",
+                      }}
+                    >
+                      <i 
+                        className="bi bi-hand-index-thumb" 
+                        style={{ fontSize: "2rem", color: "white" }}
+                      ></i>
+                      <span className="ms-2" style={{ fontSize: "0.95rem", color: "#fff" }}>
+                        Click or drag to explore the map
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </Col>
           </Row>
