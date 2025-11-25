@@ -171,6 +171,9 @@ async function getApprovedReports() {
 // Create a new report
 async function createReport(reportData) {}
 
+// Get a single report by id
+async function getReport(rid) {}
+
 export {
   handleSignup,
   createInternalUser,
@@ -180,4 +183,5 @@ export {
   getCategories,
   getApprovedReports,
   createReport,
+  getReport,
 };

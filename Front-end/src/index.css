@@ -97,6 +97,17 @@ html {
   transform: scale(1.02);
 }
 
+.report-car {
+  height: 360px;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.car.itm {
+  height: 360px;
+}
+
 /* Responsive scaling for larger screens */
 @media (min-width: 768px) {
   /* Tablet and up: slightly bigger */
