@@ -3,17 +3,17 @@ import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router';
 
 // Mock firebaseConfig first
-vi.mock('../src/firebaseConfig.js', () => ({
+vi.mock('../../src/firebaseConfig.js', () => ({
 	auth: {},
 }));
 
 // Mock firebaseService first - must be available before API tries to import it  
-vi.mock('../src/firebaseService.js', () => ({
+vi.mock('../../src/firebaseService.js', () => ({
 	getBearerToken: vi.fn(() => Promise.resolve('Bearer mock-token')),
 }));
 
 // Mock the API - provide factory to avoid loading actual module that imports firebaseService
-vi.mock('../src/API/API.js', () => ({
+vi.mock('../../src/API/API.js', () => ({
 	handleSignup: vi.fn(),
 	createInternalUser: vi.fn(),
 	getUserRoles: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock('../src/API/API.js', () => ({
 	getUserData: vi.fn(),
 }));
 
-import UserCreation from '../src/components/UserCreation.jsx';
+import UserCreation from '../../src/components/UserCreation.jsx';
 
 // Mock useNavigate
 const mockNavigate = vi.fn();
@@ -42,7 +42,7 @@ describe('UserCreation page (Vitest)', () => {
 
 	beforeEach(async () => {
 		vi.clearAllMocks();
-		const { getUserRoles } = await import('../src/API/API');
+		const { getUserRoles } = await import('../../src/API/API.js');
 		getUserRoles.mockResolvedValue(mockRoles);
 	});
 
@@ -115,7 +115,7 @@ describe('UserCreation page (Vitest)', () => {
 	});
 
 	it('shows error when user creation fails', async () => {
-		const { createInternalUser } = await import('../src/API/API');
+		const { createInternalUser } = await import('../../src/API/API.js');
 		createInternalUser.mockRejectedValueOnce(new Error('Email already exists'));
 
 		render(
@@ -143,13 +143,13 @@ describe('UserCreation page (Vitest)', () => {
 		// Submit form
 		await userEvent.click(screen.getByRole('button', { name: 'CREATE USER' }));
 
-		// Check error message appears
-		const error = await screen.findByText('Invalid user creation');
+		// Check error message appears (component displays error.message directly)
+		const error = await screen.findByText('Email already exists');
 		expect(error).toBeVisible();
 	});
 
 	it('shows success message and navigates to user-list on successful user creation', async () => {
-		const { createInternalUser } = await import('../src/API/API');
+		const { createInternalUser } = await import('../../src/API/API.js');
 		createInternalUser.mockResolvedValueOnce({ success: true });
 
 		render(
@@ -188,7 +188,7 @@ describe('UserCreation page (Vitest)', () => {
 	});
 
 	it('submits form with correct data including selected role', async () => {
-		const { createInternalUser } = await import('../src/API/API');
+		const { createInternalUser } = await import('../../src/API/API.js');
 		createInternalUser.mockResolvedValueOnce({ success: true });
 
 		render(
