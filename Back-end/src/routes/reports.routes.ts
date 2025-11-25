@@ -13,6 +13,7 @@ import { upload } from "../config/multer.js";
 import cloudinary from "../config/cloudinary.js";
 import { unlink, rename } from "fs/promises";
 import path from 'path';
+import sharp from 'sharp';
 
 const router = Router();
 const reportDAO = new ReportDAO();
@@ -75,7 +76,13 @@ router.post("/reports",
 
             for (const file of files) {
                 const newPath = file.path + path.extname(file.originalname); // add extension
-                await rename(file.path, newPath);
+
+                await sharp(file.path)
+                .resize(1200, 1200, {   // 1200 max height or width
+                  fit: 'inside',   // Keep original aspect ration
+                  withoutEnlargement: true // Don't enlarge smaller pictures
+                })
+                .toFile(newPath);
 
                 const result = await cloudinary.uploader.upload(newPath, {
                     folder: 'Participium',
@@ -87,6 +94,7 @@ router.post("/reports",
                 uploadedUrls.push(url);
 
                 // Elimina file temporaneo locale
+                await unlink(file.path);
                 await unlink(newPath);
             }
 
