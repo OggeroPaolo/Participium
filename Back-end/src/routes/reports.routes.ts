@@ -172,25 +172,24 @@ router.post("/reports",
 
             return res.status(201).json({ report: createdReport });
 
-        } catch (error) {
-            console.error("Error in /reports:", error);
-            // Rollback: Delete already updloaded images from Cloudinary
+        }
+        catch (error) {
             for (const url of uploadedUrls) {
                 try {
-                    // Get public_id from url (after /upload/ and before the extensioon)
                     const matches = url.match(/\/upload\/(?:v\d+\/)?(.+?)\.[^/.]+$/);
                     const publicId = matches ? matches[1] : null;
 
                     if (publicId) {
                         await cloudinary.uploader.destroy(publicId);
                     }
-
                 } catch (delErr) {
                     console.error("Error deleting image during rollback:", delErr);
+                    
                 }
-                return res.status(500).json({ error: "Internal server error" });
             }
+            return res.status(500).json({ error: "Internal server error" });
         }
+
     });
 
 // Patches the status of a report optionally attaching a rejection note

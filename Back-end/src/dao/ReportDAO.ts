@@ -105,7 +105,6 @@ export default class ReportDao {
         url: row.photo_url,
         ordering: row.ordering,
       }));
-
     return {
       id: baseRow.id,
       user_id: baseRow.user_id,

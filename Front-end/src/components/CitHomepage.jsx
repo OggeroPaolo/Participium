@@ -2,11 +2,13 @@ import { useEffect, useState, useRef } from "react";
 import Map from "./Map";
 import { getApprovedReports } from "../API/API";
 import { Container, Col, Row, Card } from "react-bootstrap";
+import { useNavigate } from "react-router";
 
 function CitHomepage(props) {
   const [reports, setReports] = useState([]);
   const [selectedReportID, setSelectedReportID] = useState(0);
   const reportRefs = useRef({});
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadReports = async () => {
@@ -95,6 +97,7 @@ function CitHomepage(props) {
                             selectedReportID === r.id ? "selected" : ""
                           }`}
                           onClick={() => handleSelectReport(r.id)}
+                          onDoubleClick={() => navigate(`/reports/${r.id}`)}
                           style={{ cursor: "pointer" }}
                         >
                           <Card.Body>

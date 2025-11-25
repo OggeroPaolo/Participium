@@ -12,6 +12,7 @@ import UserList from "./components/UserList.jsx";
 import { useAuthSync } from "./hooks/useAuthSync.js";
 import useUserStore from "./store/userStore.js";
 import ReportCreation from "./components/ReportCreation.jsx";
+import ReportInfo from "./components/ReportInfo.jsx";
 
 function App() {
   // Sync Zustand store with Firebase auth state
@@ -103,6 +104,16 @@ function App() {
             element={
               user?.role_name === "Citizen" ? (
                 <ReportCreation />
+              ) : (
+                <Navigate replace to='/' />
+              )
+            }
+          />
+          <Route
+            path='/reports/:rid'
+            element={
+              user?.role_name === "Citizen" ? (
+                <ReportInfo />
               ) : (
                 <Navigate replace to='/' />
               )
