@@ -80,7 +80,7 @@ export default class ReportDao {
     return getOne<Report>(sql, [reportId]);
   }
 
-  async getReportWithPhotos(reportId: number): Promise<ReportWithPhotosDTO> {
+  async getReportWithPhotosById(reportId: number): Promise<ReportWithPhotosDTO> {
     const sql = `
     SELECT r.*, p.url AS photo_url, p.ordering
     FROM reports r
@@ -165,7 +165,7 @@ export default class ReportDao {
       }
       await commitTransaction();
 
-      const createdReport = await this.getReportWithPhotos(reportId);
+      const createdReport = await this.getReportWithPhotosById(reportId);
       return createdReport;
 
     } catch (error) {
