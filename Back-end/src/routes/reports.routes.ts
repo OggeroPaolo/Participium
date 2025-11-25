@@ -115,8 +115,6 @@ router.post("/reports",
 
         }
         catch (error) {
-            console.error("Error in /reports:", error);
-
             for (const url of uploadedUrls) {
                 try {
                     const matches = url.match(/\/upload\/(?:v\d+\/)?(.+?)\.[^/.]+$/);
@@ -127,6 +125,7 @@ router.post("/reports",
                     }
                 } catch (delErr) {
                     console.error("Error deleting image during rollback:", delErr);
+                    
                 }
             }
             return res.status(500).json({ error: "Internal server error" });
