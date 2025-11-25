@@ -1,6 +1,13 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
-import Home from '../src/components/Home.jsx';
+import Home from '../../src/components/Home.jsx';
+
+// Mock leaflet.markercluster and leaflet.awesome-markers (used by Map component)
+vi.mock('leaflet.markercluster', () => ({}));
+vi.mock('leaflet.markercluster/dist/MarkerCluster.css', () => ({}));
+vi.mock('leaflet.markercluster/dist/MarkerCluster.Default.css', () => ({}));
+vi.mock('leaflet.awesome-markers/dist/leaflet.awesome-markers.css', () => ({}));
+vi.mock('leaflet.awesome-markers/dist/leaflet.awesome-markers.js', () => ({}));
 
 // Mock the userStore
 const mockUserStore = {
@@ -12,13 +19,13 @@ const mockUserStore = {
 	setLoading: vi.fn(),
 };
 
-vi.mock('../src/store/userStore.js', () => ({
+vi.mock('../../src/store/userStore.js', () => ({
 	default: vi.fn(() => mockUserStore),
 }));
 
-// Mock the Map component
-vi.mock('../src/components/Map.jsx', () => ({
-	default: () => <div data-testid="map-component">Map Component</div>,
+// Mock the CitHomepage component (which contains the Map)
+vi.mock('../../src/components/CitHomepage.jsx', () => ({
+	default: () => <div data-testid="map-component">CitHomepage Component</div>,
 }));
 
 describe('Home component (Vitest)', () => {
@@ -47,7 +54,7 @@ describe('Home component (Vitest)', () => {
 			last_name: 'Doe',
 			username: 'johndoe',
 			email: 'john@example.com',
-			role_name: 'citizen',
+			role_type: 'citizen', // Home component checks role_type, not role_name
 		};
 		mockUserStore.isAuthenticated = true;
 
@@ -57,7 +64,7 @@ describe('Home component (Vitest)', () => {
 			</BrowserRouter>
 		);
 
-		// Map component should be rendered for citizens
+		// Map component should be rendered for citizens (via CitHomepage)
 		expect(screen.getByTestId('map-component')).toBeVisible();
 	});
 
@@ -67,7 +74,7 @@ describe('Home component (Vitest)', () => {
 			last_name: 'Admin',
 			username: 'admin_user',
 			email: 'admin@example.com',
-			role_name: 'admin',
+			role_type: 'admin', // Home component checks role_type
 		};
 		mockUserStore.isAuthenticated = true;
 
@@ -89,7 +96,7 @@ describe('Home component (Vitest)', () => {
 			last_name: 'Operator',
 			username: 'operator_user',
 			email: 'operator@example.com',
-			role_name: 'org_office_operator',
+			role_type: 'org_office_operator', // Home component checks role_type
 		};
 		mockUserStore.isAuthenticated = true;
 
@@ -111,7 +118,7 @@ describe('Home component (Vitest)', () => {
 			last_name: 'Tech',
 			username: 'tech_operator',
 			email: 'tech@example.com',
-			role_name: 'technical_office_operator',
+			role_type: 'technical_office_operator', // Home component checks role_type
 		};
 		mockUserStore.isAuthenticated = true;
 
@@ -131,7 +138,7 @@ describe('Home component (Vitest)', () => {
 		mockUserStore.user = {
 			username: 'testuser',
 			email: 'test@example.com',
-			role_name: 'admin',
+			role_type: 'admin', // Home component checks role_type
 		};
 		mockUserStore.isAuthenticated = true;
 
@@ -158,7 +165,7 @@ describe('Home component (Vitest)', () => {
 		// Update to authenticated citizen
 		mockUserStore.user = {
 			first_name: 'John',
-			role_name: 'citizen',
+			role_type: 'citizen', // Home component checks role_type
 		};
 		mockUserStore.isAuthenticated = true;
 
@@ -176,7 +183,7 @@ describe('Home component (Vitest)', () => {
 	it('switches from citizen view to admin view when role changes', () => {
 		mockUserStore.user = {
 			first_name: 'John',
-			role_name: 'citizen',
+			role_type: 'citizen', // Home component checks role_type
 		};
 		mockUserStore.isAuthenticated = true;
 
@@ -192,7 +199,7 @@ describe('Home component (Vitest)', () => {
 		// Change role to admin
 		mockUserStore.user = {
 			first_name: 'John',
-			role_name: 'admin',
+			role_type: 'admin', // Home component checks role_type
 		};
 
 		rerender(
@@ -209,7 +216,7 @@ describe('Home component (Vitest)', () => {
 	it('switches from authenticated to unauthenticated view', () => {
 		mockUserStore.user = {
 			first_name: 'John',
-			role_name: 'citizen',
+			role_type: 'citizen', // Home component checks role_type
 		};
 		mockUserStore.isAuthenticated = true;
 

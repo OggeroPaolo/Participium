@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import Login from '../src/components/Login.jsx';
+import Login from '../../src/components/Login.jsx';
 
-vi.mock('../src/firebaseService', () => ({
+vi.mock('../../src/firebaseService.js', () => ({
 	loginWithEmail: vi.fn(),
 }));
 
@@ -30,7 +30,7 @@ describe('Login page (Vitest)', () => {
 	});
 
 	it('shows error when credentials are invalid', async () => {
-		const { loginWithEmail } = await import('../src/firebaseService');
+		const { loginWithEmail } = await import('../../src/firebaseService.js');
 		loginWithEmail.mockRejectedValueOnce({ code: 'auth/invalid-credential' });
 
 		render(<Login />);

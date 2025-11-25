@@ -6,6 +6,13 @@ import { Container, Col, Row, Card } from "react-bootstrap";
 function CitHomepage(props) {
   const [reports, setReports] = useState([]);
   const [selectedReportID, setSelectedReportID] = useState(0);
+  const [activeTab, setActiveTab] = useState("map");
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === "undefined") {
+      return true;
+    }
+    return window.innerWidth >= 992;
+  });
   const reportRefs = useRef({});
 
   useEffect(() => {
@@ -67,79 +74,110 @@ function CitHomepage(props) {
     }
   };
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window === "undefined") return;
+      setIsDesktop(window.innerWidth >= 992);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const renderReportList = (extraClasses = "") => (
+    <div className={`shadow-sm bg-white cit-sidebar-scroll ${extraClasses}`}>
+      <h5 className='fw-bold mb-3'>Reports Overview</h5>
+
+      {reports.length !== 0 && (
+        <>
+          {reports.map((r) => {
+            return (
+              <Card
+                key={r.id}
+                ref={(el) => (reportRefs.current[r.id] = el)}
+                className={`mt-2 shadow-sm report-card ${
+                  selectedReportID === r.id ? "selected" : ""
+                }`}
+                onClick={() => handleSelectReport(r.id)}
+                style={{ cursor: "pointer" }}
+              >
+                <Card.Body>
+                  <strong>{r.title}</strong>
+                  <div className='text-muted small'>
+                    Reported by: <b>{r.reporterName}</b>
+                  </div>
+                  <div className='small mt-2'>
+                    <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
+                    {r.position.lat}, {r.position.lng}
+                  </div>
+                </Card.Body>
+              </Card>
+            );
+          })}
+        </>
+      )}
+
+      {reports.length === 0 && (
+        <Card className='m-3 shadow-sm'>
+          <Card.Body className='text-center py-5'>
+            <i className='bi bi-journals' style={{ fontSize: "3rem", color: "#ccc" }}></i>
+            <p className='mt-3 mb-0 text-muted'>No reports yet</p>
+          </Card.Body>
+        </Card>
+      )}
+    </div>
+  );
+
+  const renderMapPanel = (customClass = "") => (
+    <div className={`cit-map-panel ${customClass}`}>
+      <Map
+        center={[45.0703, 7.6869]}
+        zoom={13}
+        approvedReports={reports}
+        selectedReportID={selectedReportID}
+        onMarkerSelect={handleSelectReport}
+      />
+    </div>
+  );
+
   return (
     <>
-      <div style={{ height: "calc(100vh - 120px)", overflow: "hidden" }}>
-        <Container fluid className='body-font'>
-          <Row style={{ height: "calc(100vh - 120px)" }}>
-            {/* sidebar with list of reports */}
-            <Col lg={3} className='d-flex flex-column h-100 p-0'>
-              <div
-                className='shadow-sm bg-white border-end h-100'
-                style={{
-                  height: "calc(100vh - 120px)",
-                  overflowY: "auto",
-                  padding: "15px",
-                }}
-              >
-                <h5 className='fw-bold mb-3'>Reports Overview</h5>
-
-                {reports.length !== 0 && (
-                  <>
-                    {reports.map((r) => {
-                      return (
-                        <Card
-                          key={r.id}
-                          ref={(el) => (reportRefs.current[r.id] = el)}
-                          className={`mt-2 shadow-sm report-card ${
-                            selectedReportID === r.id ? "selected" : ""
-                          }`}
-                          onClick={() => handleSelectReport(r.id)}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <Card.Body>
-                            <strong>{r.title}</strong>
-                            <div className='text-muted small'>
-                              Reported by: <b>{r.reporterName}</b>
-                            </div>
-                            <div className='small mt-2'>
-                              <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
-                              {r.position.lat}, {r.position.lng}
-                            </div>
-                          </Card.Body>
-                        </Card>
-                      );
-                    })}
-                  </>
-                )}
-
-                {reports.length === 0 && (
-                  <Card className='m-3 shadow-sm'>
-                    <Card.Body className='text-center py-5'>
-                      <i
-                        className='bi bi-journals'
-                        style={{ fontSize: "3rem", color: "#ccc" }}
-                      ></i>
-                      <p className='mt-3 mb-0 text-muted'>No reports yet</p>
-                    </Card.Body>
-                  </Card>
-                )}
+      <div className='cit-layout'>
+        <Container fluid className='body-font h-100'>
+          {isDesktop ? (
+            <Row className='cit-desktop-row'>
+              <Col lg={3} className='d-flex flex-column h-100 p-0'>
+                {renderReportList()}
+              </Col>
+              <Col lg={9} className='p-0'>
+                {renderMapPanel()}
+              </Col>
+            </Row>
+          ) : (
+            <div className='cit-mobile-wrapper'>
+              <div className='cit-mobile-tabs'>
+                <button
+                  type='button'
+                  className={`cit-tab-btn ${activeTab === "map" ? "active" : ""}`}
+                  onClick={() => setActiveTab("map")}
+                >
+                  Map View
+                </button>
+                <button
+                  type='button'
+                  className={`cit-tab-btn ${activeTab === "list" ? "active" : ""}`}
+                  onClick={() => setActiveTab("list")}
+                >
+                  List View
+                </button>
               </div>
-            </Col>
 
-            {/* Map */}
-            <Col lg={9} className='p-0'>
-              <div style={{ height: "calc(100vh - 120px)" }}>
-                <Map
-                  center={[45.0703, 7.6869]}
-                  zoom={13}
-                  approvedReports={reports}
-                  selectedReportID={selectedReportID}
-                  onMarkerSelect={handleSelectReport}
-                />
-              </div>
-            </Col>
-          </Row>
+              {activeTab === "map"
+                ? renderMapPanel("cit-map-panel--mobile")
+                : renderReportList("cit-sidebar-scroll--mobile")}
+            </div>
+          )}
         </Container>
       </div>
     </>

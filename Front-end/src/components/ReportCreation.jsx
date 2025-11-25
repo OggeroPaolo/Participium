@@ -199,6 +199,25 @@ function MapReport(props) {
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
 
+  const getMapHeight = () => {
+    if (typeof window === "undefined") {
+      return "400px";
+    }
+    return window.innerWidth < 768 ? "260px" : "400px";
+  };
+
+  const [mapHeight, setMapHeight] = useState(getMapHeight());
+
+  useEffect(() => {
+    const handleResize = () => {
+      setMapHeight(getMapHeight());
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
@@ -237,23 +256,17 @@ function MapReport(props) {
     });
   }, []);
 
+  useEffect(() => {
+    if (mapInstanceRef.current?.invalidateSize) {
+      mapInstanceRef.current.invalidateSize();
+    }
+  }, [mapHeight]);
+
   return (
     <div style={{ position: "relative", width: "100%" }}>
-      <div ref={mapRef} style={{ height: "400px", width: "100%" }} />
+      <div ref={mapRef} style={{ height: mapHeight, width: "100%" }} />
 
-      <div
-        style={{
-          position: "absolute",
-          top: "10px",
-          right: "10px",
-          padding: "10px",
-          background: "#fff",
-          borderRadius: "8px",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-          zIndex: 1000,
-          fontSize: "14px",
-        }}
-      >
+      <div className='location-info-box'>
         <strong>Selected location:</strong>
         <div>Lat: {props.propLat}</div>
         <div>Lng: {props.propLng}</div>

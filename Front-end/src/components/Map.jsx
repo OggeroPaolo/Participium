@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useNavigate } from "react-router";
-import "leaflet.markercluster";
+import "leaflet.markercluster/dist/leaflet.markercluster.js";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.awesome-markers/dist/leaflet.awesome-markers.css";
@@ -312,13 +312,24 @@ function Map({
       }, 100);
     }
 
-    // Cleanup on unmount
-    // return () => {
-    //   if (mapInstanceRef.current) {
-    //     mapInstanceRef.current.remove();
-    //     mapInstanceRef.current = null;
-    //   }
-    // };
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+      clusterGroupRef.current = null;
+      markersRef.current = {};
+      if (selectedLayerRef.current?.clearLayers) {
+        selectedLayerRef.current.clearLayers();
+      }
+      currentMarkerRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.setView(center, zoom);
+    }
   }, [center, zoom]);
 
   // add reports to cluster

@@ -97,6 +97,118 @@ html {
   transform: scale(1.02);
 }
 
+.cit-layout {
+  height: calc(100vh - 120px);
+  overflow: hidden;
+}
+
+.cit-desktop-row {
+  height: calc(100vh - 120px);
+}
+
+.cit-mobile-wrapper {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 0.5rem 2rem;
+}
+
+.cit-mobile-tabs {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.cit-tab-btn {
+  flex: 1;
+  border: 1px solid #d6d7d7;
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  background: #f5f6f8;
+  font-weight: 600;
+  color: #0350b5;
+  transition: all 0.2s ease;
+}
+
+.cit-tab-btn.active {
+  background: #0350b5;
+  color: white;
+  border-color: #0350b5;
+  box-shadow: 0 6px 12px rgba(3, 80, 181, 0.2);
+}
+
+.cit-sidebar-scroll {
+  height: 100%;
+  overflow-y: auto;
+  padding: 15px;
+  border-radius: 0;
+}
+
+.cit-sidebar-scroll--mobile {
+  border-radius: 16px;
+  border: 1px solid #e3e5e8;
+  max-height: calc(100vh - 240px);
+  background: white;
+}
+
+.cit-map-panel {
+  height: 100%;
+}
+
+.cit-map-panel--mobile {
+  height: 60vh;
+  min-height: 320px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.location-info-box {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  font-size: 14px;
+  max-width: 250px;
+}
+
+@media (max-width: 991.98px) {
+  .cit-layout {
+    height: auto;
+    overflow: visible;
+  }
+
+  .cit-sidebar-scroll {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 576px) {
+  .cit-tab-btn {
+    font-size: 0.9rem;
+  }
+
+  .cit-map-panel--mobile {
+    height: 55vh;
+    min-height: 280px;
+  }
+
+  .cit-sidebar-scroll--mobile {
+    max-height: calc(100vh - 260px);
+    padding: 1.25rem;
+  }
+
+  .location-info-box {
+    max-width: 150px;
+    font-size: 12px;
+    padding: 8px;
+  }
+}
+
 /* Responsive scaling for larger screens */
 @media (min-width: 768px) {
   /* Tablet and up: slightly bigger */
