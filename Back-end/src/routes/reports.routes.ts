@@ -48,7 +48,7 @@ router.get("/reports/:reportId",
     async (req: Request, res: Response) => {
         try {
             const reportId = Number(req.params.reportId);
-            const report = await reportDAO.getReportWithPhotosById(reportId);
+            const report = await reportDAO.getCompleteReportById(reportId);
             if (!report) {
                 return res.status(404).json({ error: "Report not found" });
             }
