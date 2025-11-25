@@ -248,6 +248,135 @@ Authorization: Bearer <firebase-token>
 }
 ```
 
+**GET `/reports`**
+
+* **Request Headers:** 
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** None
+
+* **Query Parameters: (Optional)** 
+```
+status: pending_approval, assigned, in_progress, suspended, rejected, resolved
+```
+
+* **Success Response (200 OK):**
+```json
+"reports": [
+        {
+        "id": 10,
+        "user_id": 1,
+        "category_id": 2,
+        "title": "\"Broken street light on 5th avenue\"",
+        "description": "\"The street light on 5th avenue is broken and needs urgent repair.\"",
+        "status": "pending_approval",
+        "assigned_to": null,
+        "reviewed_by": null,
+        "reviewed_at": null,
+        "note": null,
+        "is_anonymous": false,
+        "position_lat": 45.0632,
+        "position_lng": 7.6835,
+        "created_at": "2025-11-24 18:10:20",
+        "updated_at": "2025-11-24 18:10:20"
+    }
+]
+```
+
+* **No Content Response (204 No Content):**
+
+```json
+// Empty response body
+```
+
+* **Error Response (400 Bad Request):**
+```json
+{
+  "error": "Invalid status filter: wrong_status"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server Error"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
+
+
+**GET `/officers/:officerId/reports`**
+
+* **Request Headers:** 
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** officerId
+
+* **Success Response (200 OK):**
+```json
+"reports": [
+        {
+        "id": 10,
+        "user_id": 1,
+        "category_id": 2,
+        "title": "\"Broken street light on 5th avenue\"",
+        "description": "\"The street light on 5th avenue is broken and needs urgent repair.\"",
+        "status": "pending_approval",
+        "assigned_to": null,
+        "reviewed_by": null,
+        "reviewed_at": null,
+        "note": null,
+        "is_anonymous": false,
+        "position_lat": 45.0632,
+        "position_lng": 7.6835,
+        "created_at": "2025-11-24 18:10:20",
+        "updated_at": "2025-11-24 18:10:20"
+    }
+]
+```
+
+* **No Content Response (204 No Content):**
+
+```json
+// Empty response body
+```
+
+* **Error Response (400 Bad Request):**
+```json
+{
+  "error": "officerId must be a valid integer"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server Error"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
 ### Roles
 
 **GET `/roles`**
