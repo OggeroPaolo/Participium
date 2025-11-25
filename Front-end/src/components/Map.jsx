@@ -354,10 +354,18 @@ function Map({
       });
 
       marker.on("popupopen", (e) => {
-        const popupNode = e.popup.getElement();
-        const btn = popupNode.querySelector(".report-btn");
-
-        L.DomEvent.on(btn, "click", () => navigate(`/reports/${report.id}`));
+        // timeout to make sure DOM is updated (needed for button in popup)
+        setTimeout(() => {
+          const popupNode = e.popup.getElement();
+          let btn = popupNode.querySelector(".report-btn");
+          if (btn) {
+            const btnClone = btn.cloneNode(true);
+            btn.parentNode.replaceChild(btnClone, btn);
+            L.DomEvent.on(btnClone, "click", () =>
+              navigate(`/reports/${report.id}`)
+            );
+          }
+        }, 0);
       });
 
       markersRef.current[report.id] = marker;
