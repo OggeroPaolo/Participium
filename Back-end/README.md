@@ -87,6 +87,7 @@ The database is automatically seeded with:
             "id": 1,
             "title": "Problem with street illumination",
             "reporterName": "John Doe",
+            "reporterUsername": "johndoee",
             "position": {
                 "lat": 45.4642,
                 "lng": 9.19
@@ -96,6 +97,7 @@ The database is automatically seeded with:
             "id": 2,
             "title": "Holes in the street",
             "reporterName": "Jane Smith",
+            "reporterUsername": "janesmithh",
             "position": {
                 "lat": 45.465,
                 "lng": 9.191
@@ -115,6 +117,134 @@ The database is automatically seeded with:
 ```json
 {
   "error": "Internal server Error"
+}
+```
+
+**GET `/reports/:reportId`**
+
+* **Request Headers:** 
+  
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** reportId
+
+* **Success Response (200 OK):**
+```json
+        {
+            "id": 1,
+            "title": "Neglected street corner",
+            "description": "This area near Porta Nuova has been neglected and many people use it as a urinal, can something be done about it.",
+            "user_id": 1,
+            "position_lat": 45.06080,
+            "position_lng": 7.67613,
+            "status": "pending_approval"
+        }
+```
+
+* **Error Response (404 Not Found):**
+```json
+{
+  "error": "Report not found"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
+* **Error Response (403 Forbidden):**.
+
+```json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server Error"
+}
+```
+
+**POST `/reports`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** None
+
+* **Request Body:**
+```json
+{
+  "user_id": 1,
+  "category_id": 2,
+  "title": "Broken streetlight",
+  "description": "The streetlight near 5th avenue is out for several days.",
+  "is_anonymous": false,
+  "position_lat": 45.12345,
+  "position_lng": 9.12345,
+  "photos": [
+    "/path"
+  ]
+}
+```  
+* **Success Response (201 Created):**
+
+```json
+{
+  "report": {
+        "id": 10,
+        "user_id": 1,
+        "category_id": 2,
+        "title": "\"Broken street light on 5th avenue\"",
+        "description": "\"The street light on 5th avenue is broken and needs urgent repair.\"",
+        "status": "pending_approval",
+        "assigned_to": null,
+        "reviewed_by": null,
+        "reviewed_at": null,
+        "note": null,
+        "is_anonymous": false,
+        "position_lat": 45.0632,
+        "position_lng": 7.6835,
+        "created_at": "2025-11-24 18:10:20",
+        "updated_at": "2025-11-24 18:10:20",
+        "photos": [
+            {
+                "url": "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764007820/Participium/izvuzpkmk2yybjfxphwb",
+                "ordering": 1
+            }
+        ]
+    }
+}
+```
+
+* **Error Response (400 Bad Request - Validation errors):**
+
+```json
+{
+  "errors": [
+    { "msg": "user_id must be an integer", "param": "user_id", "location": "body" },
+    { "msg": "title is required", "param": "title", "location": "body" }
+  ]
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal Server Error"
 }
 ```
 

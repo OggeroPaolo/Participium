@@ -107,4 +107,25 @@ describe("POST /user-registrations", () => {
     expect(res.status).toBe(500);
     expect(res.body.error).toBe("Internal server error");
   });
+
+  it('should return 422 if Firebase auth/email-already-exists error is thrown', async () => {
+    vi.spyOn(userService, 'createUserWithFirebase').mockRejectedValue({
+      code: 'auth/email-already-exists',
+      message: 'Firebase email already exists',
+    });
+
+    const res = await request(app)
+      .post('/user-registrations')
+      .send({
+        firstName: 'Sam',
+        lastName: 'Smith',
+        username: 'samsmith',
+        email: 'sam@example.com',
+        password: 'password123',
+      });
+
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('Firebase email already exists');
+  });
+
 });
