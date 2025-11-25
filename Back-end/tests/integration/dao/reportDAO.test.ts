@@ -210,9 +210,9 @@ describe("ReportDao", () => {
                 ...mockReport,
                 id: 10,
                 is_anonymous: false,
-                assigned_to: undefined, 
-                reviewed_by: undefined, 
-                reviewed_at: undefined,  
+                assigned_to: undefined,
+                reviewed_by: undefined,
+                reviewed_at: undefined,
                 note: undefined,
                 photos: [
                     { url: "https://photo1.jpg", ordering: 1 },
@@ -258,6 +258,30 @@ describe("ReportDao", () => {
 
             expect(db.rollbackTransaction).toHaveBeenCalled();
         });
+    });
+
+    it("should throw 'Insert report failed' if report insert returns no lastID", async () => {
+        const mockCreateData = {
+            user_id: 2,
+            category_id: 3,
+            title: "Report with missing lastID",
+            description: "Test insert failure",
+            position_lat: 40,
+            position_lng: -70,
+            is_anonymous: false,
+            photos: ["https://photo1.jpg"]
+        };
+
+        vi.spyOn(db, "beginTransaction").mockResolvedValue();
+        vi.spyOn(db, "rollbackTransaction").mockResolvedValue();
+
+        vi.spyOn(db, "Update").mockResolvedValue({ changes: 1 });
+
+        await expect(dao.createReport(mockCreateData))
+            .rejects
+            .toThrow("Insert report failed");
+
+        expect(db.rollbackTransaction).toHaveBeenCalled();
     });
 
 
