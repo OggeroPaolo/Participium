@@ -3,7 +3,6 @@ import type { Request, Response, NextFunction } from 'express';
 import { ReportStatus } from '../models/reportStatus.js';
 
 export const validateCreateReport = [
-    body("user_id").isInt().withMessage("user_id must be an integer"),
     body("category_id").isInt().withMessage("category_id must be an integer"),
     body("title").isString().notEmpty().withMessage("title is required"),
     body("description").isString().notEmpty().withMessage("description is required"),

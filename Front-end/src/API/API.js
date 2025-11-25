@@ -169,7 +169,38 @@ async function getApprovedReports() {
 }
 
 // Create a new report
-async function createReport(reportData) {}
+async function createReport(reportData, lat, lng) {
+  const { title, description, category, photos } = reportData;
+
+  const formData = new FormData();
+  formData.append("category_id", category);
+  formData.append("title", title);
+  formData.append("description", description);
+  formData.append("position_lat", lat);
+  formData.append("position_lng", lng);
+  formData.append("is_anonymous", false);
+
+  // Append each photo
+  photos.forEach((photo) => {
+    formData.append("photos", photo);
+  });
+
+  const response = await fetch(`${URI}/reports`, {
+    method: "POST",
+    headers: {
+      Authorization: `${await getBearerToken()}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to upload report");
+  }
+
+  return await response.json();
+}
+
 
 // Get a single report by id
 async function getReport(rid) {}

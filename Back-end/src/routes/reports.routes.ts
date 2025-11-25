@@ -130,6 +130,7 @@ router.post("/reports",
         try {
             const files = req.files as Express.Multer.File[];
             if (!files || files.length === 0) {
+                console.log(files)
                 return res.status(400).json({ error: "At least one photo is required" });
             }
 
@@ -157,9 +158,10 @@ router.post("/reports",
                 await unlink(newPath);
             }
 
+            const user = (req as Request & { user: User }).user;
 
             const data: CreateReportDTO = {
-                user_id: Number(req.body.user_id),
+                user_id: Number(user.id),
                 category_id: Number(req.body.category_id),
                 title: req.body.title,
                 description: req.body.description,
