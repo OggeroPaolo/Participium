@@ -123,7 +123,8 @@ html {
 }
 
 .carousel-control-prev-icon,
-.carousel-control-next-icon {
+.carousel-control-next-icon,
+.carousel-indicators {
   /* similar to the dark blue already used */
   filter: brightness(0) saturate(100%) invert(12%) sepia(99%) saturate(7470%)
     hue-rotate(197deg) brightness(93%) contrast(102%);

@@ -18,6 +18,15 @@ function ReportInfo() {
     loadReport();
   }, []);
 
+  // string formatter for status
+  // can be pending_approval, assigned, in_progress, suspended, rejected, resolved
+  function stringFormatter(str) {
+    return str
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+
   return (
     <>
       <Container fluid className='mt-4 body-font '>
@@ -64,14 +73,26 @@ function ReportInfo() {
                 <i className='bi bi-tag-fill me-2 text-primary'></i>
                 <b>Category:</b> {report.category.name}
               </p>
-              <p className='mt-3'>
+              <p>
                 <i className='bi bi-calendar-event-fill text-success me-2'></i>{" "}
                 <b>Created on:</b> {Date(report.created_at).slice(0, 15)}
+              </p>
+              <p>
+                <i className='bi bi-chat-left-fill text-warning me-2'></i>{" "}
+                <b>Status:</b> {stringFormatter(report.status)}
               </p>
               <h6 className='fw-bold mb-2'>Description</h6>
               <Card className='p-3 bg-light border-0'>
                 <p className='mb-0'>{report.description}</p>
               </Card>
+              {report.note && (
+                <>
+                  <h6 className='fw-bold mb-2 mt-3'>Reviewer notes</h6>
+                  <Card className='p-3 bg-light border-0'>
+                    <p className='mb-0'>{report.note}</p>
+                  </Card>
+                </>
+              )}
             </Col>
           </Row>
         )}
