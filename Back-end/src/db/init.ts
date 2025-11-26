@@ -242,7 +242,6 @@ export const seedDefaultUsers = async (): Promise<void> => {
         last_name: "Bennett",
         role_id: roleMap["Water_utility_officer"]
       },
-      //TODODODOODODODODOOD
       {
         firebase_uid: "iT18eWAsjgQ0SBD8isKIFRBG1UD3",
         email: "operator-architectural@example.com",
@@ -344,35 +343,34 @@ export const seedDefaultReports = async (): Promise<void> => {
         position_lng: 7.67613,
         status: "pending_approval"
       },
-
-      // THE REST ARE GENERATED
       {
-        title: "Broken street light",
-        description: "The street light on 5th avenue is broken and needs repair.",
+        title: "Fallen Road Sign",
+        description: "A road sign has fallen and requires prompt repair.",
         user_id: firstUser.id,
-        category_id: categories.find(c => c.name.includes("Public Lighting"))?.id ?? firstCategory.id,
+        category_id: categories.find(c => c.name.includes("Road Signs and Traffic Lights"))?.id ?? firstCategory.id,
         position_lat: 45.0632,
         position_lng: 7.6835,
         status: "pending_approval"
       },
       {
-        title: "Potholes on Main Street",
-        description: "Several potholes are damaging vehicles on Main Street.",
-        user_id: firstUser.id,
-        category_id: categories.find(c => c.name.includes("Roads"))?.id ?? firstCategory.id,
-        position_lat: 45.0781,
-        position_lng: 7.6982,
-        status: "pending_approval"
-      },
-      {
-        title: "Water supply pending approval",
-        description: "Pending review for a water supply issue.",
+        title: "Damaged Bollard",
+        description: "A bollard was cracked in an accident and needs repair",
         user_id: users[1]?.id ?? firstUser.id,
-        category_id: categories.find(c => c.name.includes("Water Supply"))?.id ?? firstCategory.id,
+        category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
         position_lat: 45.0658,
         position_lng: 7.6917,
         status: "pending_approval"
       },
+      {
+        title: "Wooden Bench with Missing Boards",
+        description: "A wooden bench has several missing boards and requires maintenance.",
+        user_id: firstUser.id,
+        category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
+        position_lat: 45.0781,
+        position_lng: 7.6982,
+        status: "pending_approval"
+      },
+      // THE REST ARE GENERATED
       {
         title: "Water supply assigned",
         description: "Assigned to a technician for water supply issue.",
@@ -484,7 +482,7 @@ export const seedDefaultPhotos = async (): Promise<void> => {
       },
       {
         report_id: 1,
-        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764060548/Participium/amskcrxkkk18u0jpsein.jpg",
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/fl_original/v1764143988/Participium-demo/z7z4f0oppqissfj2fd0y",
         ordering: 2
       },
       {
@@ -496,19 +494,35 @@ export const seedDefaultPhotos = async (): Promise<void> => {
       // Report 2
       {
         report_id: 2,
-        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764060419/Participium/hz8m8p1lgdgirgtehsuz.jpg",
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764173134/Participium-demo/s3qtgqbr7put0hinwzru.jpg",
         ordering: 1
       },
       {
-        report_id: 2,
-        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764060404/Participium/gjm6zmcd13q4rfrqbuqm.png",
-        ordering: 2
+        report_id: 3,
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764172687/Participium-demo/dxsdqsuzurvw8duybjqp.jpg",
+        ordering: 1
       },
       // Report 3
       {
         report_id: 3,
-        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764060294/Participium/lq8plvcerligafjegjo1.png",
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764172686/Participium-demo/p8uvfpwvn7eecbweqx5b.jpg",
+        ordering: 2
+      },
+      {
+        report_id: 3,
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764172685/Participium-demo/ojpjqjffvq5qmww8twam.jpg",
+        ordering: 3
+      },
+      // Report 4
+      {
+        report_id: 4,
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764153275/Participium-demo/wehooeo54qsg89cwgomm.jpg",
         ordering: 1
+      },
+      {
+        report_id: 4,
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764153254/Participium-demo/d5juzjkt5t7cenm5ywde.jpg",
+        ordering: 2
       }
     ];
 
