@@ -1,0 +1,28 @@
+services:
+  backend:
+    image: kaanakarcay/participium:backend
+    build:
+      context: ./Back-end
+      dockerfile: Dockerfile
+    env_file:
+      - ./Back-end/.env
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./Back-end/data:/app/data
+    restart: unless-stopped
+
+  frontend:
+    image: kaanakarcay/participium:frontend
+    build:
+      context: ./Front-end
+      dockerfile: Dockerfile
+    env_file:
+      - ./Front-end/.env
+    ports:
+      - "4173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+
