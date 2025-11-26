@@ -1,5 +1,13 @@
+// Mock leaflet.markercluster and leaflet.awesome-markers BEFORE imports
+vi.mock('leaflet.markercluster/dist/leaflet.markercluster.js', () => ({}));
+vi.mock('leaflet.markercluster/dist/MarkerCluster.css', () => ({}));
+vi.mock('leaflet.markercluster/dist/MarkerCluster.Default.css', () => ({}));
+vi.mock('leaflet.awesome-markers/dist/leaflet.awesome-markers.css', () => ({}));
+vi.mock('leaflet.awesome-markers/dist/leaflet.awesome-markers.js', () => ({}));
+
 import { render, screen, waitFor, act } from '@testing-library/react';
-import Map from '../src/components/Map.jsx';
+import { MemoryRouter } from 'react-router';
+import Map from '../../src/components/Map.jsx';
 
 // Mock Leaflet
 vi.mock('leaflet', () => {
@@ -9,16 +17,38 @@ vi.mock('leaflet', () => {
 		removeLayer: vi.fn(),
 		remove: vi.fn(),
 		invalidateSize: vi.fn(),
+		addLayer: vi.fn(),
+	};
+
+	const mockLayerGroup = {
+		addTo: vi.fn().mockReturnThis(),
+		addLayer: vi.fn(),
+		clearLayers: vi.fn(),
+	};
+
+	const mockClusterGroup = {
+		on: vi.fn(),
+		addLayer: vi.fn(),
+		clearLayers: vi.fn(),
+		zoomToShowLayer: vi.fn((marker, cb) => cb && cb()),
 	};
 
 	const mockMarker = {
 		bindPopup: vi.fn().mockReturnThis(),
 		openPopup: vi.fn(),
 		addTo: vi.fn().mockReturnThis(),
+		setIcon: vi.fn(),
+		getLatLng: vi.fn(() => ({ lat: 0, lng: 0 })),
+		on: vi.fn().mockReturnThis(),
 	};
 
 	const mockTileLayer = {
 		addTo: vi.fn().mockReturnThis(),
+	};
+
+	const mockIconFn = vi.fn(() => ({}));
+	const mockDomEvent = {
+		on: vi.fn(),
 	};
 
 	const mockMapFn = vi.fn(() => mockMapInstance);
@@ -29,14 +59,21 @@ vi.mock('leaflet', () => {
 	global.mockMapInstance = mockMapInstance;
 	global.mockMarker = mockMarker;
 	global.mockTileLayer = mockTileLayer;
+	global.mockLayerGroup = mockLayerGroup;
+	global.mockClusterGroup = mockClusterGroup;
 	global.mockMapFn = mockMapFn;
 	global.mockTileLayerFn = mockTileLayerFn;
 	global.mockMarkerFn = mockMarkerFn;
+	global.mockIconFn = mockIconFn;
 
 	const mockLeaflet = {
 		map: mockMapFn,
 		tileLayer: mockTileLayerFn,
 		marker: mockMarkerFn,
+		layerGroup: vi.fn(() => mockLayerGroup),
+		markerClusterGroup: vi.fn(() => mockClusterGroup),
+		icon: mockIconFn,
+		DomEvent: mockDomEvent,
 		Icon: {
 			Default: {
 				prototype: {
@@ -53,13 +90,15 @@ vi.mock('leaflet', () => {
 	};
 });
 
+const renderWithRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>);
+
 describe('Map component (Vitest)', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
 	it('renders map container', () => {
-		const { container } = render(<Map />);
+		const { container } = renderWithRouter(<Map />);
 
 		// Check that the map wrapper div is rendered
 		const mapWrapper = container.querySelector('div[style*="position: relative"]');
@@ -68,7 +107,7 @@ describe('Map component (Vitest)', () => {
 	});
 
 	it('initializes map with default center and zoom', async () => {
-		render(<Map />);
+		renderWithRouter(<Map />);
 
 		await waitFor(() => {
 			expect(global.mockMapInstance.setView).toHaveBeenCalledWith([45.0703, 7.6869], 13);
@@ -76,7 +115,7 @@ describe('Map component (Vitest)', () => {
 	});
 
 	it('initializes map with custom center and zoom props', async () => {
-		render(<Map center={[40.7128, -74.0060]} zoom={10} />);
+		renderWithRouter(<Map center={[40.7128, -74.0060]} zoom={10} />);
 
 		await waitFor(() => {
 			expect(global.mockMapInstance.setView).toHaveBeenCalledWith([40.7128, -74.0060], 10);
@@ -84,7 +123,7 @@ describe('Map component (Vitest)', () => {
 	});
 
 	it('adds tile layer to map', async () => {
-		render(<Map />);
+		renderWithRouter(<Map />);
 
 		await waitFor(() => {
 			expect(global.mockTileLayer.addTo).toHaveBeenCalledWith(global.mockMapInstance);
@@ -92,7 +131,7 @@ describe('Map component (Vitest)', () => {
 	});
 
 	it('sets up click event handler on map', async () => {
-		render(<Map />);
+		renderWithRouter(<Map />);
 
 		await waitFor(() => {
 			expect(global.mockMapInstance.on).toHaveBeenCalledWith('click', expect.any(Function));
@@ -100,7 +139,7 @@ describe('Map component (Vitest)', () => {
 	});
 
 	it('displays selected location when map is clicked', async () => {
-		render(<Map />);
+		renderWithRouter(<Map />);
 
 		// Wait for map to initialize
 		await waitFor(() => {
@@ -138,7 +177,7 @@ describe('Map component (Vitest)', () => {
 	});
 
 	it('removes previous marker when new location is clicked', async () => {
-		render(<Map />);
+		renderWithRouter(<Map />);
 
 		// Wait for map to initialize
 		await waitFor(() => {
@@ -178,21 +217,25 @@ describe('Map component (Vitest)', () => {
 			});
 		}
 
-		// Check that removeLayer was called (indicating previous marker removal)
+		// Check that previous marker layers were cleared
 		await waitFor(() => {
-			expect(global.mockMapInstance.removeLayer).toHaveBeenCalled();
+			expect(global.mockLayerGroup.clearLayers).toHaveBeenCalled();
 		});
 	});
 
 	it('updates map view when center prop changes', async () => {
-		const { rerender } = render(<Map center={[45.0703, 7.6869]} zoom={13} />);
+		const { rerender } = renderWithRouter(<Map center={[45.0703, 7.6869]} zoom={13} />);
 
 		await waitFor(() => {
 			expect(global.mockMapInstance.setView).toHaveBeenCalledWith([45.0703, 7.6869], 13);
 		});
 
 		// Change center prop
-		rerender(<Map center={[40.7128, -74.0060]} zoom={13} />);
+		rerender(
+			<MemoryRouter>
+				<Map center={[40.7128, -74.0060]} zoom={13} />
+			</MemoryRouter>
+		);
 
 		// Map should update
 		await waitFor(() => {
@@ -201,14 +244,18 @@ describe('Map component (Vitest)', () => {
 	});
 
 	it('updates map view when zoom prop changes', async () => {
-		const { rerender } = render(<Map center={[45.0703, 7.6869]} zoom={13} />);
+		const { rerender } = renderWithRouter(<Map center={[45.0703, 7.6869]} zoom={13} />);
 
 		await waitFor(() => {
 			expect(global.mockMapInstance.setView).toHaveBeenCalledWith([45.0703, 7.6869], 13);
 		});
 
 		// Change zoom prop
-		rerender(<Map center={[45.0703, 7.6869]} zoom={15} />);
+		rerender(
+			<MemoryRouter>
+				<Map center={[45.0703, 7.6869]} zoom={15} />
+			</MemoryRouter>
+		);
 
 		await waitFor(() => {
 			expect(global.mockMapInstance.setView).toHaveBeenCalled();
@@ -216,7 +263,7 @@ describe('Map component (Vitest)', () => {
 	});
 
 	it('cleans up map instance on unmount', () => {
-		const { unmount } = render(<Map />);
+		const { unmount } = renderWithRouter(<Map />);
 
 		unmount();
 
@@ -224,13 +271,13 @@ describe('Map component (Vitest)', () => {
 	});
 
 	it('does not show selected location initially', () => {
-		render(<Map />);
+		renderWithRouter(<Map />);
 
 		expect(screen.queryByText(/Selected Location:/i)).not.toBeInTheDocument();
 	});
 
 	it('formats coordinates to 5 decimal places', async () => {
-		render(<Map />);
+		renderWithRouter(<Map />);
 
 		await waitFor(() => {
 			expect(global.mockMapInstance.on).toHaveBeenCalled();

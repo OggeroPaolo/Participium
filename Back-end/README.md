@@ -187,7 +187,6 @@ Authorization: Bearer <firebase-token>
 * **Request Body:**
 ```json
 {
-  "user_id": 1,
   "category_id": 2,
   "title": "Broken streetlight",
   "description": "The streetlight near 5th avenue is out for several days.",
@@ -234,7 +233,6 @@ Authorization: Bearer <firebase-token>
 ```json
 {
   "errors": [
-    { "msg": "user_id must be an integer", "param": "user_id", "location": "body" },
     { "msg": "title is required", "param": "title", "location": "body" }
   ]
 }

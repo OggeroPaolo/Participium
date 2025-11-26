@@ -3,6 +3,7 @@ import { Form, Button, Container, Alert } from "react-bootstrap";
 import { useNavigate, useLocation } from "react-router";
 import { getCategories, createReport } from "../API/API.js";
 import L from "leaflet";
+import { reverseGeocode } from "../utils/geocoding";
 
 function ReportCreation() {
   const navigate = useNavigate();
@@ -198,6 +199,19 @@ function MapReport(props) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
+  const [address, setAddress] = useState('Loading address...');
+  const [isGeocoding, setIsGeocoding] = useState(false);
+
+  // Get initial address
+  useEffect(() => {
+    const getAddress = async () => {
+      setIsGeocoding(true);
+      const addr = await reverseGeocode(parseFloat(props.propLat), parseFloat(props.propLng));
+      setAddress(addr);
+      setIsGeocoding(false);
+    };
+    getAddress();
+  }, []);
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -226,7 +240,7 @@ function MapReport(props) {
     mapInstanceRef.current = map;
 
     // allow user to modify location
-    map.on("click", (e) => {
+    map.on("click", async (e) => {
       const { lat, lng } = e.latlng;
 
       props.setPinpoint({ lat: lat.toFixed(5), lng: lng.toFixed(5) });
@@ -234,6 +248,13 @@ function MapReport(props) {
       if (markerRef.current) {
         markerRef.current.setLatLng([lat, lng]);
       }
+
+      // Update address
+      setIsGeocoding(true);
+      setAddress('Loading address...');
+      const addr = await reverseGeocode(lat, lng);
+      setAddress(addr);
+      setIsGeocoding(false);
     });
   }, []);
 
@@ -252,11 +273,23 @@ function MapReport(props) {
           boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
           zIndex: 1000,
           fontSize: "14px",
+          maxWidth: "250px",
         }}
       >
         <strong>Selected location:</strong>
-        <div>Lat: {props.propLat}</div>
-        <div>Lng: {props.propLng}</div>
+        <div style={{ marginTop: "5px", color: "#555" }}>
+          {isGeocoding ? (
+            <span>
+              <i className="spinner-border spinner-border-sm me-2"></i>
+              Loading...
+            </span>
+          ) : (
+            address
+          )}
+        </div>
+        <div style={{ fontSize: "11px", color: "#999", marginTop: "5px" }}>
+          {props.propLat}, {props.propLng}
+        </div>
       </div>
     </div>
   );

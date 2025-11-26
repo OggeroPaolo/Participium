@@ -2,7 +2,7 @@ import { getAll, Update, getOne, beginTransaction, commitTransaction, rollbackTr
 import { type ReportMap } from '../models/reportMap.js';
 import type { Report } from "../models/report.js"
 import type { CreateReportDTO } from '../dto/CreateReportDTO.js';
-import type { PhotoDTO, ReportWithPhotosDTO } from '../dto/ReportWithPhotosDTO.js';
+import type { ReportPhotoDTO, CompleteReportDTO, ReportUserDTO, ReportCategoryDTO } from '../dto/ReportWithPhotosDTO.js';
 
 export interface ReportFilters {
   status?: string;
@@ -12,7 +12,7 @@ export interface ReportFilters {
 
 export default class ReportDao {
 
-  
+
 
   async getReportsByFilters(filters: ReportFilters): Promise<Report[]> {
     const conditions: string[] = [];
@@ -30,7 +30,7 @@ export default class ReportDao {
       conditions.push("user_id = ?");
       params.push(filters.userId);
     }
-    
+
     let query = "SELECT * FROM reports";
     if (conditions.length > 0) {
       query += " WHERE " + conditions.join(" AND ");
@@ -80,10 +80,40 @@ export default class ReportDao {
     return getOne<Report>(sql, [reportId]);
   }
 
-  async getReportWithPhotosById(reportId: number): Promise<ReportWithPhotosDTO> {
+  async getCompleteReportById(reportId: number): Promise<CompleteReportDTO> {
     const sql = `
-    SELECT r.*, p.url AS photo_url, p.ordering
+    SELECT 
+      r.*,
+      -- utente autore
+      u.id          AS user_id,
+      u.first_name  AS user_first_name,
+      u.last_name   AS user_last_name,
+      u.username    AS user_username,
+
+      -- categoria
+      c.id          AS category_id,
+      c.name        AS category_name,
+
+      -- assegnatario (può essere null)
+      au.id         AS assigned_user_id,
+      au.first_name AS assigned_first_name,
+      au.last_name  AS assigned_last_name,
+      au.username   AS assigned_username,
+
+      -- revisore (può essere null)
+      ru.id         AS reviewed_user_id,
+      ru.first_name AS reviewed_first_name,
+      ru.last_name  AS reviewed_last_name,
+      ru.username   AS reviewed_username,
+
+      -- foto
+      p.url         AS photo_url,
+      p.ordering    AS photo_ordering
     FROM reports r
+    JOIN users u ON u.id = r.user_id
+    JOIN categories c ON c.id = r.category_id
+    LEFT JOIN users au ON au.id = r.assigned_to
+    LEFT JOIN users ru ON ru.id = r.reviewed_by
     LEFT JOIN photos p ON p.report_id = r.id
     WHERE r.id = ?
     ORDER BY p.ordering ASC
@@ -99,23 +129,53 @@ export default class ReportDao {
     const baseRow = rows[0];
 
     // Raggruppa le foto filtrando quelle non nulle e ordinandole
-    const photos: PhotoDTO[] = rows
+    const photos: ReportPhotoDTO[] = rows
       .filter(row => row.photo_url !== null)
       .map(row => ({
-        url: row.photo_url,
-        ordering: row.ordering,
+        url: row.photo_url as string,
+        ordering: row.ordering as number,
       }));
-    return {
+
+    const user: ReportUserDTO = {
+      id: baseRow.user_id,
+      complete_name: `${baseRow.user_first_name} ${baseRow.user_last_name}`,
+      username: baseRow.user_username,
+    };
+
+    const category: ReportCategoryDTO = {
+      id: baseRow.category_id,
+      name: baseRow.category_name,
+    };
+
+    let assigned_to: ReportUserDTO | undefined;
+    if (baseRow.assigned_user_id) {
+      assigned_to = {
+        id: baseRow.assigned_user_id,
+        complete_name: `${baseRow.assigned_first_name} ${baseRow.assigned_last_name}`,
+        username: baseRow.assigned_username,
+      };
+    }
+
+    let reviewed_by: ReportUserDTO | undefined;
+    if (baseRow.reviewed_user_id) {
+      reviewed_by = {
+        id: baseRow.reviewed_user_id,
+        complete_name: `${baseRow.reviewed_first_name} ${baseRow.reviewed_last_name}`,
+        username: baseRow.reviewed_username,
+      };
+    }
+
+    const completeReport: CompleteReportDTO = {
       id: baseRow.id,
-      user_id: baseRow.user_id,
-      category_id: baseRow.category_id,
+      user,
+      category,
       title: baseRow.title,
       description: baseRow.description,
       status: baseRow.status,
-      assigned_to: baseRow.assigned_to,
-      reviewed_by: baseRow.reviewed_by,
-      reviewed_at: baseRow.reviewed_at,
-      note: baseRow.note,
+      assigned_to,
+      reviewed_by,
+      reviewed_at: baseRow.reviewed_at ?? undefined,
+      note: baseRow.note ?? undefined,
       is_anonymous: Boolean(baseRow.is_anonymous),
       position_lat: baseRow.position_lat,
       position_lng: baseRow.position_lng,
@@ -123,9 +183,11 @@ export default class ReportDao {
       updated_at: baseRow.updated_at,
       photos,
     };
+
+    return completeReport;
   }
 
-  async createReport(data: CreateReportDTO): Promise<ReportWithPhotosDTO> {
+  async createReport(data: CreateReportDTO): Promise<CompleteReportDTO> {
     try {
       await beginTransaction();
 
@@ -165,7 +227,7 @@ export default class ReportDao {
       }
       await commitTransaction();
 
-      const createdReport = await this.getReportWithPhotosById(reportId);
+      const createdReport = await this.getCompleteReportById(reportId);
       return createdReport;
 
     } catch (error) {
