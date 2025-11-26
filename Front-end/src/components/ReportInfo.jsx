@@ -58,12 +58,12 @@ function ReportInfo() {
               </p>
               <p>
                 <i className='bi bi-person-fill me-2'></i> <b>Reported by:</b>{" "}
-                {report.user_id}
+                {report.user.complete_name}
               </p>
               <p>
                 {" "}
                 <i className='bi bi-tag-fill me-2 text-primary'></i>
-                <b>Category:</b> {report.category_id}
+                <b>Category:</b> {report.category.name}
               </p>
               <p className='mt-3'>
                 <i className='bi bi-calendar-event-fill text-success me-2'></i>{" "}
