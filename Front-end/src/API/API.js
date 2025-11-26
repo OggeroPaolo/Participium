@@ -201,7 +201,6 @@ async function createReport(reportData, lat, lng) {
   return await response.json();
 }
 
-
 // Get a single report by id
 async function getReport(rid) {
   try {
