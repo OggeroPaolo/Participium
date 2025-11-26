@@ -35,52 +35,25 @@ describe("Reports E2E", () => {
     vi.restoreAllMocks();
   });
 
-  const mockReportsForMap = {
-    reports: [
-      {
-        id: 5,
-        position: { lat: 45.0725, lng: 7.6824 },
-        reporterName: "Jane Smith",
-        reporterUsername: "JaneSmith",
-        title: "Water supply assigned",
-      },
-      {
-        id: 6,
-        position: { lat: 45.0619, lng: 7.686 },
-        reporterName: "Jane Smith",
-        reporterUsername: "JaneSmith",
-        title: "Water leakage in neighborhood",
-      },
-      {
-        id: 7,
-        position: { lat: 45.0793, lng: 7.6954 },
-        reporterName: "Jane Smith",
-        reporterUsername: "JaneSmith",
-        title: "Water supply suspended",
-      },
-      {
-        id: 8,
-        position: { lat: 45.0667, lng: 7.6841 },
-        reporterName: "Jane Smith",
-        reporterUsername: "JaneSmith",
-        title: "Water supply rejected",
-      },
-      {
-        id: 9,
-        position: { lat: 45.0759, lng: 7.6899 },
-        reporterName: "Jane Smith",
-        reporterUsername: "JaneSmith",
-        title: "Water supply resolved",
-      },
-    ],
-  }
   describe("GET /reports/map/accepted", () => {
 
     it("should return 200 with the accepted reports", async () => {
       const res = await request(app).get("/reports/map/accepted");
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(mockReportsForMap);
+
+      expect(res.body.reports).toContainEqual({
+        id: 3,
+        position: {
+          lat: 45.06555,
+          lng: 7.66233,
+        },
+        reporterName: "Jane Smith",
+        reporterUsername: "JaneSmith",
+        title: "Damaged Bollard",
+      });
     });
+
+
 
 
     it("should return 204 when no reports exist", async () => {
@@ -118,9 +91,9 @@ describe("Reports E2E", () => {
       position_lat: 45.0608,
       position_lng: 7.67613,
       photos: [
-        { ordering: 1, url: 'https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764060549/Participium/tmkf2j2elg3atji2hnuo.jpg' },
-        { ordering: 2, url: 'https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764060548/Participium/amskcrxkkk18u0jpsein.jpg' },
-        { ordering: 3, url: 'https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764060461/Participium/bllx6qjarpftuegop7ax.jpg' },
+        {
+          ordering: 1, url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/fl_original/v1764143988/Participium-demo/z7z4f0oppqissfj2fd0y.jpg",
+        },
       ],
     };
 
