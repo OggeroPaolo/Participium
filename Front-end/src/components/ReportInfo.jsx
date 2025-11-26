@@ -36,16 +36,14 @@ function ReportInfo() {
         {loadingDone && (
           <Row className='p-4 justify-content-center'>
             <Col md={5} className='me-2'>
-              <Card className='shadow-sm'>
+              <Card className='bg-light border-0 shadow-sm'>
                 <Carousel interval={null}>
                   {report.photos.map((img, idx) => {
-                    console.log(img);
                     return (
-                      <Carousel.Item key={idx} className='car-itm'>
-                        <img
-                          className='d-block w-100 report-car'
-                          src={img.url}
-                        ></img>
+                      <Carousel.Item key={idx}>
+                        <div className='car-img-box'>
+                          <img src={img.url}></img>
+                        </div>
                       </Carousel.Item>
                     );
                   })}
