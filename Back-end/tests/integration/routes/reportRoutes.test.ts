@@ -1,6 +1,6 @@
 import request from "supertest";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { makeTestApp} from "../../setup/tests_util.js";
+import { makeTestApp } from "../../setup/tests_util.js";
 import reportsRouter from "../../../src/routes/reports.routes.js";
 import ReportDAO from "../../../src/dao/ReportDAO.js";
 import { Report } from "../../../src/models/report.js";
@@ -8,12 +8,13 @@ import OperatorDAO from "../../../src/dao/OperatorDAO.js";
 import { ReportMap } from "../../../src/models/reportMap.js";
 import sharp from "sharp";
 import cloudinary from "../../../src/config/cloudinary.js";
-
+import { ReportStatus } from "../../../src/models/reportStatus.js";
+import { CompleteReportDTO } from "../../../src/dto/ReportWithPhotosDTO.js";
 
 // Mock Firebase middleware
 vi.mock("../../../src/middlewares/verifyFirebaseToken.js", () => ({
     verifyFirebaseToken: () => (req: any, _res: any, next: any) => {
-        req.user = { id: 10, role_name: "pub_relations" }; // simulate authenticated user
+        req.user = { id: 10, role_name: "pub_relations" };
         next();
     },
 }));
@@ -39,17 +40,50 @@ vi.mock("fs/promises", async () => {
 });
 
 
-
-
 let app: any;
 
 
 describe("Report Routes Integration Tests", () => {
-    
+
     beforeEach(() => {
         vi.clearAllMocks();
         app = makeTestApp(reportsRouter);
     });
+
+    const mockReports: Report[] = [
+        {
+            id: 1,
+            user_id: 2,
+            category_id: 3,
+            title: "Report 1",
+            description: "Description 1",
+            status: ReportStatus.PendingApproval,
+            assigned_to: undefined,
+            reviewed_by: undefined,
+            reviewed_at: undefined,
+            note: "Note 1",
+            position_lat: 40,
+            position_lng: -70,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        },
+        {
+            id: 2,
+            user_id: 3,
+            category_id: 2,
+            title: "Report 2",
+            description: "Description 2",
+            status: ReportStatus.Assigned,
+            assigned_to: 10,
+            reviewed_by: undefined,
+            reviewed_at: undefined,
+            note: "Note 2",
+            position_lat: 41,
+            position_lng: -71,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        },
+    ];
     describe("GET /reports/map/accepted", () => {
 
         it("should return 200 with mapped reports", async () => {
@@ -103,25 +137,50 @@ describe("Report Routes Integration Tests", () => {
         });
     });
     describe("GET /reports/:reportId", () => {
-        const mockReport: Report = {
+        const mockReport: CompleteReportDTO = {
             id: 1,
-            user_id: 2,
-            category_id: 3,
-            title: "Sample report",
-            description: "Description",
-            status: "pending_approval",
-            assigned_to: undefined,
-            reviewed_by: undefined,
-            reviewed_at: undefined,
-            note: "Initial note",
-            position_lat: 40.0,
-            position_lng: -70.0,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            title: "Test report",
+            description: "Desc",
+            status: "open",
+            reviewed_at: null,
+            note: null,
+            is_anonymous: 0,
+            position_lat: 41.0,
+            position_lng: 12.0,
+            created_at: "2025-01-01T00:00:00.000Z",
+            updated_at: "2025-01-02T00:00:00.000Z",
+
+            // user
+            user_id: 10,
+            user_first_name: "Mario",
+            user_last_name: "Rossi",
+            user_username: "mrossi",
+
+            // category
+            category_id: 5,
+            category_name: "Road Issue",
+
+            // assigned user
+            assigned_user_id: 20,
+            assigned_first_name: "Luigi",
+            assigned_last_name: "Bianchi",
+            assigned_username: "lbianchi",
+
+            // reviewed user
+            reviewed_user_id: 30,
+            reviewed_first_name: "Anna",
+            reviewed_last_name: "Verdi",
+            reviewed_username: "averdi",
+
+            // first photo
+            photo_url: "url1.jpg",
+            photos_ordering: 1
+
         };
 
         it("should return 200 with report data if report exists", async () => {
-            vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReport);
+            vi.spyOn(ReportDAO.prototype, "getCompleteReportById")
+                .mockResolvedValue(mockReport);
 
             const res = await request(app).get("/reports/1");
 
@@ -130,7 +189,8 @@ describe("Report Routes Integration Tests", () => {
         });
 
         it("should return 404 if report does not exist", async () => {
-            vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(undefined);
+            vi.spyOn(ReportDAO.prototype, "getCompleteReportById")
+                .mockRejectedValue(new Error("Report not found"));
 
             const res = await request(app).get("/reports/999");
 
@@ -138,8 +198,9 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Report not found" });
         });
 
-        it("should return 500 if DAO throws an error", async () => {
-            vi.spyOn(ReportDAO.prototype, "getReportById").mockRejectedValue(new Error("DB failure"));
+        it("should return 500 if DAO throws an unexpected error", async () => {
+            vi.spyOn(ReportDAO.prototype, "getCompleteReportById")
+                .mockRejectedValue(new Error("DB failure"));
 
             const res = await request(app).get("/reports/1");
 
@@ -147,10 +208,68 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
+    describe("GET /officers/:officerId/reports", () => {
+        it("should return 200 with reports for officer", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue([mockReports[1]]);
 
+            const res = await request(app).get("/officers/10/reports");
 
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({ reports: [mockReports[1]] });
+            expect(ReportDAO.prototype.getReportsByFilters).toHaveBeenCalledWith({ officerId: 10 });
+        });
 
+        it("should return 204 if officer has no reports", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue([]);
 
+            const res = await request(app).get("/officers/99/reports");
+
+            expect(res.status).toBe(204);
+        });
+
+        it("should return 500 if DAO throws", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockRejectedValue(new Error("DB failure"));
+
+            const res = await request(app).get("/officers/10/reports");
+
+            expect(res.status).toBe(500);
+            expect(res.body).toEqual({ error: "Internal server error" });
+        });
+    });
+    describe("GET /reports.", () => {
+        it("should return 200 with filtered reports", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue([mockReports[0]]);
+
+            const res = await request(app).get("/reports?status=pending_approval");
+
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({ reports: [mockReports[0]] });
+            expect(ReportDAO.prototype.getReportsByFilters).toHaveBeenCalledWith({ status: ReportStatus.PendingApproval });
+        });
+
+        it("should return 204 if no reports match filter", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue([]);
+
+            const res = await request(app).get("/reports?status=resolved");
+
+            expect(res.status).toBe(204);
+        });
+
+        it("should return 400 if invalid status is provided", async () => {
+            const res = await request(app).get("/reports?status=invalid_status");
+            expect(res.status).toBe(400);
+            expect(res.body).toEqual({ error: "Invalid status filter: invalid_status" });
+        });
+
+        it("should return 500 if DAO throws", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockRejectedValue(new Error("DB failure"));
+
+            const res = await request(app).get("/reports?status=pending_approval");
+
+            expect(res.status).toBe(500);
+            expect(res.body).toEqual({ error: "Internal server error" });
+        });
+    });
     describe("POST /reports", () => {
         const mockCreatedReport = {
             id: 1,
@@ -242,7 +361,6 @@ describe("Report Routes Integration Tests", () => {
 
     });
 
-
     describe("PATCH /pub_relations/reports/:reportId", () => {
         const mockReport: Report = {
             id: 1,
@@ -250,7 +368,7 @@ describe("Report Routes Integration Tests", () => {
             category_id: 3,
             title: "Sample report",
             description: "Description",
-            status: "pending_approval",
+            status: ReportStatus.PendingApproval,
             assigned_to: null,
             reviewed_by: null,
             reviewed_at: null,
@@ -346,8 +464,10 @@ describe("Report Routes Integration Tests", () => {
         });
 
         it("should return 403 if report is not pending_approval", async () => {
-            const resolvedReport: Report = { ...mockReport, status: "assigned" };
-            vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(resolvedReport);
+            const nonPendingReport: Report = { ...mockReport, status: ReportStatus.Assigned };
+
+            vi.spyOn(ReportDAO.prototype, "getReportById")
+                .mockResolvedValue(nonPendingReport);
 
             const res = await request(app)
                 .patch("/pub_relations/reports/1")
@@ -358,6 +478,7 @@ describe("Report Routes Integration Tests", () => {
                 error: "You are not allowed to change status of a form which is not in the pending approval status",
             });
         });
+
 
         it("should assign operator and return 200 ", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReport);

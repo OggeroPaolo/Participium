@@ -12,8 +12,6 @@ export interface ReportFilters {
 
 export default class ReportDao {
 
-
-
   async getReportsByFilters(filters: ReportFilters): Promise<Report[]> {
     const conditions: string[] = [];
     const params: any[] = [];
@@ -127,15 +125,13 @@ export default class ReportDao {
 
     // Prendi i dati base del report dalla prima riga
     const baseRow = rows[0];
-
     // Raggruppa le foto filtrando quelle non nulle e ordinandole
     const photos: ReportPhotoDTO[] = rows
       .filter(row => row.photo_url !== null)
       .map(row => ({
         url: row.photo_url as string,
-        ordering: row.ordering as number,
+        ordering: row.photo_ordering as number,
       }));
-
     const user: ReportUserDTO = {
       id: baseRow.user_id,
       complete_name: `${baseRow.user_first_name} ${baseRow.user_last_name}`,
@@ -211,6 +207,7 @@ export default class ReportDao {
       ];
 
       const result = await Update(insertReportSql, params);
+      console.log(result)
       if (!result.lastID) {
         throw new Error("Insert report failed");
       }
