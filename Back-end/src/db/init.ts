@@ -357,18 +357,44 @@ export const seedDefaultReports = async (): Promise<void> => {
         description: "A bollard was cracked in an accident and needs repair",
         user_id: users[1]?.id ?? firstUser.id,
         category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
-        position_lat: 45.0658,
-        position_lng: 7.6917,
-        status: "pending_approval"
+        position_lat: 45.06555,
+        position_lng: 7.66233,
+        status: "assigned",
+        reviewed_by: 3,
+        assigned_to: 10
       },
       {
         title: "Wooden Bench with Missing Boards",
         description: "A wooden bench has several missing boards and requires maintenance.",
         user_id: firstUser.id,
         category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
-        position_lat: 45.0781,
-        position_lng: 7.6982,
-        status: "pending_approval"
+        position_lat: 45.06564,
+        position_lng: 7.66166,
+        status: "in_progress",
+        reviewed_by: 3,
+        assigned_to: 10
+      },
+      {
+        title: "accessibility barrier",
+        description: "This damaged and uneven sidewalk surface represents an accessibility barrier, especially for people using wheelchairs, walkers, strollers, or those with limited mobility.",
+        user_id: firstUser.id,
+        category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
+        position_lat: 45.06504,
+        position_lng: 7.66376,
+        status: "suspended",
+        reviewed_by: 3,
+        assigned_to: 10
+      },
+      {
+        title: "Damaged Road, Hazard for Vehicles",
+        description: "This road surface in poor condition, with several cracks, uneven patches, and worn asphalt. These defects can pose challenges for vehicles, as they may cause instability, discomfort, or even damage to tires and suspension systems.",
+        user_id: firstUser.id,
+        category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
+        position_lat: 45.06297,
+        position_lng: 7.66937,
+        status: "resolved",
+        reviewed_by: 3,
+        assigned_to: 10
       },
       // THE REST ARE GENERATED
       {
@@ -480,16 +506,6 @@ export const seedDefaultPhotos = async (): Promise<void> => {
         url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/fl_original/v1764143988/Participium-demo/z7z4f0oppqissfj2fd0y.jpg",
         ordering: 1
       },
-      {
-        report_id: 1,
-        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/fl_original/v1764143988/Participium-demo/z7z4f0oppqissfj2fd0y",
-        ordering: 2
-      },
-      {
-        report_id: 1,
-        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764060461/Participium/bllx6qjarpftuegop7ax.jpg",
-        ordering: 3
-      },
 
       // Report 2
       {
@@ -523,6 +539,21 @@ export const seedDefaultPhotos = async (): Promise<void> => {
         report_id: 4,
         url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764153254/Participium-demo/d5juzjkt5t7cenm5ywde.jpg",
         ordering: 2
+      },
+      {
+        report_id: 5,
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764187721/Participium/aesk9ovwzv4snyjodlbr.jpg",
+        ordering: 1
+      },
+      {
+        report_id: 5,
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764187722/Participium/l02kbirjnunohovwdhfg.jpg",
+        ordering: 2
+      },
+      {
+        report_id: 6,
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764187945/Participium/pueajqkgblpbuncbzjey.jpg",
+        ordering: 1
       }
     ];
 
