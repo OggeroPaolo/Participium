@@ -97,7 +97,6 @@ html {
   transform: scale(1.02);
 }
 
-
 .report-car {
   height: 360px;
   width: 100%;
@@ -105,14 +104,37 @@ html {
   border-radius: 8px;
 }
 
-.car.itm {
+.car-img-box {
   height: 360px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
 }
+
+.car-img-box img {
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  /* similar to the dark blue already used */
+  filter: brightness(0) saturate(100%) invert(12%) sepia(99%) saturate(7470%)
+    hue-rotate(197deg) brightness(93%) contrast(102%);
+  transform: scale(1.2);
+}
+
 /* CitHomepage styles */
 .cit-homepage-wrapper {
   position: relative;
   width: 100%;
-  height: calc(100vh - 160px);
+  height: calc(100vh - 140px);
 }
 
 .cit-map-container {
@@ -139,7 +161,7 @@ html {
   padding: 1rem;
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .cit-reports-header {
@@ -188,7 +210,7 @@ html {
     border: none;
     padding: 6px 12px;
     border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     font-weight: 600;
     font-size: 0.85rem;
   }
@@ -211,7 +233,7 @@ html {
     max-width: 350px;
     height: calc(100vh - 70px);
     background: white;
-    box-shadow: -2px 0 8px rgba(0,0,0,0.15);
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
     z-index: 1002;
     overflow-y: auto;
     padding: 1rem;
@@ -230,9 +252,13 @@ html {
 
 /* Blink animation for map overlay */
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 /* Responsive scaling for larger screens */
