@@ -172,7 +172,26 @@ async function getApprovedReports() {
 async function createReport(reportData) {}
 
 // Get a single report by id
-async function getReport(rid) {}
+async function getReport(rid) {
+  try {
+    const response = await fetch(`${URI}/reports/${rid}`, {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+
+    if (response.ok) {
+      const rep = await response.json();
+      console.log("API: ", rep.report);
+      return rep.report;
+    } else {
+      throw new Error("Failed to fetch report data");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
 
 export {
   handleSignup,
