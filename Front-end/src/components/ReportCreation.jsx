@@ -21,6 +21,8 @@ function ReportCreation() {
     lng: initialLng.toFixed(5),
   });
 
+  const fileInputRef = useRef(null);
+
   useEffect(() => {
     const loadCategories = async () => {
       const categoryList = await getCategories();
@@ -51,7 +53,7 @@ function ReportCreation() {
       title: formData.get("title"),
       description: formData.get("description"),
       category: formData.get("category"),
-      photos: formData.getAll("photos"),
+      photos: pics,
     };
 
     try {
@@ -75,7 +77,7 @@ function ReportCreation() {
     }
   }
 
-  // function for image preview
+  // function for image preview and number of pictures
   function handleImageChange(e) {
     const incomingFiles = Array.from(e.target.files);
 
@@ -83,7 +85,7 @@ function ReportCreation() {
     if (pics.length + incomingFiles.length > 3) {
       alert("You can only upload a maximum of 3 images.");
 
-      e.target.value = null; // reset file input
+      if (fileInputRef.current) fileInputRef.current.value = null;
       return;
     }
 
@@ -95,6 +97,8 @@ function ReportCreation() {
       url: URL.createObjectURL(file),
     }));
     setPreviewImages(previews);
+
+    if (fileInputRef.current) fileInputRef.current.value = null;
   }
 
   return (
@@ -149,6 +153,7 @@ function ReportCreation() {
                 id='photo-input'
                 accept='image/*'
                 style={{ display: "none" }}
+                ref={fileInputRef}
               />
               <Button
                 onClick={() => document.getElementById("photo-input").click()}
