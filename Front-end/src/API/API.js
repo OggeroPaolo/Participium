@@ -222,6 +222,68 @@ async function getReport(rid) {
   }
 }
 
+// Get pending reports for officer review
+async function getPendingReports() {
+  try {
+    const response = await fetch(`${URI}/reports?status=pending_approval`, {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return [];
+    }
+
+    if (response.ok) {
+      const pendingReports = await response.json();
+      return pendingReports.reports || pendingReports;
+    } else {
+      throw new Error("Failed to fetch pending reports");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
+// Review a report (approve or reject)
+async function reviewReport(reportId, reviewData) {
+  const { status, note, categoryId } = reviewData;
+
+  try {
+    const body = {
+      status: status,
+    };
+
+    if (note) {
+      body.note = note;
+    }
+
+    if (categoryId) {
+      body.categoryId = categoryId;
+    }
+
+    const response = await fetch(`${URI}/pub_relations/reports/${reportId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${await getBearerToken()}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || errorData.errors?.[0] || "Failed to submit review");
+    }
+
+    return await response.json();
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
 export {
   handleSignup,
   createInternalUser,
@@ -232,4 +294,6 @@ export {
   getApprovedReports,
   createReport,
   getReport,
+  getPendingReports,
+  reviewReport,
 };
