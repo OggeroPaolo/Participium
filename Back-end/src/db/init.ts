@@ -336,7 +336,7 @@ export const seedDefaultReports = async (): Promise<void> => {
         position_lng: 7.6824,
         status: "assigned",
         reviewed_by: 3,
-        assigned_to: 6
+        assigned_to: 5
       },
       {
         title: "Water leakage in neighborhood",

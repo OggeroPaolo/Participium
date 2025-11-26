@@ -49,14 +49,13 @@ router.get("/reports/:reportId",
         try {
             const reportId = Number(req.params.reportId);
             const report = await reportDAO.getCompleteReportById(reportId);
-            if (!report) {
-                return res.status(404).json({ error: "Report not found" });
-            }
-
+            
             return res.status(200).json({ report });
 
-        } catch (error) {
-            console.error(error);
+        } catch (error: any) {
+            if (error instanceof Error && error.message === "Report not found") {
+                return res.status(404).json({ error: "Report not found" });
+            }
             return res.status(500).json({ error: "Internal server error" });
         }
     }
@@ -186,9 +185,10 @@ router.post("/reports",
                     }
                 } catch (delErr) {
                     console.error("Error deleting image during rollback:", delErr);
-                    
+
                 }
             }
+            console.log(error)
             return res.status(500).json({ error: "Internal server error" });
         }
 
