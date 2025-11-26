@@ -213,7 +213,6 @@ async function getReport(rid) {
 
     if (response.ok) {
       const report = await response.json();
-      console.log(report.report);
       return report.report;
     } else {
       throw new Error("Failed to fetch report data");

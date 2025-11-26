@@ -38,12 +38,13 @@ function ReportInfo() {
             <Col md={5} className='me-2'>
               <Card className='shadow-sm'>
                 <Carousel interval={null}>
-                  {report.photos.map((img) => {
+                  {report.photos.map((img, idx) => {
+                    console.log(img);
                     return (
-                      <Carousel.Item key={img} className='car-itm'>
+                      <Carousel.Item key={idx} className='car-itm'>
                         <img
                           className='d-block w-100 report-car'
-                          src={img}
+                          src={img.url}
                         ></img>
                       </Carousel.Item>
                     );
