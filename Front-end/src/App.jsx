@@ -13,6 +13,7 @@ import { useAuthSync } from "./hooks/useAuthSync.js";
 import useUserStore from "./store/userStore.js";
 import ReportCreation from "./components/ReportCreation.jsx";
 import ReportInfo from "./components/ReportInfo.jsx";
+import OfficerReviewList from "./components/OfficerReviewList.jsx";
 
 function App() {
   // Sync Zustand store with Firebase auth state
@@ -98,7 +99,7 @@ function App() {
             }
           />
 
-          {/* User specific routes */}
+          {/* Citizen specific routes */}
           <Route
             path='/create-report'
             element={
@@ -114,6 +115,18 @@ function App() {
             element={
               user?.role_name === "Citizen" ? (
                 <ReportInfo />
+              ) : (
+                <Navigate replace to='/' />
+              )
+            }
+          />
+
+          {/* Public Relations Officer specific routes */}
+          <Route
+            path='/review-reports'
+            element={
+              user?.role_name === "Municipal_public_relations_officer" ? (
+                <OfficerReviewList />
               ) : (
                 <Navigate replace to='/' />
               )
