@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Container, Card, Badge, Modal, Form, Button, Alert, Spinner } from "react-bootstrap";
 import { getPendingReports, reviewReport, getCategories, getReport } from "../API/API";
 import { reverseGeocode } from "../utils/geocoding";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 function OfficerReviewList() {
   const [reports, setReports] = useState([]);
@@ -19,6 +21,8 @@ function OfficerReviewList() {
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
 
   useEffect(() => {
     loadReports();
@@ -81,9 +85,16 @@ function OfficerReviewList() {
     try {
       // Fetch complete report details including photos
       const completeReport = await getReport(report.id);
-      console.log("Complete report data:", completeReport);
-      setCompleteReportData(completeReport.report);
-      setSelectedCategoryId(completeReport.report.category.id);
+      console.log("Complete report response:", completeReport);
+      console.log("Complete report.report:", completeReport.report);
+      
+      const reportData = completeReport.report || completeReport;
+      setCompleteReportData(reportData);
+      
+      // Safely extract category ID
+      const categoryId = reportData.category?.id || reportData.category_id || report.category_id;
+      console.log("Setting category ID to:", categoryId);
+      setSelectedCategoryId(categoryId);
     } catch (error) {
       console.error("Failed to load complete report:", error);
       setAlert({ show: true, message: "Failed to load report details", variant: "danger" });
@@ -101,6 +112,12 @@ function OfficerReviewList() {
     setSelectedCategoryId(null);
     setReviewAction("");
     setRejectionNote("");
+    
+    // Clean up map
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+    }
   };
 
   const handleImageClick = (imageUrl) => {
@@ -112,6 +129,51 @@ function OfficerReviewList() {
     setShowImageModal(false);
     setSelectedImage(null);
   };
+
+  // Initialize map when report data is loaded
+  useEffect(() => {
+    if (!completeReportData || !mapRef.current || mapInstanceRef.current) return;
+
+    const { position_lat, position_lng } = completeReportData;
+    if (!position_lat || !position_lng) return;
+
+    // Initialize minimal read-only map
+    const mapInstance = L.map(mapRef.current, {
+      center: [position_lat, position_lng],
+      zoom: 15,
+      zoomControl: true,
+      dragging: true,
+      touchZoom: true,
+      scrollWheelZoom: true,
+      doubleClickZoom: true,
+      boxZoom: false,
+    });
+
+    // Add tile layer
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(mapInstance);
+
+    // Add marker at report location (same icon as CitHomepage)
+    const reportIcon = L.icon({
+      iconUrl: "/icons/light-blue-location-icon.png",
+      iconSize: [48, 48],
+      iconAnchor: [24, 40],
+      popupAnchor: [0, -24],
+    });
+
+    L.marker([position_lat, position_lng], { icon: reportIcon }).addTo(mapInstance);
+
+    mapInstanceRef.current = mapInstance;
+
+    // Ensure proper rendering
+    setTimeout(() => {
+      if (mapInstance && mapInstance.invalidateSize) {
+        mapInstance.invalidateSize();
+      }
+    }, 100);
+  }, [completeReportData]);
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
@@ -267,6 +329,17 @@ function OfficerReviewList() {
                   <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
                   {reportAddresses[completeReportData.id] || "Loading address..."}
                 </p>
+                {/* Minimal read-only map */}
+                <div 
+                  ref={mapRef}
+                  style={{
+                    width: '100%',
+                    height: '250px',
+                    borderRadius: '8px',
+                    border: '1px solid #dee2e6',
+                    marginTop: '10px'
+                  }}
+                />
               </div>
 
               <div className='mb-3'>

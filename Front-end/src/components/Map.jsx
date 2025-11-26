@@ -272,7 +272,7 @@ function Map({
       mapInstance.on("click", async function (e) {
         const { lat, lng } = e.latlng;
 
-        // Store coordinates (for internal use)
+        // Store coordinates immediately
         setSelectedPoint({ lat: lat.toFixed(5), lng: lng.toFixed(5) });
         setIsGeocoding(true);
         setSelectedAddress('Loading address...');
@@ -280,7 +280,7 @@ function Map({
         // Remove previous marker
         selectedLayerRef.current.clearLayers();
 
-        // Add new marker
+        // Add new marker immediately (responsive feel)
         const newMarker = L.marker([lat, lng], { icon: newReportIcon });
         selectedLayerRef.current.addLayer(newMarker);
 
@@ -288,56 +288,78 @@ function Map({
         newMarker.bindPopup(
           `<div class="body-font">
             <b>Selected Location</b><br>
-            <span id="address-text">Getting address...</span><br>
-            <button class="map-button report-btn">Create a new report</button>
+            <span id="address-text">Verifying location...</span><br>
+            <button class="map-button report-btn" disabled style="opacity: 0.5; cursor: not-allowed;">Verifying...</button>
             </div>`
         );
-
-        newMarker.on("popupopen", (e) => {
-          const popupNode = e.popup.getElement();
-          const btn = popupNode.querySelector(".report-btn");
-
-          L.DomEvent.on(btn, "click", () =>
-            navigate("/create-report", { state: { lat, lng } })//we are still sending the lat long not readable adress
-          );
-        });
 
         newMarker.openPopup();
         currentMarkerRef.current = newMarker;
 
-        // Get human-readable address
+        // Get human-readable address and validate in background
         try {
           const address = await reverseGeocode(lat, lng);
+          
+          // Check if address contains Torino/Turin/TO
+          const isTorino = address.toLowerCase().includes('torino') || 
+                          address.toLowerCase().includes('turin') || 
+                          address.toLowerCase().includes('to,');
+          
           setSelectedAddress(address);
           setIsGeocoding(false);
 
-          // Update popup with address
+          // Update popup based on validation
           if (newMarker.getPopup()) {
-            newMarker.setPopupContent(
-              `<div class="body-font">
-                <b>Selected Location</b><br>
-                ${address}<br>
-                <button class="map-button report-btn">Create a new report</button>
-                </div>`
-            );
+            if (isTorino) {
+              // Location valid - enable button
+              newMarker.setPopupContent(
+                `<div class="body-font">
+                  <b>Selected Location</b><br>
+                  ${address}<br>
+                  <button class="map-button report-btn">Create a new report</button>
+                  </div>`
+              );
 
-            // Re-attach button listener
-            setTimeout(() => {
-              const popupNode = newMarker.getPopup().getElement();
-              if (popupNode) {
-                const btn = popupNode.querySelector(".report-btn");
-                if (btn) {
-                  L.DomEvent.on(btn, "click", () =>
-                    navigate("/create-report", { state: { lat, lng } })
-                  );
+              // Re-attach button listener
+              setTimeout(() => {
+                const popupNode = newMarker.getPopup().getElement();
+                if (popupNode) {
+                  const btn = popupNode.querySelector(".report-btn");
+                  if (btn) {
+                    L.DomEvent.on(btn, "click", () =>
+                      navigate("/create-report", { state: { lat, lng } })
+                    );
+                  }
                 }
-              }
-            }, 100);
+              }, 100);
+            } else {
+              // Location outside Torino - show error, disable button
+              newMarker.setPopupContent(
+                `<div class="body-font">
+                  <b> Location Outside Torino</b><br>
+                  ${address}<br>
+                  <small style="color: #dc3545;">Reports can only be created within Torino city limits.</small><br>
+                  <button class="map-button" disabled style="opacity: 0.5; cursor: not-allowed; margin-top: 8px;">Cannot create report here</button>
+                  </div>`
+              );
+            }
           }
         } catch (error) {
           console.error('Geocoding failed:', error);
           setSelectedAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
           setIsGeocoding(false);
+          
+          // Show error in popup
+          if (newMarker.getPopup()) {
+            newMarker.setPopupContent(
+              `<div class="body-font">
+                <b> Verification Failed</b><br>
+                ${lat.toFixed(5)}, ${lng.toFixed(5)}<br>
+                <small style="color: #dc3545;">Could not verify location. Please try again.</small><br>
+                <button class="map-button" disabled style="opacity: 0.5; cursor: not-allowed; margin-top: 8px;">Cannot create report</button>
+                </div>`
+            );
+          }
         }
       });
 
