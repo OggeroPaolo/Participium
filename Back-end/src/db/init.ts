@@ -433,7 +433,7 @@ export const seedDefaultPhotos = async (): Promise<void> => {
       // Report 1
       {
         report_id: 1,
-        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764060549/Participium/tmkf2j2elg3atji2hnuo.jpg",
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/fl_original/v1764143988/Participium-demo/z7z4f0oppqissfj2fd0y.jpg",
         ordering: 1
       },
       {
