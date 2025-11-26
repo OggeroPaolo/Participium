@@ -365,12 +365,6 @@ function Map({
     };
   }, []);
 
-  useEffect(() => {
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.setView(center, zoom);
-    }
-  }, [center, zoom]);
-
   // add reports to cluster
   useEffect(() => {
     if (!approvedReports || !clusterGroupRef.current) return;
