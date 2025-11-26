@@ -63,11 +63,6 @@ function Header(props) {
                       <Nav.Link href='/create-report'>New Report</Nav.Link>
                     </>
                   )}
-                  {user?.role_name === "Municipal_public_relations_officer" && (
-                    <>
-                      <Nav.Link href='/review-reports'>Review Reports</Nav.Link>
-                    </>
-                  )}
                   <Nav.Link href='#' onClick={handleLogout}>
                     Logout
                   </Nav.Link>
