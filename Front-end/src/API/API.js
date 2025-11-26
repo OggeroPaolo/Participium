@@ -201,7 +201,6 @@ async function createReport(reportData, lat, lng) {
   return await response.json();
 }
 
-
 // Get a single report by id
 async function getReport(rid) {
   try {
@@ -214,7 +213,8 @@ async function getReport(rid) {
 
     if (response.ok) {
       const report = await response.json();
-      return report;
+      console.log(report.report);
+      return report.report;
     } else {
       throw new Error("Failed to fetch report data");
     }
