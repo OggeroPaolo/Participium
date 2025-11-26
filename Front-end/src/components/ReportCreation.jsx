@@ -67,6 +67,8 @@ function ReportCreation() {
         success: "Report created successfully! Redirecting to homepage...",
       };
     } catch (error) {
+      setPics([]);
+      setPreviewImages([]);
       return { error: error.message };
     } finally {
       setIsFormLoading(false);
@@ -199,14 +201,17 @@ function MapReport(props) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
-  const [address, setAddress] = useState('Loading address...');
+  const [address, setAddress] = useState("Loading address...");
   const [isGeocoding, setIsGeocoding] = useState(false);
 
   // Get initial address
   useEffect(() => {
     const getAddress = async () => {
       setIsGeocoding(true);
-      const addr = await reverseGeocode(parseFloat(props.propLat), parseFloat(props.propLng));
+      const addr = await reverseGeocode(
+        parseFloat(props.propLat),
+        parseFloat(props.propLng)
+      );
       setAddress(addr);
       setIsGeocoding(false);
     };
@@ -251,7 +256,7 @@ function MapReport(props) {
 
       // Update address
       setIsGeocoding(true);
-      setAddress('Loading address...');
+      setAddress("Loading address...");
       const addr = await reverseGeocode(lat, lng);
       setAddress(addr);
       setIsGeocoding(false);
@@ -280,7 +285,7 @@ function MapReport(props) {
         <div style={{ marginTop: "5px", color: "#555" }}>
           {isGeocoding ? (
             <span>
-              <i className="spinner-border spinner-border-sm me-2"></i>
+              <i className='spinner-border spinner-border-sm me-2'></i>
               Loading...
             </span>
           ) : (
