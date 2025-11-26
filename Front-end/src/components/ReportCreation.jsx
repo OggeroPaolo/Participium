@@ -20,6 +20,7 @@ function ReportCreation() {
     lat: initialLat.toFixed(5),
     lng: initialLng.toFixed(5),
   });
+  const [isValidLocation, setIsValidLocation] = useState(true);
 
   const fileInputRef = useRef(null);
 
@@ -115,6 +116,7 @@ function ReportCreation() {
             propLat={pinpoint.lat}
             propLng={pinpoint.lng}
             setPinpoint={setPinpoint}
+            setIsValidLocation={setIsValidLocation}
           />
           <Form action={formAction}>
             <Form.Group controlId='title' className='mb-3 mt-4'>
@@ -173,6 +175,13 @@ function ReportCreation() {
               </div>
             </Form.Group>
 
+            {!isValidLocation && (
+              <Alert variant='warning'>
+                <i className='bi bi-exclamation-triangle-fill me-2'></i>
+                <strong>Location outside Torino!</strong> Please select a location within Torino city limits.
+              </Alert>
+            )}
+
             {state.error && <Alert variant='danger'>{state.error}</Alert>}
             {state.success && (
               <Alert variant='success' className='mt-4'>
@@ -192,8 +201,12 @@ function ReportCreation() {
               </>
             )}
 
-            <Button type='submit' className='mt-4 confirm-button w-100'>
-              CREATE REPORT
+            <Button 
+              type='submit' 
+              className='mt-4 confirm-button w-100'
+              disabled={!isValidLocation || isFormLoading}
+            >
+              {!isValidLocation ? "INVALID LOCATION - SELECT WITHIN TORINO" : "CREATE REPORT"}
             </Button>
           </Form>
         </Container>
@@ -208,17 +221,39 @@ function MapReport(props) {
   const markerRef = useRef(null);
   const [address, setAddress] = useState("Loading address...");
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [isValidLocation, setIsValidLocation] = useState(true);
 
-  // Get initial address
+  // Get initial address and validate location
   useEffect(() => {
     const getAddress = async () => {
       setIsGeocoding(true);
-      const addr = await reverseGeocode(
-        parseFloat(props.propLat),
-        parseFloat(props.propLng)
-      );
-      setAddress(addr);
-      setIsGeocoding(false);
+      try {
+        const addr = await reverseGeocode(
+          parseFloat(props.propLat),
+          parseFloat(props.propLng)
+        );
+        setAddress(addr);
+        
+        // Validate location is in Torino
+        const isTorino = addr.toLowerCase().includes('torino') || 
+                        addr.toLowerCase().includes('turin') || 
+                        addr.toLowerCase().includes('to,');
+        setIsValidLocation(isTorino);
+        
+        // Update parent component
+        if (props.setIsValidLocation) {
+          props.setIsValidLocation(isTorino);
+        }
+      } catch (error) {
+        console.error('Geocoding failed:', error);
+        setAddress('Failed to load address');
+        setIsValidLocation(false);
+        if (props.setIsValidLocation) {
+          props.setIsValidLocation(false);
+        }
+      } finally {
+        setIsGeocoding(false);
+      }
     };
     getAddress();
   }, []);
@@ -253,18 +288,41 @@ function MapReport(props) {
     map.on("click", async (e) => {
       const { lat, lng } = e.latlng;
 
+      // Update marker immediately (responsive)
       props.setPinpoint({ lat: lat.toFixed(5), lng: lng.toFixed(5) });
 
       if (markerRef.current) {
         markerRef.current.setLatLng([lat, lng]);
       }
 
-      // Update address
+      // Validate location and update address
       setIsGeocoding(true);
-      setAddress("Loading address...");
-      const addr = await reverseGeocode(lat, lng);
-      setAddress(addr);
-      setIsGeocoding(false);
+      setAddress("Verifying location...");
+      
+      try {
+        const addr = await reverseGeocode(lat, lng);
+        setAddress(addr);
+        
+        // Check if location is in Torino
+        const isTorino = addr.toLowerCase().includes('torino') || 
+                        addr.toLowerCase().includes('turin') || 
+                        addr.toLowerCase().includes('to,');
+        setIsValidLocation(isTorino);
+        
+        // Update parent component
+        if (props.setIsValidLocation) {
+          props.setIsValidLocation(isTorino);
+        }
+      } catch (error) {
+        console.error('Geocoding failed:', error);
+        setAddress('Failed to verify location');
+        setIsValidLocation(false);
+        if (props.setIsValidLocation) {
+          props.setIsValidLocation(false);
+        }
+      } finally {
+        setIsGeocoding(false);
+      }
     });
   }, []);
 
@@ -278,16 +336,17 @@ function MapReport(props) {
           top: "10px",
           right: "10px",
           padding: "10px",
-          background: "#fff",
+          background: isValidLocation ? "#fff" : "#fff3cd",
           borderRadius: "8px",
           boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
           zIndex: 1000,
           fontSize: "14px",
           maxWidth: "250px",
+          border: isValidLocation ? "none" : "2px solid #ffc107",
         }}
       >
-        <strong>Selected location:</strong>
-        <div style={{ marginTop: "5px", color: "#555" }}>
+        <strong><i className='bi bi-exclamation-triangle-fill me-2'></i>{isValidLocation ? "Selected location:" : "Invalid Location"}</strong>
+        <div style={{ marginTop: "5px", color: isValidLocation ? "#555" : "#856404" }}>
           {isGeocoding ? (
             <span>
               <i className='spinner-border spinner-border-sm me-2'></i>
@@ -297,6 +356,11 @@ function MapReport(props) {
             address
           )}
         </div>
+        {!isValidLocation && !isGeocoding && (
+          <div style={{ fontSize: "12px", color: "#dc3545", marginTop: "5px", fontWeight: "500" }}>
+            Location must be within Torino
+          </div>
+        )}
         <div style={{ fontSize: "11px", color: "#999", marginTop: "5px" }}>
           {props.propLat}, {props.propLng}
         </div>
