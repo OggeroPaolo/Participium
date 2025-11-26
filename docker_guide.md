@@ -32,7 +32,7 @@ docker-compose.yml
 Inside the project folder, create two subfolders with the following names:
 
 ```bash
-mkdir Back-end 
+mkdir Back-end
 mkdir Front-end
 ```
 
@@ -64,7 +64,7 @@ project-folder/
 ## 5. Environment Variable Configuration
 
 The `.env` files are required to store sensitive configuration values.  
-They **must include keys for Firebase (authentication)** and **Cloudinary (for image storage)**.  
+They **must include keys for Firebase (authentication)** and **Cloudinary (for image storage)**.
 
 Below are separate examples for the Back-end and Front-end `.env` files:
 
@@ -145,3 +145,5 @@ docker compose down
 
 You're all set! 🚀  
 Your application should now be running in Docker.
+
+The front-end will be accessible at `http://localhost:4173`, while the back-end server will run on `http://localhost:3000`.
