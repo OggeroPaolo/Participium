@@ -45,6 +45,7 @@ export default class ReportDao {
       FROM reports r
       JOIN users u ON r.user_id = u.id
       WHERE r.status != 'pending_approval'
+      ORDER BY r.created_at DESC
     `;
     return getAll<ReportMap>(sql);
   }
