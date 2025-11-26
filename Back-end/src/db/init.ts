@@ -161,6 +161,11 @@ export const seedDefaultRoles = async (): Promise<void> => {
       { name: "Municipal_public_relations_officer", type: "pub_relations", office_id: officeMap["Organization Office"]! },
       { name: "Water_utility_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Water Supply")! },
       { name: "Sewer_system_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Sewer")! },
+      { name: "Public_lightning_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Public Lightning")! },
+      { name: "Architectural_barriers_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Architectural Barriers")! },
+      { name: "Waste_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Waste")! },
+      { name: "Road_signs_urban_furnishings_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Roads and Urban Furnishings")! },
+      { name: "Public_green_areas_playgrounds_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Public Green Areas and Playgrounds")! },
       { name: "Admin", type: "admin", office_id: officeMap["Organization Office"]! }
     ];
     for (const role of roles) {
@@ -236,6 +241,47 @@ export const seedDefaultUsers = async (): Promise<void> => {
         first_name: "Marcus",
         last_name: "Bennett",
         role_id: roleMap["Water_utility_officer"]
+      },
+      //TODODODOODODODODOOD
+      {
+        firebase_uid: "iT18eWAsjgQ0SBD8isKIFRBG1UD3",
+        email: "operator-architectural@example.com",
+        username: "operator-architectural",
+        first_name: "Gigi",
+        last_name: "Proietti",
+        role_id: roleMap["Architectural_barriers_officer"]
+      },
+      {
+        firebase_uid: "kv63cdFLJXZfSXsaVVcVM3BDzog1",
+        email: "operator-lightning@example.com",
+        username: "operator-lightning",
+        first_name: "Max",
+        last_name: "Casper",
+        role_id: roleMap["Public_lightning_officer"]
+      },
+      {
+        firebase_uid: "CVvUKpF0zthFliHMgBmuOe9HtGA2",
+        email: "operator-waste@example.com",
+        username: "operator-waste",
+        first_name: "Joe",
+        last_name: "Simpson",
+        role_id: roleMap["Waste_officer"]
+      },
+      {
+        firebase_uid: "hrLE2NDZsSaGdVWpzuAsroYrGwF3",
+        email: "operator-urban@example.com",
+        username: "operator-urban",
+        first_name: "Lewis",
+        last_name: "Hamilton",
+        role_id: roleMap["Road_signs_urban_furnishings_officer"]
+      },
+      {
+        firebase_uid: "vPCfQ4wQoANVEwn7b6U5OFFeAGA2",
+        email: "operator-green@example.com",
+        username: "operator-green",
+        first_name: "Pablo",
+        last_name: "Jullones",
+        role_id: roleMap["Public_green_areas_playgrounds_officer"]
       },
       {
         firebase_uid: "CV0ZG2bmDva06EHVdSwcF4rz18F3",
