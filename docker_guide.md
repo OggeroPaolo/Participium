@@ -143,6 +143,20 @@ docker compose down
 
 ---
 
+## 9. Users credentials
+
+| Type     | Email               | Password          |
+|----------|---------------------|-------------------|
+| Citizen  | citizen@example.com | citizenexample    |
+| Public relations officer | operator@example.com| operatorexample   |
+| Admin    | admin@example.com   | adminexample      |
+
+```bash
+docker compose down
+```
+
+---
+
 You're all set! 🚀  
 Your application should now be running in Docker.
 
