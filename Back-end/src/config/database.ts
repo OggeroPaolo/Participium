@@ -57,6 +57,23 @@ export const runQuery = (sql: string, params: any[] = []): Promise<void> => {
   });
 };
 
+/*
+ * Update rows (returns the number of rows modified)
+ */
+
+export const Update = (sql: string, params: any[] = []): Promise<{ changes: number; lastID?: number }> => {
+  return new Promise((resolve, reject) => {
+    const database = getDatabase();
+    database.run(sql, params, function (this: sqlite3.RunResult, err: Error | null) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve({ changes: this.changes, lastID: this.lastID });
+      }
+    });
+  });
+};
+
 /**
  * Get a single row from the database
  */
@@ -120,6 +137,56 @@ export const closeDatabase = (): Promise<void> => {
           logger.info("Database connection closed");
           resolve();
         }
+      });
+    } else {
+      resolve();
+    }
+  });
+};
+
+/**
+ * Begins a transaction
+ */
+export const beginTransaction = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (db) {
+      db.run("BEGIN TRANSACTION", (err: Error | null) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    } else {
+      resolve();
+    }
+
+  });
+};
+
+/**
+ * Commits of the transaction
+ */
+export const commitTransaction = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (db) {
+      db.run("COMMIT", (err: Error | null) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    } else {
+      resolve();
+    }
+
+  });
+};
+
+/**
+ * Rollback of the transaction
+ */
+export const rollbackTransaction = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (db) {
+      db.run("ROLLBACK", (err: Error | null) => {
+        if (err) reject(err);
+        else resolve();
       });
     } else {
       resolve();

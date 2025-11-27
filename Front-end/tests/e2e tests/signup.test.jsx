@@ -1,10 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router';
-import Signup from '../src/components/Signup.jsx';
+import Signup from '../../src/components/Signup.jsx';
 
 // Mock the API
-vi.mock('../src/API/API', () => ({
+vi.mock('../../src/API/API.js', () => ({
 	handleSignup: vi.fn(),
 }));
 
@@ -94,7 +94,7 @@ describe('Signup page (Vitest)', () => {
 	});
 
 	it('shows error when signup fails', async () => {
-		const { handleSignup } = await import('../src/API/API');
+		const { handleSignup } = await import('../../src/API/API.js');
 		handleSignup.mockRejectedValueOnce(new Error('Email already exists'));
 
 		render(
@@ -114,13 +114,13 @@ describe('Signup page (Vitest)', () => {
 		// Submit form
 		await userEvent.click(screen.getByRole('button', { name: 'SIGNUP' }));
 
-		// Check error message appears
-		const error = await screen.findByText('Invalid signup');
+		// Check error message appears (component displays error.message directly)
+		const error = await screen.findByText('Email already exists');
 		expect(error).toBeVisible();
 	});
 
 	it('shows success message and navigates to login on successful signup', async () => {
-		const { handleSignup } = await import('../src/API/API');
+		const { handleSignup } = await import('../../src/API/API.js');
 		handleSignup.mockResolvedValueOnce({ success: true });
 
 		render(

@@ -11,6 +11,9 @@ import { logout } from "./firebaseService.js";
 import UserList from "./components/UserList.jsx";
 import { useAuthSync } from "./hooks/useAuthSync.js";
 import useUserStore from "./store/userStore.js";
+import ReportCreation from "./components/ReportCreation.jsx";
+import ReportInfo from "./components/ReportInfo.jsx";
+import OfficerReviewList from "./components/OfficerReviewList.jsx";
 
 function App() {
   // Sync Zustand store with Firebase auth state
@@ -63,7 +66,7 @@ function App() {
             path='login'
             element={
               isAuthenticated ? (
-                user?.role_name === "admin" ? (
+                user?.role_name === "Admin" ? (
                   <Navigate replace to='/user-list' />
                 ) : (
                   <Navigate replace to='/' />
@@ -78,7 +81,7 @@ function App() {
           <Route
             path='/user-creation'
             element={
-              user?.role_name === "admin" ? (
+              user?.role_name === "Admin" ? (
                 <UserCreation />
               ) : (
                 <Navigate replace to='/' />
@@ -88,8 +91,42 @@ function App() {
           <Route
             path='/user-list'
             element={
-              user?.role_name === "admin" ? (
+              user?.role_name === "Admin" ? (
                 <UserList />
+              ) : (
+                <Navigate replace to='/' />
+              )
+            }
+          />
+
+          {/* Citizen specific routes */}
+          <Route
+            path='/create-report'
+            element={
+              user?.role_name === "Citizen" ? (
+                <ReportCreation />
+              ) : (
+                <Navigate replace to='/' />
+              )
+            }
+          />
+          <Route
+            path='/reports/:rid'
+            element={
+              user?.role_name === "Citizen" ? (
+                <ReportInfo />
+              ) : (
+                <Navigate replace to='/' />
+              )
+            }
+          />
+
+          {/* Public Relations Officer specific routes */}
+          <Route
+            path='/review-reports'
+            element={
+              user?.role_name === "Municipal_public_relations_officer" ? (
+                <OfficerReviewList />
               ) : (
                 <Navigate replace to='/' />
               )

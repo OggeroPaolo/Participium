@@ -1,19 +1,19 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
-import UserList from '../src/components/UserList.jsx';
+import UserList from '../../src/components/UserList.jsx';
 
 // Mock firebaseConfig first
-vi.mock('../src/firebaseConfig.js', () => ({
+vi.mock('../../src/firebaseConfig.js', () => ({
 	auth: {},
 }));
 
 // Mock firebaseService - needed because getInternalUsers uses getBearerToken
-vi.mock('../src/firebaseService.js', () => ({
+vi.mock('../../src/firebaseService.js', () => ({
 	getBearerToken: vi.fn(() => Promise.resolve('Bearer mock-token')),
 }));
 
 // Mock the API
-vi.mock('../src/API/API', () => ({
+vi.mock('../../src/API/API.js', () => ({
 	getInternalUsers: vi.fn(),
 }));
 
@@ -47,7 +47,7 @@ describe('UserList component (Vitest)', () => {
 	});
 
 	it('renders heading correctly', async () => {
-		const { getInternalUsers } = await import('../src/API/API');
+		const { getInternalUsers } = await import('../../src/API/API.js');
 		getInternalUsers.mockResolvedValueOnce([]);
 
 		render(
@@ -60,7 +60,7 @@ describe('UserList component (Vitest)', () => {
 	});
 
 	it('displays users when loaded from API', async () => {
-		const { getInternalUsers } = await import('../src/API/API');
+		const { getInternalUsers } = await import('../../src/API/API.js');
 		getInternalUsers.mockResolvedValueOnce(mockUsers);
 
 		render(
@@ -92,7 +92,7 @@ describe('UserList component (Vitest)', () => {
 	});
 
 	it('displays empty list when no users are returned', async () => {
-		const { getInternalUsers } = await import('../src/API/API');
+		const { getInternalUsers } = await import('../../src/API/API.js');
 		getInternalUsers.mockResolvedValueOnce([]);
 
 		render(
@@ -114,7 +114,7 @@ describe('UserList component (Vitest)', () => {
 	});
 
 	it('formats role names correctly', async () => {
-		const { getInternalUsers } = await import('../src/API/API');
+		const { getInternalUsers } = await import('../../src/API/API.js');
 		const usersWithFormattedRoles = [
 			{
 				first_name: 'Test',
@@ -142,7 +142,7 @@ describe('UserList component (Vitest)', () => {
 	});
 
 	it('calls getInternalUsers on mount', async () => {
-		const { getInternalUsers } = await import('../src/API/API');
+		const { getInternalUsers } = await import('../../src/API/API.js');
 		getInternalUsers.mockResolvedValueOnce(mockUsers);
 
 		render(

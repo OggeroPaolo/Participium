@@ -8,8 +8,9 @@ const router = Router();
 const userDao = new UserDAO();
 
 // Get user by Firebase UID
-router.get("/users/:firebaseUid", verifyFirebaseToken([ROLES.ADMIN, ROLES.CITIZEN, ROLES.OPERATOR]), async (req: Request, res: Response) => {
+router.get("/users/:firebaseUid", verifyFirebaseToken([ROLES.ADMIN, ROLES.CITIZEN, ROLES.PUB_RELATIONS, ROLES.TECH_OFFICER]), async (req: Request, res: Response) => {
     const { firebaseUid } = req.params;
+
 
     if (!firebaseUid) {
         return res.status(400).json({ error: "Firebase UID is required" });

@@ -72,6 +72,309 @@ The database is automatically seeded with:
 
 - **GET** `/health` - Returns the health status of the server
 
+### Reports
+
+**GET `/reports/map`**
+
+* **Request Headers:** None
+
+* **Request Parameters:** None
+
+* **Success Response (200 OK):**
+```json
+"reports": [
+        {
+            "id": 1,
+            "title": "Problem with street illumination",
+            "reporterName": "John Doe",
+            "reporterUsername": "johndoee",
+            "position": {
+                "lat": 45.4642,
+                "lng": 9.19
+            }
+        },
+        {
+            "id": 2,
+            "title": "Holes in the street",
+            "reporterName": "Jane Smith",
+            "reporterUsername": "janesmithh",
+            "position": {
+                "lat": 45.465,
+                "lng": 9.191
+            }
+        }
+]
+```
+
+* **No Content Response (204 No Content):**
+
+```json
+// Empty response body
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server Error"
+}
+```
+
+**GET `/reports/:reportId`**
+
+* **Request Headers:** 
+  
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** reportId
+
+* **Success Response (200 OK):**
+```json
+        {
+            "id": 1,
+            "title": "Neglected street corner",
+            "description": "This area near Porta Nuova has been neglected and many people use it as a urinal, can something be done about it.",
+            "user_id": 1,
+            "position_lat": 45.06080,
+            "position_lng": 7.67613,
+            "status": "pending_approval"
+        }
+```
+
+* **Error Response (404 Not Found):**
+```json
+{
+  "error": "Report not found"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
+* **Error Response (403 Forbidden):**.
+
+```json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server Error"
+}
+```
+
+**POST `/reports`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** None
+
+* **Request Body:**
+```json
+{
+  "category_id": 2,
+  "title": "Broken streetlight",
+  "description": "The streetlight near 5th avenue is out for several days.",
+  "is_anonymous": false,
+  "position_lat": 45.12345,
+  "position_lng": 9.12345,
+  "photos": [
+    "/path"
+  ]
+}
+```  
+* **Success Response (201 Created):**
+
+```json
+{
+  "report": {
+        "id": 10,
+        "user_id": 1,
+        "category_id": 2,
+        "title": "\"Broken street light on 5th avenue\"",
+        "description": "\"The street light on 5th avenue is broken and needs urgent repair.\"",
+        "status": "pending_approval",
+        "assigned_to": null,
+        "reviewed_by": null,
+        "reviewed_at": null,
+        "note": null,
+        "is_anonymous": false,
+        "position_lat": 45.0632,
+        "position_lng": 7.6835,
+        "created_at": "2025-11-24 18:10:20",
+        "updated_at": "2025-11-24 18:10:20",
+        "photos": [
+            {
+                "url": "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764007820/Participium/izvuzpkmk2yybjfxphwb",
+                "ordering": 1
+            }
+        ]
+    }
+}
+```
+
+* **Error Response (400 Bad Request - Validation errors):**
+
+```json
+{
+  "errors": [
+    { "msg": "title is required", "param": "title", "location": "body" }
+  ]
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal Server Error"
+}
+```
+
+**GET `/reports`**
+
+* **Request Headers:** 
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** None
+
+* **Query Parameters: (Optional)** 
+```
+status: pending_approval, assigned, in_progress, suspended, rejected, resolved
+```
+
+* **Success Response (200 OK):**
+```json
+"reports": [
+        {
+        "id": 10,
+        "user_id": 1,
+        "category_id": 2,
+        "title": "\"Broken street light on 5th avenue\"",
+        "description": "\"The street light on 5th avenue is broken and needs urgent repair.\"",
+        "status": "pending_approval",
+        "assigned_to": null,
+        "reviewed_by": null,
+        "reviewed_at": null,
+        "note": null,
+        "is_anonymous": false,
+        "position_lat": 45.0632,
+        "position_lng": 7.6835,
+        "created_at": "2025-11-24 18:10:20",
+        "updated_at": "2025-11-24 18:10:20"
+    }
+]
+```
+
+* **No Content Response (204 No Content):**
+
+```json
+// Empty response body
+```
+
+* **Error Response (400 Bad Request):**
+```json
+{
+  "error": "Invalid status filter: wrong_status"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server Error"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
+
+
+**GET `/officers/:officerId/reports`**
+
+* **Request Headers:** 
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** officerId
+
+* **Success Response (200 OK):**
+```json
+"reports": [
+        {
+        "id": 10,
+        "user_id": 1,
+        "category_id": 2,
+        "title": "\"Broken street light on 5th avenue\"",
+        "description": "\"The street light on 5th avenue is broken and needs urgent repair.\"",
+        "status": "pending_approval",
+        "assigned_to": null,
+        "reviewed_by": null,
+        "reviewed_at": null,
+        "note": null,
+        "is_anonymous": false,
+        "position_lat": 45.0632,
+        "position_lng": 7.6835,
+        "created_at": "2025-11-24 18:10:20",
+        "updated_at": "2025-11-24 18:10:20"
+    }
+]
+```
+
+* **No Content Response (204 No Content):**
+
+```json
+// Empty response body
+```
+
+* **Error Response (400 Bad Request):**
+```json
+{
+  "error": "officerId must be a valid integer"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server Error"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
 ### Roles
 
 **GET `/roles`**
@@ -91,13 +394,13 @@ Authorization: Bearer <firebase-token>
   {
     "id": 2,
     "name": "Roads_Maintenance_Office_Staff",
-    "type": "operator",
+    "type": "tech_officer",
     "created_at": "2025-11-08 11:46:55"
   },
   {
     "id": 3,
     "name": "Water_Utility_Office_Staff",
-    "type": "operator",
+    "type": "tech_officer",
     "created_at": "2025-11-08 11:46:55"
   }
 ]
@@ -123,7 +426,7 @@ Authorization: Bearer <firebase-token>
 
 ```json
 {
-  "error": "Forbidden: admin access required"
+  "error": "Forbidden: insufficient permissions"
 }
 ```
 
@@ -257,7 +560,7 @@ Returned when no valid authentication token is provided.
 Returned when the authenticated user is not an admin.
 ```json
 {
-  "error": "Forbidden: admin access required"
+  "error": "Forbidden: insufficient permissions"
 }
 ```
 
@@ -321,7 +624,7 @@ Authorization: Bearer <firebase-token>
 * **Error Response (403 Forbidden):**
 ```json
 {
-  "error": "Forbidden: admin access required"
+  "error": "Forbidden: insufficient permissions"
 }
 ```
 
@@ -352,6 +655,87 @@ Authorization: Bearer <firebase-token>
   "error": "Internal server error"
 }
 ```
+
+**PATCH `/reports/{reportId}`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:**
+
+  - reportId: integer
+
+* **Request Body:**
+
+```json
+{
+  "status": "rejected",
+  "note": "Insufficient details",
+  "categoryId": 3
+}
+```
+
+* **Field Usage Notes:**
+
+| Field      | When Required                        | Types                    |
+| ---------- | ------------------------------------ | ------------------------ |
+| status     | Always required                      | ["assigned", "rejected"] |
+| note       | Required when `status` is `rejected` | string                   |
+| categoryId | Optional                             | integer                  |
+
+* **Success Response (200 OK):**
+
+```json
+{
+  "message": "Report status updated successfully"
+}
+```
+
+* **Error Response (400 Bad Request):**
+
+```json
+{
+  "errors": "Invalid request data"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+  Returned when no valid authentication token is provided.
+
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+* **Error Response (403 Forbidden):**
+  Returned when the authenticated user is not a public relations officer.
+
+```json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+
+* **Error Response (404 Not Found):**
+
+```json
+{
+  "error": "Report not found"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server error"
+}
+```
+
 
 ## Project Structure
 

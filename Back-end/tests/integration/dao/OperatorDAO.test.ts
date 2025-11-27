@@ -73,4 +73,35 @@ describe("OperatorDAO Integration Test Suite", () => {
       await expect(dao.getOperators()).rejects.toThrow("Failed to retrieve operators");
     });
   });
+
+  // -------------------------
+  // New unit tests for getAssigneeId
+  // -------------------------
+  describe("getAssigneeId", () => {
+    it("returns the user id of the assignee with the fewest assigned reports", async () => {
+      const mockAssignees = [
+        { id: 5, assigned_report_count: 2 },
+      ];
+
+      vi.spyOn(db, "getAll").mockResolvedValueOnce(mockAssignees);
+
+      const result = await dao.getAssigneeId(1); // categoryId = 1
+      expect(result).toBe(5);
+
+      expect(db.getAll).toHaveBeenCalledTimes(1);
+      expect(db.getAll).toHaveBeenCalledWith(expect.stringContaining("SELECT"), [1]);
+    });
+
+    it("throws an error if no assignee is found", async () => {
+      vi.spyOn(db, "getAll").mockResolvedValueOnce([]);
+
+      await expect(dao.getAssigneeId(1)).rejects.toThrow("No assignee found");
+    });
+
+    it("propagates database errors", async () => {
+      vi.spyOn(db, "getAll").mockRejectedValueOnce(new Error("Database error"));
+
+      await expect(dao.getAssigneeId(1)).rejects.toThrow("Database error");
+    });
+  });
 });

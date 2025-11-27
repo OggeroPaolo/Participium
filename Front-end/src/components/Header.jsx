@@ -51,13 +51,18 @@ function Header(props) {
                       <span>{displayName}</span>
                     </Navbar.Text>
                   )}
-                  {user?.role_name === "admin" && (
+                  {user?.role_name === "Admin" && (
                     <>
                       <Nav.Link href='/user-creation'>User Creation</Nav.Link>
                       <Nav.Link href='/user-list'>User List</Nav.Link>
                     </>
                   )}
                   <div className='nav-divider d-sm-none'></div>
+                  {user?.role_name === "Citizen" && (
+                    <>
+                      <Nav.Link href='/create-report'>New Report</Nav.Link>
+                    </>
+                  )}
                   <Nav.Link href='#' onClick={handleLogout}>
                     Logout
                   </Nav.Link>

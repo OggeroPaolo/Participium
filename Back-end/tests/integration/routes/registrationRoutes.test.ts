@@ -2,18 +2,7 @@ import request from "supertest";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { makeTestApp } from "../../setup/tests_util.js";
 import router from "../../../src/routes/registrations.routes.js";
-import {
-  createUserWithFirebase,
-  EmailOrUsernameConflictError,
-  UserAlreadyExistsError,
-} from "../../../src/services/userService.js";
-
-// Mock userService
-vi.mock("../../../src/services/userService.js", () => ({
-  createUserWithFirebase: vi.fn(),
-  EmailOrUsernameConflictError: class EmailOrUsernameConflictError extends Error {},
-  UserAlreadyExistsError: class UserAlreadyExistsError extends Error {},
-}));
+import * as userService from "../../../src/services/userService.js";
 
 let app: any;
 
@@ -24,22 +13,31 @@ beforeEach(() => {
 
 describe("POST /user-registrations", () => {
   it("should register user successfully", async () => {
-    (createUserWithFirebase as any).mockResolvedValue({ id: 42 });
+    vi.spyOn(userService, "createUserWithFirebase").mockResolvedValue({
+      id: 100,
+      firebase_uid: "firebaseUid",
+      email: "alice@example.com",
+      username: "aliceop",
+      first_name: "Alice",
+      last_name: "Operator",
+      role_name: "Citizen",
+      role_type: "citizen",
+    });
 
     const res = await request(app)
       .post("/user-registrations")
       .send({
-        firstName: "John",
-        lastName: "Doe",
-        username: "john123",
-        email: "john@example.com",
-        password: "123456",
+        firstName: "Alice",
+        lastName: "Operator",
+        username: "aliceop",
+        email: "alice@example.com",
+        password: "password123",
       });
 
     expect(res.status).toBe(201);
     expect(res.body).toEqual({
       message: "User data saved successfully",
-      userId: 42,
+      userId: 100,
     });
   });
 
@@ -56,8 +54,8 @@ describe("POST /user-registrations", () => {
   });
 
   it("should return 422 if EmailOrUsernameConflictError is thrown", async () => {
-    (createUserWithFirebase as any).mockRejectedValue(
-      new EmailOrUsernameConflictError("Email or username already in use")
+    vi.spyOn(userService, "createUserWithFirebase").mockRejectedValue(
+      new userService.EmailOrUsernameConflictError("Email or username already in use")
     );
 
     const res = await request(app)
@@ -75,8 +73,8 @@ describe("POST /user-registrations", () => {
   });
 
   it("should return 409 if UserAlreadyExistsError is thrown", async () => {
-    (createUserWithFirebase as any).mockRejectedValue(
-      new UserAlreadyExistsError("User already registered")
+    vi.spyOn(userService, "createUserWithFirebase").mockRejectedValue(
+      new userService.UserAlreadyExistsError("User already registered")
     );
 
     const res = await request(app)
@@ -94,7 +92,7 @@ describe("POST /user-registrations", () => {
   });
 
   it("should return 500 for unknown errors", async () => {
-    (createUserWithFirebase as any).mockRejectedValue(new Error("Unexpected failure"));
+    vi.spyOn(userService, "createUserWithFirebase").mockRejectedValue(new Error("Unexpected failure"));
 
     const res = await request(app)
       .post("/user-registrations")
@@ -109,4 +107,25 @@ describe("POST /user-registrations", () => {
     expect(res.status).toBe(500);
     expect(res.body.error).toBe("Internal server error");
   });
+
+  it('should return 422 if Firebase auth/email-already-exists error is thrown', async () => {
+    vi.spyOn(userService, 'createUserWithFirebase').mockRejectedValue({
+      code: 'auth/email-already-exists',
+      message: 'Firebase email already exists',
+    });
+
+    const res = await request(app)
+      .post('/user-registrations')
+      .send({
+        firstName: 'Sam',
+        lastName: 'Smith',
+        username: 'samsmith',
+        email: 'sam@example.com',
+        password: 'password123',
+      });
+
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('Firebase email already exists');
+  });
+
 });

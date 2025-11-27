@@ -8,4 +8,4 @@ data/*.db
 coverage
 *.log
 .DS_Store
-
+tmp
