@@ -71,12 +71,19 @@ sections:
   - Total hours estimated: 5h
   - Total hours spent: 5h
   - Nr of test cases: 54
-
 - Code review:
   - Total hours estimated: 15h
   - Total hours spent: 13h 20m
 
-## ASSESSMENT
+### Test Policy
+The testing strategy is organized as follows:
+
+- **Unit/Component Testing**: 
+  - Ensures each component works correctly in isolation.
+- **End-to-End (E2E) Testing**  
+   - Tests the complete process of the application.  
+   - Verifies each API endpoint for each route to ensure proper integration and functionality.
+
 ## ASSESSMENT
 
 ### What went wrong in the sprint?
