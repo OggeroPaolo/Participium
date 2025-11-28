@@ -77,38 +77,48 @@ sections:
   - Total hours spent: 13h 20m
 
 ## ASSESSMENT
+## ASSESSMENT
 
 ### What went wrong in the sprint?
-- We underestimated several backend and frontend tasks.
-- Cloudflare Images integration took much longer than expected and caused many errors.
-- We missed some API needs for the frontend, which led to extra work.
-- A bug was found at the last moment, causing additional work close to the deadline.
+- We developed slower than expected, so many major parts were completed in the last 2–3 days.
+- Some frontend tasks (e.g., responsiveness on one page) were clearly overestimated out of fear of underestimating.
+- Even though underestimations were small (15–30 minutes), the overall timing still ended up being “last minute,” increasing stress and risk.
 
-### What caused the estimation errors (if any)?
-- We missed parts of the scope during estimation (both BE & FE).
-- We didn’t anticipate that Cloudflare integrations would be so time-consuming and error-prone.
-- Some frontend estimations were not exhaustive enough.
+### What caused your estimation errors (if any)?
+- We shifted from underestimation to “safety padding,” especially on some frontend tasks.
+- We didn’t manage flow during the sprint well enough, so tasks piled up toward the end regardless of accurate estimates.
 
 ### What lessons did you learn (both positive and negative) this sprint?
 
 **Positive:**
-- We managed branches much more effectively than in the previous sprint.
+- We can deliver full functionality on time, even under pressure.
+- Git branch management and coordination around merging were handled very well.
+- We no longer miss task details/requirements like before — our planning/spec clarity has improved.
 
 **Negative:**
-- Risky areas like frontend integrations need more detailed thinking upfront.
-- We need to capture hidden frontend functionalities during estimation, not during development.
+- Good estimates and correct requirements are not enough if execution is clustered at the end of the sprint.
+- Overestimating out of fear is also a problem — it hides real velocity and creates a false sense of safety.
 
 ### Which improvement goals from the previous retrospective were achieved?
-- Better Git branch management to avoid merge conflicts.
+- **Goal 2 – Avoid missed frontend functionalities:** Achieved. We did not miss task details/requirements this time.
+- **Goal 3 – Better git branch management:** Achieved. Branch management was strong, and we avoided merge conflicts.
+- **Goal 1 – Improve estimation for risky tasks:** Partially achieved. Estimates were closer, and we had no major surprises, but fear-based overestimation appeared in some cases.
 
 ### Which goals were not achieved? Why?
-- Avoiding missed frontend functionalities and thinking more about use cases and designs.  
-  We didn’t spend enough time during the design phase, leading to underestimation.
+- We still haven’t fully improved estimation quality: instead of underestimation, we shifted to overestimation in some areas.
+- We didn’t solve the “last-minute delivery” issue: work still accumulated near the end despite better planning, likely due to pacing and flow rather than scope or tooling.
 
 ### Improvement goals for the next sprint and how to achieve them
-**Goal 1:** Avoid missing frontend functionalities by spending more time on use-case analysis and reviewing designs thoroughly.  
-**Goal 2:** Improve frontend test planning and design.
+
+**Goal 1 – Smooth execution across the sprint (avoid last-minute crunch).**
+- Ensure that by mid-sprint, at least 60–70% of critical stories are “In Review” or “Done.”
+- Break large tasks into smaller, earlier-deliverable chunks.
+- Add a quick daily/bi-daily check: *“Which tasks are at risk of slipping into the last 2–3 days?”* and act early.
+
+**Goal 2 – Calibrate estimations (reduce fear-based overestimation).**
+- After the sprint, review 3–5 tasks (Estimate vs Actual) and note a one-line reason (e.g., “fear padding,” “unexpected UI bug”).
+- Add a simple confidence level to each task (Low/Medium/High).  
+  Low-confidence tasks may need a spike or more detailed breakdown instead of padded estimates.
 
 ### One thing you are proud of as a team
-Despite estimation issues, we managed to handle the challenges effectively during the last days of the sprint.
-we kept pushing, collaborated, and delivered key parts 
+Despite slower execution, we delivered all planned functionality on time, maintained excellent git discipline, and missed no requirements — showing strong growth in planning and coordination, even if sprint pacing still needs improvement.
