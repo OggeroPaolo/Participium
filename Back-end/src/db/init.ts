@@ -375,7 +375,7 @@ export const seedDefaultReports = async (): Promise<void> => {
         assigned_to: 10
       },
       {
-        title: "accessibility barrier",
+        title: "Accessibility barrier",
         description: "This damaged and uneven sidewalk surface represents an accessibility barrier, especially for people using wheelchairs, walkers, strollers, or those with limited mobility.",
         user_id: firstUser.id,
         category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
@@ -395,6 +395,17 @@ export const seedDefaultReports = async (): Promise<void> => {
         status: "resolved",
         reviewed_by: 3,
         assigned_to: 10
+      },
+      {
+        title: "Abandoned Pole",
+        description: "An abandoned pole in the green areas",
+        user_id: firstUser.id,
+        category_id: 8,
+        position_lat: 45.06222,
+        position_lng: 7.66694,
+        status: "pending_approval",
+        reviewed_by: null,
+        assigned_to: null,
       },
       // THE REST ARE GENERATED
       {
@@ -542,17 +553,22 @@ export const seedDefaultPhotos = async (): Promise<void> => {
       },
       {
         report_id: 5,
-        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764187721/Participium/aesk9ovwzv4snyjodlbr.jpg",
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764345101/Participium/rei7xyxueyvtz031ved9.jpg",
         ordering: 1
       },
       {
         report_id: 5,
-        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764187722/Participium/l02kbirjnunohovwdhfg.jpg",
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764345066/Participium/e3x1elvzx0fsyal9som1.jpg",
         ordering: 2
       },
       {
         report_id: 6,
-        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764187945/Participium/pueajqkgblpbuncbzjey.jpg",
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764345440/Participium/ctndw8ykaoubibuqnmud.jpg",
+        ordering: 1
+      },
+      {
+        report_id: 7,
+        url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764345798/Participium/qx8fszwxuorrzre7qkoo.jpg",
         ordering: 1
       }
     ];
