@@ -25,10 +25,10 @@ sections:
 
 **Remember** a story is done ONLY if it fits the Definition of Done:
 
-- Unit Tests passing: **TODO**
+- Unit Tests passing: 150
 - Code review completed: 13h 20m
 - Code present on VCS
-- End-to-End tests performed : **TODO**
+- End-to-End tests performed : 54
 
 > Please refine your DoD if required (you cannot remove items!)
 
@@ -62,18 +62,15 @@ sections:
 
 ## QUALITY MEASURES
 
-- Unit Testing: **TODO**
-  - Total hours estimated: 4h
+- Unit Testing:
+  - Total hours estimated: 8.30h
+  - Total hours spent: 10h
+  - Nr of automated unit test cases: 120
+  - Coverage:  98.80%
+- E2E testing:
+  - Total hours estimated: 5h
   - Total hours spent: 5h
-  - Nr of automated unit test cases: 47
-  - Coverage: 96.15%
-- E2E testing: **TODO**
-
-  - Total hours estimated: 9h 30m
-  - Total hours spent: 8h
-  - Nr of test cases: 21
-
-  **TODO** add integration testing
+  - Nr of test cases: 54
 
 - Code review:
   - Total hours estimated: 15h
@@ -81,33 +78,37 @@ sections:
 
 ## ASSESSMENT
 
-- What did go wrong in the sprint?
-  • We underestimated some backend and frontend tasks.
-  • Firebase backend integrations took much longer than expected and caused many errors.
-  • We missed some frontend functionalities during estimation, which led to extra work.
-  • Map-related work was overestimated, so that time could have been used better.
-  • Because of uncoordinated bad branch management we got merge conflicts which eat up some time of estimated tasks.
-- What caused your errors in estimation (if any)?
-  • We missed some parts of the scope while estimating (both BE & FE).
-  • We didn’t realize that Firebase integrations would be this time-consuming and error-prone.
-  • Some frontend functionalities were not thought of during planning.
-  • We treated “map research” as a separate big task instead of doing lighter research during sprint planning.
-- What lessons did you learn (both positive and negative) in this sprint?
-  • Positive:
-  • Once we understand the problem well (e.g., map part), implementation can be much faster than expected.
-  • Negative:
-  • Risky areas like backend integrations (Firebase) need more detailed thinking up front.
-  • We need to capture hidden frontend functionalities during estimation, not during development.
-- Which improvement goals set in the previous retrospective were you able to achieve?
-  N/A
-- Which ones you were not able to achieve? Why?
-  N/A
-- Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
-  Goal 1 – Improve estimation for risky tasks (especially backend & integrations). And in sprint planning, mark “risky” tasks (Firebase, complex flows). Do a short technical spike / quick research during planning for these tasks before estimating directly or assigning research tasks blindly.
+### What went wrong in the sprint?
+- We underestimated several backend and frontend tasks.
+- Cloudflare Images integration took much longer than expected and caused many errors.
+- We missed some API needs for the frontend, which led to extra work.
+- A bug was found at the last moment, causing additional work close to the deadline.
 
-Goal 2 – Avoid missed frontend functionalities and think more of use cases and designs as they tend to be underestimated.
+### What caused the estimation errors (if any)?
+- We missed parts of the scope during estimation (both BE & FE).
+- We didn’t anticipate that Cloudflare integrations would be so time-consuming and error-prone.
+- Some frontend estimations were not exhaustive enough.
 
-Goal 3 - A better git branch management to avoid merge conflicts.
+### What lessons did you learn (both positive and negative) this sprint?
 
-- One thing you are proud of as a Team!!
-  Despite estimation issues and Firebase errors, we kept pushing, collaborated, and delivered key parts (like the map) faster than expected
+**Positive:**
+- We managed branches much more effectively than in the previous sprint.
+
+**Negative:**
+- Risky areas like frontend integrations need more detailed thinking upfront.
+- We need to capture hidden frontend functionalities during estimation, not during development.
+
+### Which improvement goals from the previous retrospective were achieved?
+- Better Git branch management to avoid merge conflicts.
+
+### Which goals were not achieved? Why?
+- Avoiding missed frontend functionalities and thinking more about use cases and designs.  
+  We didn’t spend enough time during the design phase, leading to underestimation.
+
+### Improvement goals for the next sprint and how to achieve them
+**Goal 1:** Avoid missing frontend functionalities by spending more time on use-case analysis and reviewing designs thoroughly.  
+**Goal 2:** Improve frontend test planning and design.
+
+### One thing you are proud of as a team
+Despite estimation issues, we managed to handle the challenges effectively during the last days of the sprint.
+we kept pushing, collaborated, and delivered key parts 
