@@ -142,9 +142,9 @@ describe("Report Routes Integration Tests", () => {
             title: "Test report",
             description: "Desc",
             status: "open",
-            reviewed_at: null,
-            note: null,
-            is_anonymous: 0,
+            reviewed_at: undefined,
+            note: undefined,
+            is_anonymous: false,
             position_lat: 41.0,
             position_lng: 12.0,
             created_at: "2025-01-01T00:00:00.000Z",
@@ -503,7 +503,6 @@ describe("Report Routes Integration Tests", () => {
             );
             expect(res.body).toEqual({ message: "Report status updated successfully" });
         });
-
         it("should update the category, assign operator and return 200 ", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReport);
             vi.spyOn(OperatorDAO.prototype, "getAssigneeId").mockResolvedValue(99);

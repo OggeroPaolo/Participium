@@ -49,7 +49,7 @@ router.get("/reports/:reportId",
         try {
             const reportId = Number(req.params.reportId);
             const report = await reportDAO.getCompleteReportById(reportId);
-            
+
             return res.status(200).json({ report });
 
         } catch (error: any) {
@@ -177,20 +177,28 @@ router.post("/reports",
         catch (error) {
             for (const url of uploadedUrls) {
                 try {
-                    const matches = url.match(/\/upload\/(?:v\d+\/)?(.+?)\.[^/.]+$/);
-                    const publicId = matches ? matches[1] : null;
+                    // Extract everything after /upload/v123/ and before the extension
+                    const matches = url.match(/\/upload\/(?:v\d+\/)?(.+?)\.([a-zA-Z0-9]+)$/);
+                    let publicId = matches ? matches[1] : null;
+                    const ext = matches ? matches[2] : null; // capture the extension
 
-                    if (publicId) {
-                        await cloudinary.uploader.destroy(publicId);
+                    if (publicId && ext) {
+                        // Append the original extension back
+                        publicId = `${publicId}.${ext}`;
+
+                        await cloudinary.uploader.destroy(publicId, {
+                            resource_type: "raw"
+                        });
                     }
                 } catch (delErr) {
                     console.error("Error deleting image during rollback:", delErr);
-
                 }
             }
-            console.log(error)
+
+            console.log(error);
             return res.status(500).json({ error: "Internal server error" });
         }
+
 
     });
 

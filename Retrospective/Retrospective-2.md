@@ -25,7 +25,7 @@ sections:
 
 **Remember** a story is done ONLY if it fits the Definition of Done:
 
-- Unit Tests passing: 150
+- Unit Tests passing: 120
 - Code review completed: 13h 20m
 - Code present on VCS
 - End-to-End tests performed : 54

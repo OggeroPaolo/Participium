@@ -208,7 +208,6 @@ export default class ReportDao {
       ];
 
       const result = await Update(insertReportSql, params);
-      console.log(result)
       if (!result.lastID) {
         throw new Error("Insert report failed");
       }

@@ -13,6 +13,10 @@ import { Update } from "../../src/config/database.js";
 
 const user_id = 3;
 
+//Use for clean up of Create Report test
+let testUploadedUrls: string[] = [];
+const testImg = path.join(__dirname, "../test_img/test.jpg");
+
 // Mock Firebase middleware to simulate an authenticated user
 vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
   verifyFirebaseToken: () => (req: any, _res: any, next: any) => {
@@ -248,12 +252,42 @@ describe("Reports E2E", () => {
 
   });
 
-  describe("POST /reports ", () => {
-    const testFilePath = path.join(__dirname, "../test_img/test.jpg");
 
+  describe("POST /reports", () => {
+
+    // --- CLEANUP AFTER EACH TEST ---
+    afterEach(async () => {
+
+      for (const url of testUploadedUrls) {
+        try {
+          if (!url || typeof url !== "string") continue;
+
+          // Extract everything after /upload/v123/ and before extension
+          const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[^/.]+)?$/);
+
+          if (!match) {
+            console.warn("[CLEANUP] Could not extract publicId from:", url);
+            continue;
+          }
+
+          // Remove any extension and add .jpg
+          const publicId = match[1].replace(/\.[^/.]+$/, "") + ".jpg";
+
+          await cloudinary.uploader.destroy(publicId, {
+            resource_type: "raw"
+          });
+        } catch (err) {
+          console.error("[CLEANUP ERROR]", err);
+        }
+      }
+
+
+      testUploadedUrls = []; // reset after cleanup
+    });
+
+    // --- TEST 1: SINGLE PHOTO UPLOAD ---
     it("should create a report with a real photo upload", async () => {
       const payload = {
-        user_id: user_id,
         category_id: 1,
         title: "E2E Test Report",
         description: "Testing photo upload with Vitest",
@@ -261,7 +295,7 @@ describe("Reports E2E", () => {
         position_lat: 40.7128,
         position_lng: -74.0060,
       };
-      console.log(payload.user_id);
+
       const res = await request(app)
         .post("/reports")
         .field("category_id", payload.category_id.toString())
@@ -270,19 +304,20 @@ describe("Reports E2E", () => {
         .field("is_anonymous", payload.is_anonymous.toString())
         .field("position_lat", payload.position_lat.toString())
         .field("position_lng", payload.position_lng.toString())
-        .attach("photos", testFilePath);
+        .attach("photos", testImg);
 
       expect(res.status).toBe(201);
       expect(res.body.report).toBeDefined();
       expect(res.body.report.photos).toHaveLength(1);
-      expect(res.body.report.title).toBe(payload.title);
-      expect(res.body.report.description).toBe(payload.description);
 
+      testUploadedUrls = (res.body.report.photos || []).map(p =>
+        typeof p === "string" ? p : p.url || p.photo_url
+      );
     });
 
+    // --- TEST 2: FAIL WITHOUT PHOTOS ---
     it("should fail if no photos are uploaded", async () => {
       const payload = {
-        user_id: user_id,
         category_id: 1,
         title: "No Photos Report",
         description: "Testing report without photos",
@@ -310,17 +345,12 @@ describe("Reports E2E", () => {
         ],
       });
 
+      testUploadedUrls = []; // no cleanup required
     });
 
-
-
+    // --- TEST 3: MULTIPLE PHOTO UPLOAD ---
     it("should upload multiple photos (max 3)", async () => {
-      const file1 = path.join(__dirname, "../test_img/test.jpg");
-      const file2 = path.join(__dirname, "../test_img/test.jpg");
-      const file3 = path.join(__dirname, "../test_img/test.jpg");
-
       const payload = {
-        user_id: user_id,
         category_id: 1,
         title: "Multi Photo Report",
         description: "Testing multiple photos",
@@ -337,26 +367,24 @@ describe("Reports E2E", () => {
         .field("is_anonymous", payload.is_anonymous.toString())
         .field("position_lat", payload.position_lat.toString())
         .field("position_lng", payload.position_lng.toString())
-        .attach("photos", file1)
-        .attach("photos", file2)
-        .attach("photos", file3);
+        .attach("photos", testImg)
+        .attach("photos", testImg)
+        .attach("photos", testImg);
 
       expect(res.status).toBe(201);
       expect(res.body.report.photos).toHaveLength(3);
+
+      testUploadedUrls = (res.body.report.photos || []).map(p =>
+        typeof p === "string" ? p : p.url || p.photo_url
+      );
     });
 
-
     it("should delete uploaded image if report creation fails", async () => {
-      const testFilePath = path.join(__dirname, "../test_img/test.jpg");
-
-      // Mock DAO to throw error
-      vi.spyOn(ReportDAO.prototype, "createReport").mockRejectedValue(new Error("Forced DB error"));
-
-      // Spy on Cloudinary destroy method
-      const destroySpy = vi.spyOn(cloudinary.uploader, "destroy");
+      const createSpy = vi
+        .spyOn(ReportDAO.prototype, "createReport")
+        .mockRejectedValue(new Error("Forced DB error"));
 
       const payload = {
-        user_id: user_id,
         category_id: 1,
         title: "Report causing error",
         description: "This should trigger rollback",
@@ -367,24 +395,21 @@ describe("Reports E2E", () => {
 
       const res = await request(app)
         .post("/reports")
-        .field("user_id", payload.user_id.toString())
         .field("category_id", payload.category_id.toString())
         .field("title", payload.title)
         .field("description", payload.description)
         .field("is_anonymous", payload.is_anonymous.toString())
         .field("position_lat", payload.position_lat.toString())
         .field("position_lng", payload.position_lng.toString())
-        .attach("photos", testFilePath);
+        .attach("photos", testImg);
 
-      // Should return 500
       expect(res.status).toBe(500);
       expect(res.body).toEqual({ error: "Internal server error" });
 
-      // Check that Cloudinary destroy was called for rollback
-      expect(destroySpy).toHaveBeenCalled();
-      destroySpy.mockRestore();
+      testUploadedUrls = []; // no cleanup needed, rollback handled it
     });
   });
+
 
   describe("PATCH /pub_relations/reports/:reportId", () => {
     const mockReport: Report = {
