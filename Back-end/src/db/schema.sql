@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
   role_id INTEGER NOT NULL DEFAULT 1,
   profile_photo_url TEXT,
   telegram_username TEXT,
-  email_notifications_enabled INTEGER DEFAULT 1, -- SQLite uses INTEGER for boolean (1=true, 0=false)
+  email_notifications_enabled INTEGER DEFAULT 1,
   is_active INTEGER DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -25,11 +25,14 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS roles (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
-  type TEXT NOT NULL,
-  office_id INTEGER,
+  type TEXT NOT NULL CHECK(type IN ('citizen','tech_officer','pub_relations','admin','external_maintainer')),
+  office_id INTEGER NULL,
+  company_id INTEGER NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (office_id) REFERENCES offices(id) ON DELETE SET NULL
+  FOREIGN KEY (office_id) REFERENCES offices(id) ON DELETE SET NULL,
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL
 );
+
 
 -- Offices table. TODO: type necessary?
 CREATE TABLE IF NOT EXISTS offices (
@@ -86,6 +89,28 @@ CREATE TABLE IF NOT EXISTS photos (
   ordering INTEGER NOT NULL CHECK(ordering >=1 AND ordering <=3),
   FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE
 );
+
+-- Companies table
+CREATE TABLE IF NOT EXISTS companies (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  category_id INTEGER,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+);
+
+-- Comments table
+CREATE TABLE IF NOT EXISTS comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  report_id INTEGER NOT NULL,
+  username TEXT NOT NULL,
+  type TEXT NOT NULL CHECK(type IN ('private','public')),
+  text TEXT NOT NULL,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE
+);
+
 -- ============================================
 -- Indexes for better query performance
 -- ============================================
@@ -115,6 +140,10 @@ CREATE INDEX IF NOT EXISTS idx_roles_office_id ON roles(office_id);
 
 -- Photos indexes
 CREATE INDEX IF NOT EXISTS idx_photos_report_id ON photos(report_id);
+
+-- Indexes for comments
+CREATE INDEX IF NOT EXISTS idx_comments_report_id ON comments(report_id);
+CREATE INDEX IF NOT EXISTS idx_comments_type ON comments(type);
 
 -- ============================================
 -- Triggers for updated_at timestamps
@@ -161,4 +190,12 @@ BEGIN
     UPDATE reports
     SET reviewed_at = CURRENT_TIMESTAMP
     WHERE id = OLD.id;
+END;
+
+-- Companis updated_at trigger
+CREATE TRIGGER IF NOT EXISTS trigger_companies_updated_at
+AFTER UPDATE ON companies
+FOR EACH ROW
+BEGIN
+  UPDATE companies SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;

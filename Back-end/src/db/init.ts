@@ -45,21 +45,16 @@ export const initializeDatabase = async (): Promise<void> => {
  */
 export const seedDefaultData = async (): Promise<void> => {
   try {
-    const result = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM roles");
-
-    if (result && result.count === 0) {
-
+  
       await seedDefaultCategories();
       await seedDefaultOffices();
+      await seedDefaultCompany();
       await seedDefaultRoles();
       await seedDefaultUsers();
       await seedDefaultReports();
+      await seedDefaultComments();
       await seedDefaultPhotos();
       logger.info("Default data seeded successfully");
-
-    } else {
-      logger.info("Database already contains data, skipping seed");
-    }
   } catch (error) {
     logger.error({ error }, "Failed to seed default data");
   }
@@ -104,7 +99,6 @@ export const seedDefaultOffices = async (): Promise<void> => {
   try {
     const officeCount = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM offices");
     if (officeCount?.count && officeCount.count > 0) {
-      logger.info("Offices already exist, skipping seed");
       return;
     }
 
@@ -134,7 +128,6 @@ export const seedDefaultRoles = async (): Promise<void> => {
   try {
     const roleCount = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM roles");
     if (roleCount?.count && roleCount.count > 0) {
-      logger.info("Roles already exist, skipping seed");
       return;
     }
 
@@ -156,33 +149,39 @@ export const seedDefaultRoles = async (): Promise<void> => {
       return category ? officeMap[`${category.name} Office`]! : officeMap[`${firstCategory.name} Office`]!;
     };
 
-    const roles: { name: string; type: string; office_id: number | null }[] = [
-      { name: "Citizen", type: "citizen", office_id: null },
-      { name: "Municipal_public_relations_officer", type: "pub_relations", office_id: officeMap["Organization Office"]! },
-      { name: "Water_utility_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Water Supply")! },
-      { name: "Sewer_system_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Sewer")! },
-      { name: "Public_lightning_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Public Lightning")! },
-      { name: "Architectural_barriers_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Architectural Barriers")! },
-      { name: "Waste_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Waste")! },
-      { name: "Road_signs_urban_furnishings_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Roads and Urban Furnishings")! },
-      { name: "Public_green_areas_playgrounds_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Public Green Areas and Playgrounds")! },
-      { name: "Admin", type: "admin", office_id: officeMap["Organization Office"]! }
+    // Get default company id
+    const company = await getOne<{ id: number }>("SELECT id FROM companies WHERE name = ?", ["Enel"]);
+    const defaultCompanyId = company?.id ?? 1;
+
+    const roles: { name: string; type: string; office_id: number | null; company_id: number | null }[] = [
+      { name: "Citizen", type: "citizen", office_id: null, company_id: null },
+      { name: "Municipal_public_relations_officer", type: "pub_relations", office_id: officeMap["Organization Office"]!, company_id: null },
+      { name: "Water_utility_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Water Supply")!, company_id: null },
+      { name: "Sewer_system_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Sewer")!, company_id: null },
+      { name: "Public_lightning_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Public Lighting")!, company_id: null },
+      { name: "Architectural_barriers_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Architectural Barriers")!, company_id: null },
+      { name: "Waste_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Waste")!, company_id: null },
+      { name: "Road_signs_urban_furnishings_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Roads and Urban Furnishings")!, company_id: null },
+      { name: "Public_green_areas_playgrounds_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Public Green Areas and Playgrounds")!, company_id: null },
+      { name: "Admin", type: "admin", office_id: officeMap["Organization Office"]!, company_id: null },
+      { name: "External Maintainer", type: "external_maintainer", office_id: null, company_id: defaultCompanyId }
     ];
+
+
     for (const role of roles) {
       const existing = await getOne<{ id: number }>("SELECT id FROM roles WHERE name = ?", [role.name]);
       if (!existing) {
         await runQuery(
-          `INSERT INTO roles (name, type, office_id) VALUES (?, ?, ?)`,
-          [role.name, role.type, role.office_id]
+          `INSERT INTO roles (name, type, office_id, company_id) VALUES (?, ?, ?, ?)`,
+          [role.name, role.type, role.office_id, role.company_id]
         );
       }
     }
-
-    logger.info("Roles and offices seeded successfully");
   } catch (error) {
     logger.error({ error }, "Failed to seed roles and offices");
   }
 };
+
 
 /**
  * Seed default users
@@ -289,7 +288,15 @@ export const seedDefaultUsers = async (): Promise<void> => {
         first_name: "Emily",
         last_name: "Carter",
         role_id: roleMap["Admin"]
-      }
+      },
+      {
+        firebase_uid: "pWlYdRgKb3aCTmAM1D7Rr8730W02",
+        email: "external-matainer@example.com",
+        username: "GabeNewell",
+        first_name: "Gabe",
+        last_name: "Newell",
+        role_id: roleMap["External Maintainer"]
+      },
     ];
 
     for (const user of users) {
@@ -314,7 +321,6 @@ export const seedDefaultReports = async (): Promise<void> => {
   try {
     const reportCount = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM reports");
     if (reportCount?.count && reportCount.count > 0) {
-      logger.info("Reports already exist, skipping seed");
       return;
     }
 
@@ -499,7 +505,6 @@ export const seedDefaultPhotos = async (): Promise<void> => {
   try {
     const photoCount = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM photos");
     if (photoCount?.count && photoCount.count > 0) {
-      logger.info("Photos already exist, skipping seed");
       return;
     }
 
@@ -584,6 +589,115 @@ export const seedDefaultPhotos = async (): Promise<void> => {
     logger.error({ error }, "Failed to seed default photos");
   }
 };
+
+/**
+ * Seed default company
+ */
+export const seedDefaultCompany = async (): Promise<void> => {
+  try {
+    // Check if companies table is empty
+    const companyCount = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM companies");
+    let companyId: number;
+
+    if (!companyCount || companyCount.count === 0) {
+      // Get first category as fallback
+      const category = await getOne<{ id: number }>("SELECT id FROM categories LIMIT 1");
+
+      // Insert default company "Enel"
+      await runQuery(
+        `INSERT INTO companies (name, category_id) VALUES (?, ?)`,
+        ["Enel", category?.id ?? null]
+      );
+
+      // Get last inserted ID with fallback
+      const lastIdResult = await getOne<{ lastId: number }>("SELECT last_insert_rowid() as lastId");
+      companyId = lastIdResult?.lastId ?? 1;
+    } else {
+      // If company exists, use the first one named Enel (or fallback)
+      const existingCompany = await getOne<{ id: number }>("SELECT id FROM companies WHERE name = ?", ["Enel"]);
+      companyId = existingCompany?.id ?? 1;
+    }
+
+    // Link only roles with type 'external_maintainer'
+    const externalRoles = await getAll<{ id: number }>(
+      "SELECT id FROM roles WHERE type = 'external_maintainer'"
+    );
+
+    for (const role of externalRoles) {
+      await runQuery(
+        "UPDATE roles SET company_id = ? WHERE id = ?",
+        [companyId, role.id]
+      );
+    }
+  } catch (error) {
+    logger.error({ error }, "Failed to seed default company");
+  }
+};
+
+/**
+ * Seed default comments
+ */
+export const seedDefaultComments = async (): Promise<void> => {
+  try {
+    // Check if any comments already exist
+    const commentCount = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM comments");
+    if (commentCount?.count && commentCount.count > 0) {
+      return;
+    }
+
+    // Get some reports to link comments to
+    const reports: { id: number; title: string }[] = (await getAll<{ id: number; title: string }>(
+      "SELECT id, title FROM reports LIMIT 5"
+    )) ?? [];
+
+    if (reports.length != 0) {
+
+
+      const comments = [
+        {
+          report_id: reports[0]?.id,
+          username: "JohnDoe",
+          type: "public",
+          text: "This issue needs urgent attention."
+        },
+        {
+          report_id: reports[0]?.id,
+          username: "AdminUser",
+          type: "private",
+          text: "Assigned to maintenance team."
+        },
+        {
+          report_id: reports[1]?.id,
+          username: "JaneSmith",
+          type: "public",
+          text: "I noticed this problem too, it affects traffic."
+        },
+        {
+          report_id: reports[2]?.id,
+          username: "PublicUser",
+          type: "public",
+          text: "Please fix this as soon as possible."
+        },
+        {
+          report_id: reports[3]?.id,
+          username: "Operator",
+          type: "private",
+          text: "Scheduled maintenance for tomorrow."
+        }
+      ];
+
+      for (const comment of comments) {
+        await runQuery(
+          `INSERT INTO comments (report_id, username, type, text) VALUES (?, ?, ?, ?)`,
+          [comment.report_id, comment.username, comment.type, comment.text]
+        );
+      }
+    }
+  } catch (error) {
+    console.error("Failed to seed default comments", error);
+  }
+};
+
 
 
 export default initializeDatabase;
