@@ -28,6 +28,25 @@ router.get("/operators", verifyFirebaseToken([ROLES.ADMIN]), async (req, res) =>
   }
 });
 
+// GET all operators for a specific category
+router.get("/categories/:categoryId/operators", verifyFirebaseToken([ROLES.PUB_RELATIONS]), async (req, res) => {
+  try {
+
+    const categoryId = Number(req.params.categoryId);
+
+    const InternalUsersByCategory = await operatorDao.getOperatorsByCategory(categoryId);
+
+    if (Array.isArray(InternalUsersByCategory) && InternalUsersByCategory.length === 0) {
+      return res.status(204).send(); // No Operators saved
+    }
+
+    res.status(200).json(InternalUsersByCategory);
+
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 // ADD a new operator
 router.post("/operator-registrations",
   verifyFirebaseToken([ROLES.ADMIN]),

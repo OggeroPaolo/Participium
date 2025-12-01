@@ -212,7 +212,8 @@ router.patch("/pub_relations/reports/:reportId",
 
         body("note").if(body("status").equals("rejected")).notEmpty()
             .withMessage("A note is required when report is rejected"),
-        body("categoryId").optional({ nullable: true }).isInt().withMessage("categoryId must be an integer if passed")
+        body("categoryId").optional({ nullable: true }).isInt().withMessage("categoryId must be an integer if passed"),
+        body("officerId").optional({ nullable: true }).isInt().withMessage("officerId must be an integer if passed")
     ],
     verifyFirebaseToken([ROLES.PUB_RELATIONS]),
     async (req: Request, res: Response) => {
@@ -225,7 +226,7 @@ router.patch("/pub_relations/reports/:reportId",
 
 
         try {
-            let { status, note, categoryId } = req.body;
+            let { status, note, categoryId, officerId } = req.body;
 
             // if status to be changed is not rejected set note to null so it won't be changed in the sql query
             if (status != "rejected") {
@@ -253,13 +254,23 @@ router.patch("/pub_relations/reports/:reportId",
 
             // if status to be is assigned get the operator of the corresponding category that has the least assigned reports 
             // (maybe should change it to include in the number not only assigned reports, but also in_progress reports)
-            let assigneeId;
-            if (status === "assigned") {
+            let assigneeId = undefined;
+            if (status === "assigned" && !officerId) {
                 assigneeId = await operatorDAO.getAssigneeId(categoryIdFinal);
+            }
+            if (officerId) {
+                const officerCategoryId = await operatorDAO.getCategoryOfOfficer(officerId);
+                if (officerCategoryId === categoryIdFinal) {
+                    assigneeId = officerId
+                } else {
+                    return res.status(403).json({
+                        error: `The officer you want to assign to this report does not handle this category`
+                    });
+                }
             }
 
             // update the report and optionally assigne it if to be status is assigned
-            await reportDAO.updateReportStatusAndAssign(reportId, status, user.id, note, categoryId, assigneeId);
+            await reportDAO.updateReportStatusAndAssign(reportId, status, 2, note, categoryId, assigneeId);
 
             return res.status(200).json({
                 message: "Report status updated successfully"
