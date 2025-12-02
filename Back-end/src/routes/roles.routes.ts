@@ -5,7 +5,7 @@ import { ROLES } from "../models/userRoles.js";
 
 const router = Router();
 
-// Health check endpoint
+// Get all roles different from 'citizen' or 'admin'
 router.get("/roles", verifyFirebaseToken([ROLES.ADMIN]), async (req, res) => {
   try {
     const rolesDao = new RolesDao();

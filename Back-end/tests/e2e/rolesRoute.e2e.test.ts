@@ -1,9 +1,11 @@
 import request from "supertest";
 import { Express } from "express";
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll } from "vitest";
 import rolesRouter from "../../src/routes/roles.routes.js";
 import RolesDao from "../../src/dao/RolesDAO.js";
-import { makeTestApp } from "../setup/tests_util.js";
+import { initTestDB, makeTestApp, resetTestDB } from "../setup/tests_util.js";
+import { afterEach } from "vitest";
+import { runQuery } from "../../src/config/database.js";
 
 // Mock firebase token verification middleware
 vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
@@ -13,40 +15,43 @@ vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
 describe("GET /roles (E2E)", () => {
   let app: Express;
 
-  beforeEach(() => {
-    vi.clearAllMocks();
+  beforeAll(async () => {
+    await initTestDB();
     app = makeTestApp(rolesRouter);
   });
 
-  it("should return a list of roles (200)", async () => {
-    const mockRoles = [
-      { id: 1, name: "Citizen" },
-      { id: 2, name: "Operator" },
-      { id: 4, name: "Admin" },
-    ];
+  afterEach(async () => {
+    await resetTestDB();
+    vi.restoreAllMocks();
+  });
 
-    const spy = vi
-      .spyOn(RolesDao.prototype, "getRoles")
-      .mockResolvedValue(mockRoles);
+  it("should return a list of roles (200)", async () => {
+    const expectedRoles = [
+      { name: "Municipal_public_relations_officer", type: "pub_relations" },
+      { name: "Water_utility_officer", type: "tech_officer" },
+      { name: "External Maintainer", type: "external_maintainer" }
+    ];
 
     const res = await request(app).get("/roles");
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual(mockRoles);
 
-    spy.mockRestore();
+    expect(res.body).toEqual(
+      expect.arrayContaining(
+        expectedRoles.map(role => expect.objectContaining(role))
+      )
+    );
   });
 
   it("should return 204 if no roles exist", async () => {
-    const spy = vi
-      .spyOn(RolesDao.prototype, "getRoles")
-      .mockResolvedValue([]);
+
+    //Clearing categories table (bypass foreign key constraints)
+    await runQuery("PRAGMA foreign_keys = OFF");
+    await runQuery("DELETE FROM roles");
+    await runQuery("PRAGMA foreign_keys = ON");
 
     const res = await request(app).get("/roles");
-
     expect(res.status).toBe(204);
-
-    spy.mockRestore();
   });
 
   it("should return 500 if getRoles throws an error", async () => {

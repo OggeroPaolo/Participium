@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS roles (
 );
 
 
--- Offices table. TODO: type necessary?
+-- Offices table. 
 CREATE TABLE IF NOT EXISTS offices (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL,
