@@ -656,6 +656,96 @@ Authorization: Bearer <firebase-token>
 }
 ```
 
+**PATCH `/tech_officer/reports/{reportId}/assign_external`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+* **Request Parameters:**
+
+  - reportId: integer
+
+* **Request Body:**
+
+```json
+{
+  "externalMaintainerId": "4"
+}
+```
+
+* **Success Response (200 OK):**
+
+```json
+{
+  "message": "Report successfully assigned to the external maintainer"
+}
+```
+
+* **Error Response (400 Bad Request):**
+
+```json
+{
+  "errors": "Invalid request data"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+  Returned when no valid authentication token is provided.
+
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+* **Error Response (403 Forbidden):**
+  Returned when the authenticated user is not a tech officer.
+
+```json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+* **Error Response (403 Forbidden):**
+
+```json
+{
+  "error": "You are not allowed to assign to an external maintainer if the report is not in already in assigned status"
+}
+```
+* **Error Response (403 Forbidden):**
+
+```json
+{
+  "error": "You are not allowed to assign to an external maintainer a report that is not assigned to you"
+}
+```
+* **Error Response (403 Forbidden):**
+
+```json
+{
+  "error": "The external maintainer you want to assign to this report does not handle this category"
+}
+```
+
+* **Error Response (404 Not Found):**
+
+```json
+{
+  "error": "Report not found"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server error"
+}
+```
+
 **PATCH `/reports/{reportId}`**
 
 * **Request Headers:**
