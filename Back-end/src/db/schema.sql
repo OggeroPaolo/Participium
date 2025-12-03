@@ -57,7 +57,6 @@ CREATE TABLE IF NOT EXISTS categories (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Reports table
 CREATE TABLE IF NOT EXISTS reports (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,
@@ -66,6 +65,7 @@ CREATE TABLE IF NOT EXISTS reports (
   description TEXT NOT NULL,
   status TEXT NOT NULL CHECK(status in ('pending_approval', 'assigned', 'in_progress', 'suspended', 'rejected', 'resolved')),
   assigned_to INTEGER,
+  external_user INTEGER,
   reviewed_by INTEGER,
   reviewed_at DATETIME,
   note TEXT,
@@ -75,11 +75,12 @@ CREATE TABLE IF NOT EXISTS reports (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
   FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
-  FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL
+  FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (external_user) REFERENCES users(id) ON DELETE SET NULL
 );
+
 
 -- Photos table
 CREATE TABLE IF NOT EXISTS photos (

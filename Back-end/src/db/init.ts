@@ -45,16 +45,16 @@ export const initializeDatabase = async (): Promise<void> => {
  */
 export const seedDefaultData = async (): Promise<void> => {
   try {
-  
-      await seedDefaultCategories();
-      await seedDefaultOffices();
-      await seedDefaultCompany();
-      await seedDefaultRoles();
-      await seedDefaultUsers();
-      await seedDefaultReports();
-      await seedDefaultComments();
-      await seedDefaultPhotos();
-      logger.info("Default data seeded successfully");
+
+    await seedDefaultCategories();
+    await seedDefaultOffices();
+    await seedDefaultCompany();
+    await seedDefaultRoles();
+    await seedDefaultUsers();
+    await seedDefaultReports();
+    await seedDefaultComments();
+    await seedDefaultPhotos();
+    logger.info("Default data seeded successfully");
   } catch (error) {
     logger.error({ error }, "Failed to seed default data");
   }
@@ -338,7 +338,7 @@ export const seedDefaultReports = async (): Promise<void> => {
 
     const reports = [
       /********************************
-       * REAL REPORT ABOUT PORTA NUOVA*
+       * REAL REPORT*
        ********************************/
       {
         title: "Neglected street corner",
@@ -400,7 +400,8 @@ export const seedDefaultReports = async (): Promise<void> => {
         position_lng: 7.66937,
         status: "resolved",
         reviewed_by: 3,
-        assigned_to: 10
+        assigned_to: 10,
+        external_user: 13
       },
       {
         title: "Abandoned Pole",
@@ -475,9 +476,9 @@ export const seedDefaultReports = async (): Promise<void> => {
       const existing = await getOne<{ id: number }>("SELECT id FROM reports WHERE title = ?", [report.title]);
       if (!existing) {
         await runQuery(
-          ` INSERT INTO reports 
-            (title, description, user_id, category_id, position_lat, position_lng, status, note, assigned_to, reviewed_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO reports 
+    (title, description, user_id, category_id, position_lat, position_lng, status, note, assigned_to, reviewed_by, external_user)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             report.title,
             report.description,
@@ -488,9 +489,11 @@ export const seedDefaultReports = async (): Promise<void> => {
             report.status,
             report.note ?? null,
             report.assigned_to ?? null,
-            report.reviewed_by ?? null
+            report.reviewed_by ?? null,
+            report.external_user ?? null
           ]
         );
+
       }
     }
   } catch (error) {
