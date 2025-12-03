@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { Request, Response, NextFunction } from "express";
-import { body, validationResult } from "express-validator";
+import { body, validationResult, param } from "express-validator";
 import { verifyFirebaseToken } from "../middlewares/verifyFirebaseToken.js";
 import { ROLES } from "../models/userRoles.js";
 import UserDAO from "../dao/UserDAO.js";
@@ -13,7 +13,7 @@ const operatorDao = new OperatorDAO();
 const userDao = new UserDAO();
 
 // GET all operators
-router.get("/operators", verifyFirebaseToken([ROLES.ADMIN]), async (req, res) => {
+router.get("/operators", verifyFirebaseToken([ROLES.ADMIN]), async (req: Request, res: Response) => {
   try {
     const operatorsList = await operatorDao.getOperators();
 
@@ -29,14 +29,15 @@ router.get("/operators", verifyFirebaseToken([ROLES.ADMIN]), async (req, res) =>
 });
 
 // GET all operators for a specific category
-router.get("/categories/:categoryId/operators", verifyFirebaseToken([ROLES.PUB_RELATIONS]), async (req, res) => {
+router.get("/categories/:categoryId/operators",
+  [
+    param("categoryId").isInt().withMessage("Category ID must be a valid integer"),
+  ],
+  verifyFirebaseToken([ROLES.PUB_RELATIONS]),
+  async (req: Request, res: Response) => {
   try {
 
     const categoryId = Number(req.params.categoryId);
-    
-    if (isNaN(categoryId)) {
-      return res.status(400).json({ error: "Category ID must be a valid number" });
-    }
 
     const InternalUsersByCategory = await operatorDao.getOperatorsByCategory(categoryId);
 
