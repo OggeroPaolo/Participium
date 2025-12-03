@@ -122,7 +122,7 @@ describe("GET /categories/:categoryId/operators", () => {
     console.log(res.body);
     expect(res.status).toBe(400);
     expect(res.body).toEqual({
-      error: "Category ID must be a valid number",
+      error: "Category ID must be a valid integer",
     });
   });
 

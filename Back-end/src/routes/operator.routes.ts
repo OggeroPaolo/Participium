@@ -35,23 +35,30 @@ router.get("/categories/:categoryId/operators",
   ],
   verifyFirebaseToken([ROLES.PUB_RELATIONS]),
   async (req: Request, res: Response) => {
-  try {
-
-    const categoryId = Number(req.params.categoryId);
-
-    const InternalUsersByCategory = await operatorDao.getOperatorsByCategory(categoryId);
-
-    if (Array.isArray(InternalUsersByCategory) && InternalUsersByCategory.length === 0) {
-      return res.status(204).send(); // No Operators saved
+    const errors = validationResult(req);
+    if (!errors.isEmpty() && errors !== undefined) {
+      const errs = errors.array();          
+      const firstError = errs[0]?.msg;
+      return res.status(400).json({ error: firstError });
     }
 
-    res.status(200).json(InternalUsersByCategory);
 
-  } catch (error) {
+    try {
 
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
+      const categoryId = Number(req.params.categoryId);
+
+      const InternalUsersByCategory = await operatorDao.getOperatorsByCategory(categoryId);
+
+      if (Array.isArray(InternalUsersByCategory) && InternalUsersByCategory.length === 0) {
+        return res.status(204).send(); // No Operators saved
+      }
+
+      res.status(200).json(InternalUsersByCategory);
+
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
 
 // ADD a new operator
 router.post("/operator-registrations",
@@ -98,8 +105,6 @@ router.post("/operator-registrations",
       if (error.code === "auth/email-already-exists") {
         return res.status(422).json({ error: error.message });
       }
-
-      console.error(error);
       return res.status(500).json({ error: "Internal server error" });
     }
   }
