@@ -187,6 +187,18 @@ html {
   animation: blink 2s ease-in-out infinite;
 }
 
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 11, 37, 0.55);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(3px);
+  z-index: 9999;
+}
+
 /* Mobile styles */
 @media (max-width: 991px) {
   .cit-desktop-layout {

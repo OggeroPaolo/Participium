@@ -4,16 +4,13 @@ import { loginWithEmail } from "../firebaseService";
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isFormLoading, setIsFormLoading] = useState(false);
 
-  const [state, formAction] = useActionState(submitCredentials, {
+  const [state, formAction, isPending] = useActionState(submitCredentials, {
     email: "",
     password: "",
   });
 
   async function submitCredentials(prevData, formData) {
-    setIsFormLoading(true);
-
     const credentials = {
       email: formData.get("email"),
       password: formData.get("password"),
@@ -30,8 +27,6 @@ function Login() {
       else if (error.code === "auth/too-many-requests")
         message = "Too many failed attempts, please try later.";
       return { error: message };
-    } finally {
-      setIsFormLoading(false);
     }
   }
 
@@ -87,17 +82,14 @@ function Login() {
             {state.error && (
               <p className='text-danger mt-3 mb-2'>{state.error}</p>
             )}
-            {isFormLoading && (
-              <>
+            {isPending && (
+              <div className='loading-overlay'>
                 <div
-                  className='d-flex justify-content-center align-items-center'
-                  style={{ minHeight: "10vh" }}
-                >
-                  <div className='spinner-border text-primary' role='status'>
-                    <span className='visually-hidden'>Loading...</span>
-                  </div>
-                </div>
-              </>
+                  className='spinner-border text-light'
+                  style={{ width: "3rem", height: "3rem" }}
+                ></div>
+                <div className='mt-3 text-light fw-semibold'>Logging in...</div>
+              </div>
             )}
 
             <Button type='submit' className='mt-4 confirm-button w-100'>

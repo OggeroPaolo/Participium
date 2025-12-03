@@ -7,9 +7,8 @@ function Signup() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConf, setShowPasswordConf] = useState(false);
-  const [isFormLoading, setIsFormLoading] = useState(false);
 
-  const [state, formAction] = useActionState(submitCredentials, {
+  const [state, formAction, isPending] = useActionState(submitCredentials, {
     firstName: "",
     lastName: "",
     username: "",
@@ -19,8 +18,6 @@ function Signup() {
   });
 
   async function submitCredentials(prevData, formData) {
-    setIsFormLoading(true);
-
     const credentials = {
       firstName: formData.get("firstName"),
       lastName: formData.get("lastName"),
@@ -32,7 +29,6 @@ function Signup() {
     const passwordConfirm = formData.get("passwordConfirm");
 
     if (credentials.password !== passwordConfirm) {
-      setIsFormLoading(false);
       return { error: "Passwords do not match" };
     }
 
@@ -47,8 +43,6 @@ function Signup() {
       };
     } catch (error) {
       return { error: error.message };
-    } finally {
-      setIsFormLoading(false);
     }
   }
 
@@ -144,17 +138,14 @@ function Signup() {
                 {state.success}
               </Alert>
             )}
-            {isFormLoading && (
-              <>
+            {isPending && (
+              <div className='loading-overlay'>
                 <div
-                  className='d-flex justify-content-center align-items-center'
-                  style={{ minHeight: "10vh" }}
-                >
-                  <div className='spinner-border text-primary' role='status'>
-                    <span className='visually-hidden'>Loading...</span>
-                  </div>
-                </div>
-              </>
+                  className='spinner-border text-light'
+                  style={{ width: "3rem", height: "3rem" }}
+                ></div>
+                <div className='mt-3 text-light fw-semibold'>Signing in...</div>
+              </div>
             )}
 
             <Button type='submit' className='mt-4 confirm-button w-100'>
