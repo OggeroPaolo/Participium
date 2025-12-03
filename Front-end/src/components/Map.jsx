@@ -387,6 +387,27 @@ function Map({
     };
   }, []);
 
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    async function loadGeoJSON() {
+      try {
+        const response = await fetch('/turin_geojson.geojson');
+        const geojson = await response.json();
+
+        const layer = L.geoJSON(geojson, {
+          style: { color: '#2886da', weight: 2, opacity: 0.4, fillColor: '#2886da', fillOpacity: 0.07 }
+        }).addTo(mapInstanceRef.current);
+
+        mapInstanceRef.current.fitBounds(layer.getBounds());
+      } catch (err) {
+        console.error("Failed loading GeoJSON", err);
+      }
+    }
+
+    loadGeoJSON();
+  }, []);
+
   // add reports to cluster
   useEffect(() => {
     if (!approvedReports || !clusterGroupRef.current) return;
