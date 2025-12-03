@@ -8,7 +8,7 @@ import type { ReportMap } from "../models/reportMap.js";
 import OperatorDAO from "../dao/OperatorDAO.js";
 import { ROLES } from "../models/userRoles.js";
 import type { User } from "../models/user.js"
-import { validateCreateReport, validateGetReport, validateGetReports, validateOfficersGetReports } from "../middlewares/reportValidation.js";
+import { validateAssignExternalMaintainer, validateCreateReport, validateGetReport, validateGetReports, validateOfficersGetReports } from "../middlewares/reportValidation.js";
 import { upload } from "../config/multer.js";
 import cloudinary from "../config/cloudinary.js";
 import { unlink, rename } from "fs/promises";
@@ -201,6 +201,53 @@ router.post("/reports",
 
 
     });
+
+// Patches the external_user field of a report in order to assign it to the correct external mantainer
+router.patch("/tech_officer/reports/:reportId/assign_external",
+    validateAssignExternalMaintainer,
+    verifyFirebaseToken([ROLES.TECH_OFFICER]),
+    async (req: Request, res: Response) => {
+        try {
+            const reportId = Number(req.params.reportId);
+            const user = (req as Request & { user: User }).user;
+            let { externalMaintainerId } = req.body
+
+            // get report info to check the current status
+            const report = await reportDAO.getReportById(reportId);
+            if (!report) return res.status(404).json({ error: "Report not found" });
+
+            if (report.status !== 'assigned') {
+                return res.status(403).json({
+                    error: `You are not allowed to assign to an external maintainer if the report is not in already in assigned status`
+                });
+            }
+
+            if (report.assigned_to !== user.id) {
+                return res.status(403).json({
+                    error: `You are not allowed to assign to an external maintainer a report that is not assigned to you`
+                });
+            }
+
+
+            const externalMaintainerCategoryId = await operatorDAO.getCategoryOfExternalMaintainer(externalMaintainerId);
+            if (externalMaintainerCategoryId === report.category_id) {
+                await reportDAO.updateReportExternalMaintainer(reportId, externalMaintainerId);
+            } else {
+                return res.status(403).json({
+                    error: `The external maintainer you want to assign to this report does not handle this category`
+                });
+            }
+
+            return res.status(200).json({
+                message: "Report successfully assigned to the external maintainer"
+            });
+
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
 
 // Patches the status of a report optionally attaching a rejection note
 router.patch("/pub_relations/reports/:reportId",
