@@ -37,7 +37,7 @@ router.get("/categories/:categoryId/operators",
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty() && errors !== undefined) {
-      const errs = errors.array();          
+      const errs = errors.array();
       const firstError = errs[0]?.msg;
       return res.status(400).json({ error: firstError });
     }
@@ -64,17 +64,19 @@ router.get("/categories/:categoryId/operators",
 router.post("/operator-registrations",
   verifyFirebaseToken([ROLES.ADMIN]),
   [
-    body("firstName").isString().notEmpty(),
-    body("lastName").isString().notEmpty(),
-    body("username").isAlphanumeric().notEmpty(),
-    body("email").isEmail().normalizeEmail(),
-    body("password").isString().notEmpty(),
-    body("role_id").isNumeric().notEmpty(),
+    body("firstName").isString().notEmpty().withMessage("First name is required"),
+    body("lastName").isString().notEmpty().withMessage("Last name is required"),
+    body("username").isAlphanumeric().notEmpty().withMessage("Username must be alphanumeric"),
+    body("email").isEmail().normalizeEmail().withMessage("Email must be valid"),
+    body("password").isString().notEmpty().withMessage("Password is required"),
+    body("role_id").isNumeric().notEmpty().withMessage("Role ID must be numeric"),
   ],
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ error: "Invalid request data" });
+      //Extract the validation error messages 
+      const extractedErrors = errors.array().map(err => err.msg);
+      return res.status(400).json({ errors: extractedErrors });
     }
 
     try {

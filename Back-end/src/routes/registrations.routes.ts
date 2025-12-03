@@ -10,16 +10,18 @@ const userDao = new UserDAO();
 // Registrates a new User
 router.post("/user-registrations",
     [
-        body("firstName").isString().notEmpty(),
-        body("lastName").isString().notEmpty(),
-        body("username").isAlphanumeric().notEmpty(),
-        body("email").isEmail().normalizeEmail(),
-        body("password").isString()
+        body("firstName").isString().notEmpty().withMessage("First name is required"),
+        body("lastName").isString().notEmpty().withMessage("Last name is required"),
+        body("username").isAlphanumeric().notEmpty().withMessage("Username must be alphanumeric and not empty"),
+        body("email").isEmail().normalizeEmail().withMessage("Email must be valid"),
+        body("password").isString().withMessage("Password must be a string")
     ],
     async (req: Request, res: Response) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ error: "Invalid request data" });
+            //Extract the validation error messages 
+            const extractedErrors = errors.array().map(err => err.msg);
+            return res.status(400).json({ errors: extractedErrors });
         }
 
         try {
