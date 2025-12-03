@@ -297,26 +297,6 @@ function OfficerReviewList() {
           ) : completeReportData ? (
             <>
               <h5 className='fw-bold mb-3'>{completeReportData.title}</h5>
-              
-              <div className='mb-3'>
-                <strong>Category:</strong>{" "}
-                <Form.Select
-                  value={selectedCategoryId || ""}
-                  onChange={(e) => setSelectedCategoryId(Number(e.target.value))}
-                  style={{ 
-                    display: 'inline-block', 
-                    width: 'auto',
-                    padding: '0.25rem 2rem 0.25rem 0.5rem',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </Form.Select>
-              </div>
 
               <div className='mb-3'>
                 <strong>Description:</strong>
@@ -371,6 +351,28 @@ function OfficerReviewList() {
                   </div>
                 </div>
               )}
+
+              <div className='mb-3'>
+                <strong>Category:</strong>{" "}
+                <Form.Select
+                  value={selectedCategoryId || ""}
+                  onChange={(e) =>
+                    setSelectedCategoryId(Number(e.target.value))
+                  }
+                  style={{
+                    display: "inline-block",
+                    width: "auto",
+                    padding: "0.25rem 2rem 0.25rem 0.5rem",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </Form.Select>
+              </div>
 
               <hr />
 
