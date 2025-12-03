@@ -255,7 +255,6 @@ describe("Reports E2E", () => {
 
   describe("POST /reports", () => {
 
-    // --- CLEANUP AFTER EACH TEST ---
     afterEach(async () => {
 
       for (const url of testUploadedUrls) {
@@ -412,77 +411,36 @@ describe("Reports E2E", () => {
 
 
   describe("PATCH /pub_relations/reports/:reportId", () => {
-    const mockReport: Report = {
-      id: 1,
-      user_id: 2,
-      category_id: 3,
-      title: "Sample report",
-      description: "Test description",
-      status: ReportStatus.PendingApproval,
-      assigned_to: null,
-      reviewed_by: null,
-      reviewed_at: null,
-      note: "Initial note",
-      position_lat: 40.0,
-      position_lng: -70.0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    it("should return 400 if reportId is not an integer", async () => {
+    it("should return multiple validation errors together", async () => {
       const res = await request(app)
-        .patch("/pub_relations/reports/abc")
-        .send({ status: "assigned" });
+        .patch("/pub_relations/reports/xyz")
+        .send({ status: "wrongStatus", categoryId: "abc" });
 
       expect(res.status).toBe(400);
-      expect(res.body).toEqual({ errors: ["Report ID must be a valid integer"] });
-    });
-
-    it("should return 400 if status is invalid", async () => {
-      const res = await request(app)
-        .patch("/pub_relations/reports/1")
-        .send({ status: "pending_approval" });
-
-      expect(res.status).toBe(400);
-      expect(res.body).toEqual({ errors: ["Status must be one of: assigned, rejected"] });
-    });
-
-    it("should return 400 if note is missing when rejecting", async () => {
-      const res = await request(app)
-        .patch("/pub_relations/reports/1")
-        .send({ status: "rejected" });
-
-      expect(res.status).toBe(400);
-      expect(res.body).toEqual({ errors: ["A note is required when report is rejected"] });
-    });
-
-    it("should return 400 if categoryId is invalid", async () => {
-      const res = await request(app)
-        .patch("/pub_relations/reports/1")
-        .send({ status: "assigned", categoryId: "abc" });
-
-      expect(res.status).toBe(400);
-      expect(res.body).toEqual({ errors: ["categoryId must be an integer if passed"] });
+      expect(res.body).toEqual({
+        errors: [
+          "Report ID must be a valid integer",
+          "Status must be one of: assigned, rejected",
+          "categoryId must be an integer if passed"
+        ]
+      });
     });
 
     it("should return 404 if report not found", async () => {
-      vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(undefined);
 
       const res = await request(app)
         .patch("/pub_relations/reports/999")
-        .send({ status: "assigned" });
+        .send({ status: ReportStatus.Assigned });
 
       expect(res.status).toBe(404);
       expect(res.body).toEqual({ error: "Report not found" });
     });
 
     it("should return 403 if report status is not pending_approval", async () => {
-      const resolvedReport: Report = { ...mockReport, status: ReportStatus.Assigned };
-      vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(resolvedReport);
 
       const res = await request(app)
-        .patch("/pub_relations/reports/1")
-        .send({ status: "assigned" });
+        .patch("/pub_relations/reports/3")
+        .send({ status: ReportStatus.Assigned });
 
       expect(res.status).toBe(403);
       expect(res.body).toEqual({
@@ -490,7 +448,91 @@ describe("Reports E2E", () => {
       });
     });
 
+    it("should assign operator and return 200 ", async () => {
+      const res = await request(app)
+        .patch("/pub_relations/reports/1")
+        .send({ status: ReportStatus.Assigned });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ message: "Report status updated successfully" });
+    });
+
+    it("should assign a specific operator and return 200 ", async () => {
+      const res = await request(app)
+        .patch("/pub_relations/reports/1")
+        .send({ status: ReportStatus.Assigned, officerId: 10 });
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ message: "Report status updated successfully" });
+    });
+
+    it("should return 403 if specific operator don't handle report category", async () => {
+      const res = await request(app)
+        .patch("/pub_relations/reports/1")
+        .send({ status: "assigned", officerId: 5 });
+
+      expect(res.status).toBe(403);
+      expect(res.body).toEqual({ error: `The officer you want to assign to this report does not handle this category` });
+    });
+
+    it("should update the category, assign operator and return 200 ", async () => {
+      const res = await request(app)
+        .patch("/pub_relations/reports/1")
+        .send({ status: ReportStatus.Assigned, categoryId: 1 });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ message: "Report status updated successfully" });
+    });
+
+    it("should update the category, assign a specific operator and return 200 ", async () => {
+      const res = await request(app)
+        .patch("/pub_relations/reports/1")
+        .send({ status: ReportStatus.Assigned, categoryId: 1, officerId: 5 });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ message: "Report status updated successfully" });
+    });
+
+    it("should return 403 if specific operator don't handle the updated category ", async () => {
+      const res = await request(app)
+        .patch("/pub_relations/reports/1")
+        .send({ status: ReportStatus.Assigned, categoryId: 1, officerId: 10 });
+
+      expect(res.status).toBe(403);
+      expect(res.body).toEqual({ error: `The officer you want to assign to this report does not handle this category` });
+    });
+
+    it("should set note to null if status is 'Assigned' and no note is provided", async () => {
+      const res = await request(app)
+        .patch("/pub_relations/reports/1")
+        .send({ status: ReportStatus.Assigned, note: "This note will be ignored" });
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ message: "Report status updated successfully" });
+    });
+
+    it("should return 200 if status is 'rejected' and note is provided", async () => {
+      const res = await request(app)
+        .patch("/pub_relations/reports/1")
+        .send({ status: ReportStatus.Rejected, note: "Insufficient details provided" });
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ message: "Report status updated successfully" });
+    });
     it("should return 500 if DAO update throws an error", async () => {
+      const mockReport: Report = {
+        id: 1,
+        user_id: 3,
+        category_id: 3,
+        title: "Sample report",
+        description: "Description",
+        status: ReportStatus.PendingApproval,
+        assigned_to: null,
+        reviewed_by: null,
+        reviewed_at: null,
+        note: "Initial note",
+        position_lat: 40.0,
+        position_lng: -70.0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
       vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReport);
       vi.spyOn(ReportDAO.prototype, "updateReportStatusAndAssign").mockRejectedValue(new Error("DB failure"));
 

@@ -215,7 +215,7 @@ router.patch("/pub_relations/reports/:reportId",
         body("categoryId").optional({ nullable: true }).isInt().withMessage("categoryId must be an integer if passed"),
         body("officerId").optional({ nullable: true }).isInt().withMessage("officerId must be an integer if passed")
     ],
-    // verifyFirebaseToken([ROLES.PUB_RELATIONS]),
+    verifyFirebaseToken([ROLES.PUB_RELATIONS]),
     async (req: Request, res: Response) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -270,7 +270,7 @@ router.patch("/pub_relations/reports/:reportId",
             }
 
             // update the report and optionally assigne it if to be status is assigned
-            await reportDAO.updateReportStatusAndAssign(reportId, status, 2, note, categoryId, assigneeId);
+            await reportDAO.updateReportStatusAndAssign(reportId, status, user.id, note, categoryId, assigneeId);
 
             return res.status(200).json({
                 message: "Report status updated successfully"

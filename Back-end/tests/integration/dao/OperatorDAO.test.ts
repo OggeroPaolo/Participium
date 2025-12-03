@@ -104,4 +104,96 @@ describe("OperatorDAO Integration Test Suite", () => {
       await expect(dao.getAssigneeId(1)).rejects.toThrow("Database error");
     });
   });
+
+  // -------------------------
+  // Tests for getCategoryOfOfficer
+  // -------------------------
+  describe("getCategoryOfOfficer", () => {
+    it("returns the category id of the officer", async () => {
+      const mockResult = { category_id: 3 };
+
+      vi.spyOn(db, "getOne").mockResolvedValueOnce(mockResult);
+
+      const result = await dao.getCategoryOfOfficer(10); // officerId = 10
+
+      expect(result).toBe(3);
+      expect(db.getOne).toHaveBeenCalledTimes(1);
+      expect(db.getOne).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT"),
+        [10]
+      );
+    });
+
+    it("returns undefined if no officer category is found", async () => {
+      vi.spyOn(db, "getOne").mockResolvedValueOnce(undefined);
+
+      const result = await dao.getCategoryOfOfficer(10);
+
+      expect(result).toBeUndefined();
+    });
+
+    it("propagates database errors", async () => {
+      vi.spyOn(db, "getOne").mockRejectedValueOnce(
+        new Error("DB failure")
+      );
+
+      await expect(dao.getCategoryOfOfficer(10)).rejects.toThrow("DB failure");
+    });
+  });
+
+  // -------------------------
+  // Tests for getOperatorsByCategory
+  // -------------------------
+  describe("getOperatorsByCategory", () => {
+    it("returns a list of operators in the given category", async () => {
+      const mockOperators = [
+        {
+          id: 7,
+          email: "tech1@example.com",
+          username: "tech1",
+          first_name: "Jane",
+          last_name: "Roe",
+          role_name: "Tech Officer",
+        },
+        {
+          id: 8,
+          email: "pubrel1@example.com",
+          username: "pr1",
+          first_name: "John",
+          last_name: "Public",
+          role_name: "Public Relations",
+        },
+      ];
+
+      vi.spyOn(db, "getAll").mockResolvedValueOnce(mockOperators);
+
+      const result = await dao.getOperatorsByCategory(2);
+
+      expect(result).toEqual(mockOperators);
+      expect(db.getAll).toHaveBeenCalledTimes(1);
+      expect(db.getAll).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT"),
+        [2]
+      );
+    });
+
+    it("returns an empty array when no operators are found", async () => {
+      vi.spyOn(db, "getAll").mockResolvedValueOnce([]);
+
+      const result = await dao.getOperatorsByCategory(2);
+
+      expect(result).toEqual([]);
+    });
+
+    it("propagates database errors", async () => {
+      vi.spyOn(db, "getAll").mockRejectedValueOnce(
+        new Error("Database crash")
+      );
+
+      await expect(dao.getOperatorsByCategory(2)).rejects.toThrow(
+        "Database crash"
+      );
+    });
+  });
+
 });

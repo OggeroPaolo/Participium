@@ -71,6 +71,72 @@ describe("GET /operators", () => {
     expect(res.body).toEqual({ error: "Database error" });
   });
 });
+describe("GET /categories/:categoryId/operators", () => {
+  it("should return 200 with a list of operators for the category", async () => {
+    const mockOperators = [
+      {
+        id: 1,
+        firebase_uid: "uid1",
+        email: "operator1@example.com",
+        username: "op1",
+        first_name: "Alice",
+        last_name: "Doe",
+        role_name: "Operator",
+        role_type: "tech_officer",
+      },
+      {
+        id: 2,
+        firebase_uid: "uid2",
+        email: "operator2@example.com",
+        username: "op2",
+        first_name: "Bob",
+        last_name: "Smith",
+        role_name: "Municipal_public_relations_officer",
+        role_type: "pub_relations",
+      },
+    ];
+
+    const spy = vi
+      .spyOn(OperatorDAO.prototype, "getOperatorsByCategory")
+      .mockResolvedValueOnce(mockOperators);
+
+    const res = await request(app).get("/categories/10/operators");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(mockOperators);
+    expect(spy).toHaveBeenCalledWith(10);
+  });
+
+  it("should return 204 if no operators exist in the category", async () => {
+    vi.spyOn(OperatorDAO.prototype, "getOperatorsByCategory")
+      .mockResolvedValueOnce([]);
+
+    const res = await request(app).get("/categories/10/operators");
+
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
+  });
+
+  it("should return 400 if categoryId is not a number", async () => {
+    const res = await request(app).get("/categories/abc/operators");
+    console.log(res.body);
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      error: "Category ID must be a valid number",
+    });
+  });
+
+  it("should return 500 if DAO throws", async () => {
+    vi.spyOn(OperatorDAO.prototype, "getOperatorsByCategory")
+      .mockRejectedValueOnce(new Error("Database failure"));
+
+    const res = await request(app).get("/categories/5/operators");
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: "Database failure" });
+  });
+});
+
 describe("POST /operator-registrations", () => {
   it("should create a new operator successfully", async () => {
     vi.spyOn(userService, "createUserWithFirebase").mockResolvedValue({

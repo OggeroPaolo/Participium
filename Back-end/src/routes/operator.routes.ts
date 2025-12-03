@@ -33,6 +33,10 @@ router.get("/categories/:categoryId/operators", verifyFirebaseToken([ROLES.PUB_R
   try {
 
     const categoryId = Number(req.params.categoryId);
+    
+    if (isNaN(categoryId)) {
+      return res.status(400).json({ error: "Category ID must be a valid number" });
+    }
 
     const InternalUsersByCategory = await operatorDao.getOperatorsByCategory(categoryId);
 
@@ -43,6 +47,7 @@ router.get("/categories/:categoryId/operators", verifyFirebaseToken([ROLES.PUB_R
     res.status(200).json(InternalUsersByCategory);
 
   } catch (error) {
+
     res.status(500).json({ error: (error as Error).message });
   }
 });

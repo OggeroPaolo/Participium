@@ -11,10 +11,11 @@ import cloudinary from "../../../src/config/cloudinary.js";
 import { ReportStatus } from "../../../src/models/reportStatus.js";
 import { CompleteReportDTO } from "../../../src/dto/ReportWithPhotosDTO.js";
 
+const userId = 3;
 // Mock Firebase middleware
 vi.mock("../../../src/middlewares/verifyFirebaseToken.js", () => ({
     verifyFirebaseToken: () => (req: any, _res: any, next: any) => {
-        req.user = { id: 10, role_name: "pub_relations" };
+        req.user = { id: userId, role_name: "pub_relations" };
         next();
     },
 }));
@@ -364,7 +365,7 @@ describe("Report Routes Integration Tests", () => {
     describe("PATCH /pub_relations/reports/:reportId", () => {
         const mockReport: Report = {
             id: 1,
-            user_id: 2,
+            user_id: userId,
             category_id: 3,
             title: "Sample report",
             description: "Description",
@@ -496,12 +497,51 @@ describe("Report Routes Integration Tests", () => {
             expect(updateSpy).toHaveBeenCalledWith(
                 1,            // reportId
                 "assigned",   // status
-                10,           // reviewerId from mocked req.user
+                userId,       // reviewerId from mocked req.user
                 null,         // note is null for assigned
-                undefined,         // categoryId
+                undefined,    // categoryId
                 99            // assigneeId
             );
             expect(res.body).toEqual({ message: "Report status updated successfully" });
+        });
+        it("should assign a specific operator and return 200 ", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReport);
+            vi.spyOn(OperatorDAO.prototype, "getCategoryOfOfficer").mockResolvedValue(3);
+
+            const updateSpy = vi
+                .spyOn(ReportDAO.prototype, "updateReportStatusAndAssign")
+                .mockResolvedValue({ changes: 1 });
+
+            const res = await request(app)
+                .patch("/pub_relations/reports/1")
+                .send({ status: "assigned", officerId: 5 });
+
+            expect(res.status).toBe(200);
+            expect(updateSpy).toHaveBeenCalledWith(
+                1,            // reportId
+                "assigned",   // status
+                userId,       // reviewerId from mocked req.user
+                null,         // note is null for assigned
+                undefined,    // categoryId
+                5            // assigneeId
+            );
+            expect(res.body).toEqual({ message: "Report status updated successfully" });
+        });
+
+        it("should return 403 if specific operator don't handle report category", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReport);
+            vi.spyOn(OperatorDAO.prototype, "getCategoryOfOfficer").mockResolvedValue(4);
+
+            const updateSpy = vi
+                .spyOn(ReportDAO.prototype, "updateReportStatusAndAssign")
+                .mockResolvedValue({ changes: 1 });
+
+            const res = await request(app)
+                .patch("/pub_relations/reports/1")
+                .send({ status: "assigned", officerId: 5 });
+
+            expect(res.status).toBe(403);
+            expect(res.body).toEqual({ error: `The officer you want to assign to this report does not handle this category` });
         });
         it("should update the category, assign operator and return 200 ", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReport);
@@ -519,7 +559,7 @@ describe("Report Routes Integration Tests", () => {
             expect(updateSpy).toHaveBeenCalledWith(
                 1,            // reportId
                 "assigned",   // status
-                10,           // reviewerId from mocked req.user
+                userId,           // reviewerId from mocked req.user
                 null,         // note is null for assigned
                 12,           // categoryId
                 99            // assigneeId
@@ -527,7 +567,7 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ message: "Report status updated successfully" });
         });
 
-        it("should set note to null if status is 'rejected' and no note is provided", async () => {
+        it("should set note to null if status is 'Assigned'", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReport);
             vi.spyOn(OperatorDAO.prototype, "getAssigneeId").mockResolvedValue(99);
 
@@ -537,12 +577,12 @@ describe("Report Routes Integration Tests", () => {
 
             const res = await request(app)
                 .patch("/pub_relations/reports/1")
-                .send({ status: "assigned", note: "This note will be ignored" });
+                .send({ status: ReportStatus.Assigned, note: "This note will be ignored" });
             expect(res.status).toBe(200);
             expect(updateSpy).toHaveBeenCalledWith(
                 1,         // reportId
                 "assigned",// status
-                10,        // reviewerId from mocked req.user
+                userId,    // reviewerId 
                 null,      // note should be null 
                 undefined, // categoryId not provided
                 99  // assigneeId not applicable
@@ -550,7 +590,8 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ message: "Report status updated successfully" });
         });
 
-        it("should reject and return 200 when status is 'rejected' and note is provided", async () => {
+
+        it("should return 200 when status is 'rejected' and note is provided", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReport);
 
             const updateSpy = vi
@@ -565,7 +606,7 @@ describe("Report Routes Integration Tests", () => {
             expect(updateSpy).toHaveBeenCalledWith(
                 1,
                 "rejected",
-                10,                 // reviewerId from mocked req.user
+                userId,                 // reviewerId from mocked req.user
                 "Duplicate report", // note kept
                 undefined,          // categoryId not provided
                 undefined           // no assignee
