@@ -215,7 +215,7 @@ router.patch("/pub_relations/reports/:reportId",
         body("categoryId").optional({ nullable: true }).isInt().withMessage("categoryId must be an integer if passed"),
         body("officerId").optional({ nullable: true }).isInt().withMessage("officerId must be an integer if passed")
     ],
-    verifyFirebaseToken([ROLES.PUB_RELATIONS]),
+    // verifyFirebaseToken([ROLES.PUB_RELATIONS]),
     async (req: Request, res: Response) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -258,7 +258,7 @@ router.patch("/pub_relations/reports/:reportId",
             if (status === "assigned" && !officerId) {
                 assigneeId = await operatorDAO.getAssigneeId(categoryIdFinal);
             }
-            if (officerId) {
+            if (status === "assigned" && officerId) {
                 const officerCategoryId = await operatorDAO.getCategoryOfOfficer(officerId);
                 if (officerCategoryId === categoryIdFinal) {
                     assigneeId = officerId
