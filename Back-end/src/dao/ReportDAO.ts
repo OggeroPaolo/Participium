@@ -50,6 +50,22 @@ export default class ReportDao {
     return getAll<ReportMap>(sql);
   }
 
+  async updateReportExternalMaintainer(reportId: number, externalMaintainerId: number) {
+    const query = `
+      UPDATE reports
+      SET external_user = ?
+      WHERE id = ?;
+    `;
+
+    const result = await Update(query, [externalMaintainerId, reportId]);
+
+    if (result.changes === 0) {
+      throw new Error("Report not found or no changes made");
+    }
+
+    return result;
+  }
+
   async updateReportStatusAndAssign(reportId: number, status: string, reviewerId: number, note?: string, categoryId?: number, assigneeId?: number) {
     const query = `
       UPDATE reports

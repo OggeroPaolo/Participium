@@ -61,3 +61,15 @@ export const validateGetReports = [
         next();
     }
 ];
+
+export const validateAssignExternalMaintainer = [
+    param("reportId").isInt().withMessage("Report ID must be a valid integer"),
+    body("externalMaintainerId").isInt().withMessage("externalMaintainerId must be an integer"),
+    (req: Request, res: Response, next: NextFunction) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        next();
+    }
+]
