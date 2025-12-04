@@ -66,6 +66,22 @@ export default class ReportDao {
     return result;
   }
 
+  async updateReportStatus(reportId: number, status: string) {
+    const query = `
+      UPDATE reports
+      SET status = ?, 
+      WHERE id = ?;
+    `;
+
+    const result = await Update(query, [status, reportId]);
+
+    if (result.changes === 0) {
+      throw new Error("Report not found or no changes made");
+    }
+
+    return result;
+  }
+
   async updateReportStatusAndAssign(reportId: number, status: string, reviewerId: number, note?: string, categoryId?: number, assigneeId?: number) {
     const query = `
       UPDATE reports

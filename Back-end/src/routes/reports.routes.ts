@@ -8,7 +8,7 @@ import type { ReportMap } from "../models/reportMap.js";
 import OperatorDAO from "../dao/OperatorDAO.js";
 import { ROLES } from "../models/userRoles.js";
 import type { User } from "../models/user.js"
-import { validateAssignExternalMaintainer, validateCreateReport, validateGetReport, validateGetReports, validateOfficersGetReports } from "../middlewares/reportValidation.js";
+import { validateAssignExternalMaintainer, validateCreateReport, validateExternalMaintainerUpdateStatus, validateGetReport, validateGetReports, validateOfficersGetReports } from "../middlewares/reportValidation.js";
 import { upload } from "../config/multer.js";
 import cloudinary from "../config/cloudinary.js";
 import { unlink, rename } from "fs/promises";
@@ -240,6 +240,46 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
 
             return res.status(200).json({
                 message: "Report successfully assigned to the external maintainer"
+            });
+
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
+
+// Permits to an external maintainer to update the status of a report assigned to him
+router.patch("/ext_maintainer/reports/:reportId",
+    validateExternalMaintainerUpdateStatus,
+    verifyFirebaseToken([ROLES.EXT_MAINTAINER]),
+    async (req: Request, res: Response) => {
+        try {
+            const reportId = Number(req.params.reportId);
+            const user = (req as Request & { user: User }).user;
+            let { status } = req.body
+
+            const report = await reportDAO.getReportById(reportId);
+            if (!report) return res.status(404).json({ error: "Report not found" });
+
+            if (report.status !== 'assigned' &&
+                report.status !== 'in_progress' &&
+                report.status !== 'suspended') {
+                return res.status(403).json({
+                    error: `You are not allowed to change status of a report not in assigned/in_progress/suspended state`
+                });
+            }
+
+            if (report.external_user !== user.id) {
+                return res.status(403).json({
+                    error: `You are not allowed to change status of a report that is not assigned to you`
+                });
+            }
+
+            await reportDAO.updateReportStatus(reportId, status)
+
+            return res.status(200).json({
+                message: "Report status updated successfully"
             });
 
         } catch (error) {
