@@ -378,7 +378,11 @@ router.get("/report/:reportId/internal-comments",
     async (req: Request, res: Response) => {
         try {
             const reportId = Number(req.params.reportId);
-            const comments = await commentDAO.getCommentsByReportId(reportId);
+            const comments = await commentDAO.getPrivateCommentsByReportId(reportId);
+
+            if (Array.isArray(comments) && comments.length === 0) {
+                return res.status(204).send();
+            }
 
             return res.status(200).json({ comments });
 

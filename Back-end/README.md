@@ -312,6 +312,61 @@ status: pending_approval, assigned, in_progress, suspended, rejected, resolved
 }
 ```
 
+**GET `/reports/:reportId/internal-comments`**
+
+* **Request Headers:** 
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** reportId
+
+* **Query Parameters:**  None
+
+* **Success Response (200 OK):**
+```json
+"comments": [
+        {
+        "id": 10,
+        "report_id": 1,
+        "category_id": 2,
+        "username": "mariorossi",
+        "type": "private",
+        "text": "Nice work",
+        "timestamp": "2025-11-24 18:10:20"
+    }
+]
+```
+
+* **No Content Response (204 No Content):**
+
+```json
+// Empty response body
+```
+
+* **Error Response (400 Bad Request):**
+```json
+{
+  "error": "reportId must be a valid integer"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server Error"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
 
 
 **GET `/officers/:officerId/reports`**
