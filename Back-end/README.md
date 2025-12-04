@@ -746,6 +746,103 @@ Authorization: Bearer <firebase-token>
 }
 ```
 
+**PATCH `/ext_maintainer/reports/{reportId}`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+* **Request Parameters:**
+
+  - reportId: integer
+
+* **Request Body:**
+
+```json
+{
+  "status": "in_progress"
+}
+```
+
+* **Field Usage Notes:**
+
+| Field      | When Required                        | Types                    |
+| ---------- | ------------------------------------ | ------------------------ |
+| status     | Always                               | ["assigned", "in_progress", "suspended"] |
+
+
+* **Success Response (200 OK):**
+
+```json
+{
+  "message": "Report status updated successfully"
+}
+```
+
+* **Error Response (400 Bad Request):**
+
+```json
+{
+  "errors": "Invalid request data"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+  Returned when no valid authentication token is provided.
+
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+* **Error Response (403 Forbidden):**
+  Returned when the authenticated user is not an external maintainer.
+
+```json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+* **Error Response (403 Forbidden):**
+
+```json
+{
+  "error": "You are not allowed to change status of a report not in assigned/in_progress/suspended state"
+}
+```
+* **Error Response (403 Forbidden):**
+
+```json
+{
+  "error": "You are not allowed to assign to an external maintainer a report that is not assigned to you"
+}
+```
+* **Error Response (403 Forbidden):**
+
+```json
+{
+  "error": "You are not allowed to change status of a report that is not assigned to you"
+}
+```
+
+* **Error Response (404 Not Found):**
+
+```json
+{
+  "error": "Report not found"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server error"
+}
+```
+
 **PATCH `/reports/{reportId}`**
 
 * **Request Headers:**
