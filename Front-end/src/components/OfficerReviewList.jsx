@@ -252,6 +252,29 @@ function OfficerReviewList() {
     }, 100);
   }, [completeReportData]);
 
+  //add city border to map
+  useEffect(() => {
+    console.log("before if")
+    if (!mapInstanceRef.current) return;
+    console.log("after if")
+  
+    async function loadGeoJSON() {
+      try {
+        const response = await fetch('/turin_geojson.geojson');
+        const geojson = await response.json();
+  
+        const layer = L.geoJSON(geojson, {
+          style: { color: '#2886da', weight: 2, opacity: 0.4, fillColor: '#2886da', fillOpacity: 0.07 }
+        }).addTo(mapInstanceRef.current);
+  
+      } catch (err) {
+        console.error("Failed loading GeoJSON", err);
+      }
+    }
+  
+    loadGeoJSON();
+  }, [completeReportData]);
+
   const handleSubmitReview = async (e) => {
     e.preventDefault();
 

@@ -387,6 +387,7 @@ function Map({
     };
   }, []);
 
+  //add city border to map
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
@@ -399,7 +400,7 @@ function Map({
           style: { color: '#2886da', weight: 2, opacity: 0.4, fillColor: '#2886da', fillOpacity: 0.07 }
         }).addTo(mapInstanceRef.current);
 
-        mapInstanceRef.current.fitBounds(layer.getBounds());
+        mapInstanceRef.current.fitBounds(layer.getBounds());      //maybe should take the pan to fit the boundary away
       } catch (err) {
         console.error("Failed loading GeoJSON", err);
       }
