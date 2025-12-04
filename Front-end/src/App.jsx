@@ -14,6 +14,7 @@ import useUserStore from "./store/userStore.js";
 import ReportCreation from "./components/ReportCreation.jsx";
 import ReportInfo from "./components/ReportInfo.jsx";
 import OfficerReviewList from "./components/OfficerReviewList.jsx";
+import TechAssignedReports from "./components/TechAssignedReports.jsx";
 
 function App() {
   // Sync Zustand store with Firebase auth state
@@ -68,6 +69,8 @@ function App() {
               isAuthenticated ? (
                 user?.role_name === "Admin" ? (
                   <Navigate replace to='/user-list' />
+                ) : user?.role_type === "tech_officer" ? (
+                  <Navigate replace to='/tech-assigned-reports' />
                 ) : (
                   <Navigate replace to='/' />
                 )
@@ -127,6 +130,18 @@ function App() {
             element={
               user?.role_name === "Municipal_public_relations_officer" ? (
                 <OfficerReviewList />
+              ) : (
+                <Navigate replace to='/' />
+              )
+            }
+          />
+
+          {/* Technical Officer specific routes */}
+          <Route
+            path='/tech-assigned-reports'
+            element={
+              user?.role_type === "tech_officer" ? (
+                <TechAssignedReports />
               ) : (
                 <Navigate replace to='/' />
               )

@@ -275,12 +275,39 @@ async function reviewReport(reportId, reviewData) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || errorData.errors?.[0] || "Failed to submit review");
+      throw new Error(
+        errorData.error || errorData.errors?.[0] || "Failed to submit review"
+      );
     }
 
     return await response.json();
   } catch (err) {
     throw new Error(err.message || "Network error");
+  }
+}
+
+// Get assigned reports for technical officer review
+async function getAssignedReports(officerId) {
+  try {
+    const response = await fetch(`${URI}/officers/${officerId}/reports`, {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return [];
+    }
+
+    if (response.ok) {
+      const assignedReports = await response.json();
+      return assignedReports.reports || assignedReports;
+    } else {
+      throw new Error("Failed to fetch assigned reports");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
   }
 }
 
@@ -296,4 +323,5 @@ export {
   getReport,
   getPendingReports,
   reviewReport,
+  getAssignedReports,
 };
