@@ -8,7 +8,7 @@ import type { ReportMap } from "../models/reportMap.js";
 import OperatorDAO from "../dao/OperatorDAO.js";
 import { ROLES } from "../models/userRoles.js";
 import type { User } from "../models/user.js"
-import { validateAssignExternalMaintainer, validateCreateReport, validateExternalMaintainerUpdateStatus, validateGetReport, validateGetReports, validateOfficersGetReports } from "../middlewares/reportValidation.js";
+import { validateAssignExternalMaintainer, validateCreateReport, validateExternalMaintainerUpdateStatus, validateReportId, validateGetReports, validateOfficersGetReports } from "../middlewares/reportValidation.js";
 import { upload } from "../config/multer.js";
 import cloudinary from "../config/cloudinary.js";
 import { unlink, rename } from "fs/promises";
@@ -16,10 +16,12 @@ import path from 'path';
 import sharp from 'sharp';
 import type { ReportFilters } from "../dao/ReportDAO.js";
 import { ReportStatus } from "../models/reportStatus.js";
+import CommentDAO from "../dao/CommentDAO.js";
 
 const router = Router();
 const reportDAO = new ReportDAO();
 const operatorDAO = new OperatorDAO();
+const commentDAO = new CommentDAO();
 
 //GET /reports/map
 router.get("/reports/map/accepted",
@@ -44,7 +46,7 @@ router.get("/reports/map/accepted",
 //GET /reports/:reportId
 router.get("/reports/:reportId",
     verifyFirebaseToken([ROLES.CITIZEN, ROLES.PUB_RELATIONS, ROLES.TECH_OFFICER]),
-    validateGetReport,
+    validateReportId,
     async (req: Request, res: Response) => {
         try {
             const reportId = Number(req.params.reportId);
@@ -364,6 +366,25 @@ router.patch("/pub_relations/reports/:reportId",
             });
         } catch (error: any) {
             return res.status(500).json({ error: error.message });
+        }
+    }
+);
+
+
+//GET /report/:reportId/internal-comments
+router.get("/report/:reportId/internal-comments",
+    validateReportId,
+    verifyFirebaseToken([ROLES.EXT_MAINTAINER, ROLES.TECH_OFFICER]),
+    async (req: Request, res: Response) => {
+        try {
+            const reportId = Number(req.params.reportId);
+            const comments = await commentDAO.getCommentsByReportId(reportId);
+
+            return res.status(200).json({ comments });
+
+        } catch (error: any) {
+            console.log(error);
+            return res.status(500).json({ error: "Internal server error" });
         }
     }
 );
