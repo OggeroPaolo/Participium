@@ -50,7 +50,7 @@ describe("POST /user-registrations", () => {
       });
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe("Invalid request data");
+    expect(res.body.errors).toHaveLength(7);
   });
 
   it("should return 422 if EmailOrUsernameConflictError is thrown", async () => {

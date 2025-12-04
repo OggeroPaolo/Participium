@@ -38,11 +38,18 @@ export default class OperatorDao {
     return assignee[0].id;
   }
 
-  async getCategoryOfOfficer(officerId: number): Promise<Number | undefined>{
+  async getCategoryOfOfficer(officerId: number): Promise<Number | undefined> {
     const query = "SELECT o.category_id FROM users u, roles r, offices o WHERE r.id = u.role_id AND r.office_id = o.id AND u.id = ?";
     const officerCategoryId = await getOne<{ category_id: number }>(query, [officerId]);
 
     return officerCategoryId?.category_id;
+  }
+
+  async getCategoryOfExternalMaintainer(externalMaintainerId: number): Promise<Number | undefined> {
+    const query = "SELECT c.category_id FROM users u, roles r, companies c WHERE r.id = u.role_id AND r.company_id = c.id AND u.id = ?";
+    const externalMaintainerCategoryId = await getOne<{ category_id: number }>(query, [externalMaintainerId]);
+
+    return externalMaintainerCategoryId?.category_id;
   }
 
   async getOperatorsByCategory(categoryId: number): Promise<User[]> {

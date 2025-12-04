@@ -70,7 +70,8 @@ describe("POST /user-registrations (E2E)", () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body).toHaveProperty("error", "Invalid request data");
+        expect(response.body.errors).toHaveLength(2);
+;
     });
 
     it("should return 422 if username or email conflicts", async () => {

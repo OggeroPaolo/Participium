@@ -112,7 +112,7 @@ describe("Operator Routes E2E", () => {
         });
 
       expect(res.status).toBe(400);
-      expect(res.body).toEqual({ error: "Invalid request data" });
+      expect(res.body.errors).toHaveLength(7);
     });
 
     it("should return 422 if role_id is invalid (admin or citizen)", async () => {
