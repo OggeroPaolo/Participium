@@ -325,6 +325,27 @@ function MapReport(props) {
     });
   }, []);
 
+  //add city border to map
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    async function loadGeoJSON() {
+      try {
+        const response = await fetch('/turin_geojson.geojson');
+        const geojson = await response.json();
+
+        const layer = L.geoJSON(geojson, {
+          style: { color: '#2886da', weight: 2, opacity: 0.4, fillColor: '#2886da', fillOpacity: 0.07 }
+        }).addTo(mapInstanceRef.current);
+
+      } catch (err) {
+        console.error("Failed loading GeoJSON", err);
+      }
+    }
+
+    loadGeoJSON();
+  }, []);
+
   return (
     <div style={{ position: "relative", width: "100%" }}>
       <div ref={mapRef} style={{ height: "400px", width: "100%" }} />
