@@ -31,18 +31,19 @@ router.post("/user-registrations",
         try {
             const { firstName, lastName, username, email, password } = req.body;
 
-            // NOTE: Do NOT create a Firebase user yet!
-            // First, create verification code.
+            // Create verification code.
             const code = crypto.randomInt(1000, 9999).toString();
 
             // Hash the code using bcrypt
             const hashedCode = await bcrypt.hash(code, 10);
 
-            // Store user data with hashed password + hashed code in memory for 30 minutes
+            // Store user data with password + hashed code in memory for 30 minutes 
+            // (probably not good to save password in plain text, but you need it later to create the firebase account, otherwise you would have to hash it and also hash it when the user logs in, 
+            // but this way firebase stores the hash of the hash and i dont know how goot it is)
             await savePendingUser(email, {
                 hashedCode,
-                userData: { firstName, lastName, username, email, password: password },
-                expiresAt: Date.now() + 30 * 60 * 1000, // 30 minutes
+                userData: { firstName, lastName, username, email, password },
+                expiresAt: Date.now() + 30 * 60 * 1000, // 30 minutes from now
             });
 
             await sendVerificationEmail(email, code);
@@ -78,13 +79,13 @@ router.post("/verify-code",
             return res.status(400).json({ error: "No pending verification for this email" });
         }
 
-        // Check expiration
+        // Check if code has expired
         if (Date.now() > pending.expiresAt) {
             removePendingUser(email);
             return res.status(410).json({ error: "Verification code expired" });
         }
 
-        // Verify code
+        // Verify if code matches the hash
         const codeMatches = await bcrypt.compare(code, pending.hashedCode);
         if (!codeMatches) {
             return res.status(401).json({ error: "Invalid verification code" });
@@ -94,7 +95,7 @@ router.post("/verify-code",
         try {
             const newUser = await createUserWithFirebase(pending.userData, userDao);
 
-            // Cleanup
+            // Cleanup the user from the pending user map
             removePendingUser(email);
 
             return res.status(201).json({
