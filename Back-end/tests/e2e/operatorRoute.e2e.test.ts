@@ -229,8 +229,8 @@ describe("Operator Routes E2E", () => {
   // ----------------------------
   // GET /external-maintainer
   // ----------------------------
-  describe("GET /external-maintainers", () => {
+  /*describe("GET /external-maintainers", () => {
     //TODO: Implement tests for the route
 
-  });
+  });*/
 });

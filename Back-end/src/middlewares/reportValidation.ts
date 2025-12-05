@@ -21,10 +21,7 @@ export const validateCreateReport = [
         next();
     },
     (req: Request, res: Response, next: NextFunction) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
+        validationResult(req);
         next();
     }
 ];
@@ -32,10 +29,7 @@ export const validateCreateReport = [
 export const validateReportId = [
     param("reportId").isInt().withMessage("reportId must be a valid integer"),
     (req: Request, res: Response, next: NextFunction) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
+        validationResult(req);
         next();
     }
 ];

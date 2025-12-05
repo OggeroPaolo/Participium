@@ -11,7 +11,7 @@ import cloudinary from "../../src/config/cloudinary.js";
 import { ReportStatus } from "../../src/models/reportStatus.js";
 import { Update } from "../../src/config/database.js";
 
-const user_id = 3;
+const mock_user_id = 3;
 
 //Use for clean up of Create Report test
 let testUploadedUrls: string[] = [];
@@ -20,7 +20,7 @@ const testImg = path.join(__dirname, "../test_img/test.jpg");
 // Mock Firebase middleware to simulate an authenticated user
 vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
   verifyFirebaseToken: () => (req: any, _res: any, next: any) => {
-    req.user = { id: user_id, role_name: "pub_relations" };
+    req.user = { id: mock_user_id, role_name: "pub_relations" };
     next();
   },
 }));
@@ -254,7 +254,6 @@ describe("Reports E2E", () => {
 
 
   describe("POST /reports", () => {
-
     afterEach(async () => {
 
       for (const url of testUploadedUrls) {
@@ -509,4 +508,16 @@ describe("Reports E2E", () => {
     });
   });
 
+  //TODO: Implement tests for the following routes
+  /*
+  describe("PATCH /tech_officer/reports/:reportId/assign_external", () => {
+
+  });
+
+  describe("PATCH /ext_maintainer/reports/:reportId", () => {
+  });
+
+  describe("GET /report/:reportId/internal-comments", () => {
+  });
+*/
 });

@@ -254,9 +254,9 @@ router.patch("/ext_maintainer/reports/:reportId",
             const report = await reportDAO.getReportById(reportId);
             if (!report) return res.status(404).json({ error: "Report not found" });
 
-            if (report.status !== 'assigned' &&
-                report.status !== 'in_progress' &&
-                report.status !== 'suspended') {
+            if (report.status !== ReportStatus.Assigned &&
+                report.status !== ReportStatus.InProgress &&
+                report.status !== ReportStatus.Suspended) {
                 return res.status(403).json({
                     error: `You are not allowed to change status of a report not in assigned/in_progress/suspended state`
                 });

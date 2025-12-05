@@ -143,6 +143,42 @@ describe("OperatorDAO Integration Test Suite", () => {
   });
 
   // -------------------------
+  // Tests for getCategoryOfExternalMaintainer
+  // -------------------------
+  describe("getCategoryOfExternalMaintainer", () => {
+    const externalMaintainerId = 15;
+
+    it("returns the category id for a valid external maintainer", async () => {
+      const mockResult = { category_id: 4 };
+
+      const getOneSpy = vi.spyOn(db, "getOne").mockResolvedValueOnce(mockResult);
+
+      const result = await dao.getCategoryOfExternalMaintainer(externalMaintainerId);
+
+      expect(result).toBe(4);
+      expect(getOneSpy).toHaveBeenCalledTimes(1);
+      expect(getOneSpy).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT c.category_id FROM users u, roles r, companies c"),
+        [externalMaintainerId]
+      );
+    });
+
+    it("returns undefined if no category is found", async () => {
+      vi.spyOn(db, "getOne").mockResolvedValueOnce(undefined);
+
+      const result = await dao.getCategoryOfExternalMaintainer(externalMaintainerId);
+
+      expect(result).toBeUndefined();
+    });
+
+    it("propagates database errors", async () => {
+      vi.spyOn(db, "getOne").mockRejectedValueOnce(new Error("Database failure"));
+
+      await expect(dao.getCategoryOfExternalMaintainer(externalMaintainerId)).rejects.toThrow("Database failure");
+    });
+  });
+
+  // -------------------------
   // Tests for getOperatorsByCategory
   // -------------------------
   describe("getOperatorsByCategory", () => {

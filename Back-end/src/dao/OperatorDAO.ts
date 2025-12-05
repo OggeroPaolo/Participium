@@ -78,7 +78,7 @@ export default class OperatorDao {
       params.push(filters.companyId);
     }
 
-    // Filter by role category
+    // Filter by categoryId
     if (typeof filters.categoryId === "number" && !isNaN(filters.categoryId)) {
       conditions.push("c.category_id = ?");
       params.push(filters.categoryId);
