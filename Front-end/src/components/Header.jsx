@@ -3,6 +3,7 @@ import { Navbar } from "react-bootstrap";
 import { Container } from "react-bootstrap";
 import yellowbull from "../assets/yellowbull.png";
 import { Nav } from "react-bootstrap";
+import NotificationBell from "./NotificationBell.jsx";
 
 function Header(props) {
   const expand = "sm";
@@ -59,10 +60,9 @@ function Header(props) {
                   )}
                   <div className='nav-divider d-sm-none'></div>
                   {user?.role_name === "Citizen" && (
-                    <>
-                      <Nav.Link href='/create-report'>New Report</Nav.Link>
-                    </>
+                    <Nav.Link href='/create-report'>New Report</Nav.Link>
                   )}
+                  <NotificationBell />
                   <Nav.Link href='#' onClick={handleLogout}>
                     Logout
                   </Nav.Link>

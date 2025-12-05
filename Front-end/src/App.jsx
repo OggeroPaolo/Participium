@@ -10,6 +10,7 @@ import UserCreation from "./components/UserCreation.jsx";
 import { logout } from "./firebaseService.js";
 import UserList from "./components/UserList.jsx";
 import { useAuthSync } from "./hooks/useAuthSync.js";
+import { useRealtimeNotifications } from "./hooks/useRealtimeNotifications.js";
 import useUserStore from "./store/userStore.js";
 import ReportCreation from "./components/ReportCreation.jsx";
 import ReportInfo from "./components/ReportInfo.jsx";
@@ -18,6 +19,7 @@ import OfficerReviewList from "./components/OfficerReviewList.jsx";
 function App() {
   // Sync Zustand store with Firebase auth state
   useAuthSync();
+  useRealtimeNotifications();
 
   // get user data from Zustand store
   const { user, isAuthenticated, isLoading } = useUserStore();
