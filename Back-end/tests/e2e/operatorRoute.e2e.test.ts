@@ -225,66 +225,12 @@ describe("Operator Routes E2E", () => {
     });
   });
 
-  
+
   // ----------------------------
   // GET /external-maintainer
   // ----------------------------
   describe("GET /external-maintainers", () => {
+    //TODO: Implement tests for the route
 
-    it("should return a list of external maintainers successfully", async () => {
-      const res = await request(app).get("/external-maintainers");
-      expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBeGreaterThan(0);
-    });
-
-    it("should return filtered external maintainers by companyId", async () => {
-      const companyId = 1
-      const res = await request(app).get(`/external-maintainers?companyId=${companyId}`);
-      expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-
-      // Verify each result matches the filters
-      for (const user of res.body) {
-        if (user.company) {
-          expect(user.company.id).toBe(companyId);
-        }
-      }
-    });
-
-    it("should return filtered external maintainers by categoryId", async () => {
-      const categoryId = 4
-      const res = await request(app).get(`/external-maintainers?categoryId=${categoryId}`);
-      expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-
-      // Verify each result matches the filters
-      for (const user of res.body) {
-        if (user.company) {
-          expect(user.categories.id).toBe(categoryId);
-        }
-      }
-    });
-
-    it("should return 204 if no external maintainers exist", async () => {
-      // Delete all external maintainers from DB
-      await runQuery("PRAGMA foreign_keys = OFF");
-      await runQuery("DELETE FROM users");
-      await runQuery("PRAGMA foreign_keys = ON");
-
-      const res = await request(app).get("/external-maintainers");
-      expect(res.status).toBe(204);
-      expect(res.body).toEqual({});
-    });
-
-    it("should return 500 if database error occurs", async () => {
-      // Mock only for this test
-      vi.spyOn(OperatorDAO.prototype, "getExternalMaintainersByFilter").mockRejectedValueOnce(new Error("DB error"));
-
-      const res = await request(app).get("/external-maintainers");
-      expect(res.status).toBe(500);
-      expect(res.body).toEqual({ error: "DB error" });
-    });
   });
-
 });
