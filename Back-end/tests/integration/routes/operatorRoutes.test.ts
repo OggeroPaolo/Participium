@@ -4,6 +4,7 @@ import { makeTestApp } from "../../setup/tests_util.js";
 import router from "../../../src/routes/operator.routes.js";
 import * as userService from "../../../src/services/userService.js";
 import OperatorDAO from "../../../src/dao/OperatorDAO.js";
+import { ExternalUserDTO } from "../../../src/dto/externalUserDTO.js";
 
 // Mock firebase middleware
 vi.mock("../../../src/middlewares/verifyFirebaseToken.js", () => ({
@@ -119,7 +120,6 @@ describe("Operator Routes Unit Test", () => {
 
     it("should return 400 if categoryId is not a number", async () => {
       const res = await request(app).get("/categories/abc/operators");
-      console.log(res.body);
       expect(res.status).toBe(400);
       expect(res.body).toEqual({
         error: "Category ID must be a valid integer",
@@ -273,6 +273,100 @@ describe("Operator Routes Unit Test", () => {
 
       expect(res.status).toBe(500);
       expect(res.body).toEqual({ error: "Internal server error" });
+    });
+
+  });
+
+
+  describe("GET /external-maintainers", () => {
+
+    it("should return 200 with a list of external maintainers", async () => {
+      const mockMaintainers: ExternalUserDTO[] = [
+        {
+          id: 1,
+          fullName: "Alice Doe",
+          username: "alice1",
+          email: "alice@example.com",
+          roleName: "External Maintainer",
+          roleType: "external_maintainer",
+          companyId: 1,
+          companyName: "Company A",
+        },
+        {
+          id: 2,
+          fullName: "Bob Smith",
+          username: "bob2",
+          email: "bob@example.com",
+          roleName: "External Maintainer",
+          roleType: "external_maintainer",
+          companyId: 2,
+          companyName: "Company B",
+        }
+      ];
+
+      const spy = vi.spyOn(OperatorDAO.prototype, "getExternalMaintainersByFilter")
+        .mockResolvedValueOnce(mockMaintainers);
+
+      const res = await request(app).get("/external-maintainers");
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(mockMaintainers);
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith({ "categoryId": NaN, "companyId": NaN, });
+    });
+
+    it("should apply filters from query params", async () => {
+      const mockMaintainers: ExternalUserDTO[] = [
+        {
+          id: 3,
+          fullName: "Charlie Doe",
+          username: "charlie",
+          email: "charlie@example.com",
+          roleName: "External Maintainer",
+          roleType: "external_maintainer",
+          companyId: 2,
+          companyName: "Company B",
+        }
+      ];
+
+      const spy = vi.spyOn(OperatorDAO.prototype, "getExternalMaintainersByFilter")
+        .mockResolvedValueOnce(mockMaintainers);
+
+      const res = await request(app).get("/external-maintainers?companyId=5&categoryId=2");
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(mockMaintainers);
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith({ companyId: 5, categoryId: 2 });
+    });
+
+    it("should return 204 if no external maintainers exist", async () => {
+      vi.spyOn(OperatorDAO.prototype, "getExternalMaintainersByFilter")
+        .mockResolvedValueOnce([]);
+
+      const res = await request(app).get("/external-maintainers");
+
+      expect(res.status).toBe(204);
+      expect(res.body).toEqual({});
+    });
+
+    it("should return 400 for invalid query params", async () => {
+      const res = await request(app).get("/external-maintainers?companyId=213dsa&categoryId=abc");
+
+      expect(res.status).toBe(400);
+      expect(res.body.errors).toEqual([
+        "CompanyId must be a positive integer",
+        "CategoryId must be a positive integer"
+      ]);
+    });
+
+    it("should return 500 if DAO throws an error", async () => {
+      vi.spyOn(OperatorDAO.prototype, "getExternalMaintainersByFilter")
+        .mockRejectedValueOnce(new Error("Database failure"));
+
+      const res = await request(app).get("/external-maintainers");
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: "Database failure" });
     });
 
   });
