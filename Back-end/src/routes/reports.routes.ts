@@ -93,11 +93,7 @@ router.get("/reports",
     validateGetReports,
     async (req: Request, res: Response) => {
         try {
-            const status = req.query.status as string | undefined;
-
-            if (status && !Object.values(ReportStatus).includes(status as ReportStatus)) {
-                return res.status(400).json({ error: "Invalid status filter" });
-            }
+            const status = req.query.status as string;
 
             const filters: ReportFilters = {};
             if (status) {
@@ -128,10 +124,6 @@ router.post("/reports",
 
         try {
             const files = req.files as Express.Multer.File[];
-            if (!files || files.length === 0) {
-                console.log(files)
-                return res.status(400).json({ error: "At least one photo is required" });
-            }
 
             for (const file of files) {
                 const newPath = file.path + path.extname(file.originalname); // add extension
@@ -194,8 +186,6 @@ router.post("/reports",
                     console.error("Error deleting image during rollback:", delErr);
                 }
             }
-
-            console.log(error);
             return res.status(500).json({ error: "Internal server error" });
         }
 

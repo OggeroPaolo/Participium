@@ -656,6 +656,76 @@ Authorization: Bearer <firebase-token>
 }
 ```
 
+## GET `/external-maintainers`
+
+Retrieve a list of **external maintainers**, optionally filtered by `companyId` and/or `categoryId`.
+
+---
+
+* **Request Headers**
+```http
+Authorization: Bearer <firebase-token>
+```
+
+Allowed roles: TECH_OFFICER, PUB_RELATIONS, ADMIN
+
+---
+
+**Query Parameters (Optional)**
+- companyId 
+- categoryId 
+Example: `/external-maintainers?companyId=3&categoryId=2`
+
+---
+
+### Success Response (200 OK)
+```json
+{
+  "id": 12,
+  "fullName": "Alice Brown",
+  "username": "ext_maintainer1",
+  "email": "maintainer@example.com",
+  "roleName": "External Maintainer",
+  "roleType": "external_maintainer",
+  "companyId": 3,
+  "companyName": "HydroTech Ltd"
+}
+```
+### No Content Response (204 No Content)
+```json
+// empty response
+```
+###  Error Response (400 Bad Request)
+```json
+{
+  "errors": [
+    "CompanyId must be a positive integer",
+    "CategoryId must be a positive integer"
+  ]
+}
+```
+### Error Response (401 Unauthorized):
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+### Error Response (403 Forbidden):
+```json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+### Error Response (500 Internal Server Error):
+
+```json
+{
+  "error": "Internal server error"
+}
+```
+---
+### Reports
 **PATCH `/tech_officer/reports/{reportId}/assign_external`**
 
 * **Request Headers:**
