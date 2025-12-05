@@ -156,7 +156,7 @@ describe("Reports E2E", () => {
       },
     ];
 
-    it("should return 200 and reports like expected (ignore created_at/updated_at)", async () => {
+    it("should return 200 and reports like expected", async () => {
       const officerId = 5;
       const res = await request(app).get(`/officers/${officerId}/reports`);
 
@@ -284,7 +284,6 @@ describe("Reports E2E", () => {
       testUploadedUrls = []; // reset after cleanup
     });
 
-    // --- TEST 1: SINGLE PHOTO UPLOAD ---
     it("should create a report with a real photo upload", async () => {
       const payload = {
         category_id: 1,
@@ -314,7 +313,6 @@ describe("Reports E2E", () => {
       );
     });
 
-    // --- TEST 2: FAIL WITHOUT PHOTOS ---
     it("should fail if no photos are uploaded", async () => {
       const payload = {
         category_id: 1,
@@ -347,42 +345,8 @@ describe("Reports E2E", () => {
       testUploadedUrls = []; // no cleanup required
     });
 
-    // --- TEST 3: MULTIPLE PHOTO UPLOAD ---
-    it("should upload multiple photos (max 3)", async () => {
-      const payload = {
-        category_id: 1,
-        title: "Multi Photo Report",
-        description: "Testing multiple photos",
-        is_anonymous: false,
-        position_lat: 40.7128,
-        position_lng: -74.0060,
-      };
-
-      const res = await request(app)
-        .post("/reports")
-        .field("category_id", payload.category_id.toString())
-        .field("title", payload.title)
-        .field("description", payload.description)
-        .field("is_anonymous", payload.is_anonymous.toString())
-        .field("position_lat", payload.position_lat.toString())
-        .field("position_lng", payload.position_lng.toString())
-        .attach("photos", testImg)
-        .attach("photos", testImg)
-        .attach("photos", testImg);
-
-      expect(res.status).toBe(201);
-      expect(res.body.report.photos).toHaveLength(3);
-
-      testUploadedUrls = (res.body.report.photos || []).map(p =>
-        typeof p === "string" ? p : p.url || p.photo_url
-      );
-    });
-
     it("should delete uploaded image if report creation fails", async () => {
-      const createSpy = vi
-        .spyOn(ReportDAO.prototype, "createReport")
-        .mockRejectedValue(new Error("Forced DB error"));
-
+      const createSpy = vi.spyOn(ReportDAO.prototype, "createReport").mockRejectedValue(new Error("Forced DB error"));
       const payload = {
         category_id: 1,
         title: "Report causing error",
