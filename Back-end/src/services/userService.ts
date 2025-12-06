@@ -7,12 +7,12 @@ export class EmailOrUsernameConflictError extends Error{}
 export async function createUserWithFirebase(
   userData: {
     email: string;
-    password: string;
     firstName: string;
     lastName: string;
     username: string;
     role_id?: number;
   },
+  password: string,
   userDaoInstance: UserDAO
 ) {
   // Controllo conflitti email/username a priori
@@ -24,7 +24,7 @@ export async function createUserWithFirebase(
   // Creo utente in Firebase
   const firebaseUser = await firebaseAdmin.auth().createUser({
     email: userData.email,
-    password: userData.password,
+    password: password,
     displayName: `${userData.firstName} ${userData.lastName}`,
   });
 
