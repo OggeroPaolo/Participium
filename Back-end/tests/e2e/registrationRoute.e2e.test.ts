@@ -1,7 +1,7 @@
 import request from "supertest";
 import { Express } from "express";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import userRouter from "../../src/routes/registrations.routes.js"; 
+import userRouter from "../../src/routes/registrations.routes.js";
 import * as userService from "../../src/services/userService.js";
 import UserDAO from "../../src/dao/UserDAO.js";
 import { makeTestApp } from "../setup/tests_util.js";
@@ -71,7 +71,7 @@ describe("POST /user-registrations (E2E)", () => {
 
         expect(response.status).toBe(400);
         expect(response.body.errors).toHaveLength(2);
-;
+        ;
     });
 
     it("should return 422 if username or email conflicts", async () => {

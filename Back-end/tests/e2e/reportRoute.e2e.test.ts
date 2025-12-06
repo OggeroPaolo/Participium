@@ -1,6 +1,6 @@
 import request from "supertest";
 import { Express } from "express";
-import { describe, it, expect, beforeAll, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, afterEach, vi, beforeEach } from "vitest";
 import reportsRouter from "../../src/routes/reports.routes.js";
 import { makeTestApp } from "../setup/tests_util.js";
 import { initTestDB, resetTestDB } from "../setup/tests_util.js";
@@ -10,6 +10,7 @@ import path from "path";
 import cloudinary from "../../src/config/cloudinary.js";
 import { ReportStatus } from "../../src/models/reportStatus.js";
 import { Update } from "../../src/config/database.js";
+
 
 const mock_user_id = 3;
 
@@ -353,7 +354,7 @@ describe("Reports E2E", () => {
         is_anonymous: false,
         position_lat: 40.7128,
         position_lng: -74.0060,
-      };
+      }
 
       const res = await request(app)
         .post("/reports")
@@ -368,7 +369,7 @@ describe("Reports E2E", () => {
       expect(res.status).toBe(500);
       expect(res.body).toEqual({ error: "Internal server error" });
 
-      testUploadedUrls = []; // no cleanup needed, rollback handled it
+      testUploadedUrls = [];
     });
   });
 
@@ -508,16 +509,25 @@ describe("Reports E2E", () => {
     });
   });
 
-  //TODO: Implement tests for the following routes
+
   /*
-  describe("PATCH /tech_officer/reports/:reportId/assign_external", () => {
+  
+    describe("PATCH /tech_officer/reports/:reportId/assign_external", () => {
+    });
+  
+  
+    describe.skip("PATCH /ext_maintainer/reports/:reportId", () => {
+     
+    });
 
-  });
-
-  describe("PATCH /ext_maintainer/reports/:reportId", () => {
-  });
 
   describe("GET /report/:reportId/internal-comments", () => {
+    const mockReportId = 1;
+    it("should assign report to external maintainer successfully", async () => {
+      const res = await request(app)
+        .get(`/report/${mockReportId}/internal-comments`)
+      expect(res.status).toBe(200);
+    });
   });
 */
 });

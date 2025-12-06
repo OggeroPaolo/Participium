@@ -69,7 +69,7 @@ export default class ReportDao {
   async updateReportStatus(reportId: number, status: string) {
     const query = `
       UPDATE reports
-      SET status = ?, 
+      SET status = ?
       WHERE id = ?;
     `;
 
