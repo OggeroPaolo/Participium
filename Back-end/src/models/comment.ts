@@ -1,7 +1,7 @@
 export type Comment = {
     id: number;
     report_id: number;
-    username: string;
+    user_id: number;
     type: string;
     text: string;
     timestamp: string;

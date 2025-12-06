@@ -372,7 +372,8 @@ export const seedDefaultReports = async (): Promise<void> => {
         position_lng: 7.66233,
         status: "assigned",
         reviewed_by: 3,
-        assigned_to: 10
+        assigned_to: 10,
+        external_user: 14
       },
       {
         title: "Wooden Bench with Missing Boards",
@@ -406,7 +407,6 @@ export const seedDefaultReports = async (): Promise<void> => {
         status: "resolved",
         reviewed_by: 3,
         assigned_to: 10,
-        external_user: 13
       },
       {
         title: "Abandoned Pole",
@@ -607,7 +607,7 @@ export const seedDefaultCompanies = async (): Promise<void> => {
     const companyCount = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM companies");
 
     if (!companyCount || companyCount.count === 0) {
-    
+
       const defaultCompanies = [
         { name: "Enel", category_id: 4 },
         { name: "Apex Corp", category_id: 7 },
@@ -649,31 +649,37 @@ export const seedDefaultComments = async (): Promise<void> => {
       const comments = [
         {
           report_id: reports[0]?.id,
-          username: "JohnDoe",
+          user_id: 1,
           type: "public",
           text: "This issue needs urgent attention."
         },
         {
           report_id: reports[0]?.id,
-          username: "AdminUser",
+          user_id: 10,
           type: "private",
           text: "Assigned to maintenance team."
         },
         {
+          report_id: reports[0]?.id,
+          user_id: 14,
+          type: "private",
+          text: "Will be addressed in the next maintenance cycle."
+        },
+        {
           report_id: reports[1]?.id,
-          username: "JaneSmith",
+          user_id: 3,
           type: "public",
           text: "I noticed this problem too, it affects traffic."
         },
         {
           report_id: reports[2]?.id,
-          username: "PublicUser",
+          user_id: 2,
           type: "public",
           text: "Please fix this as soon as possible."
         },
         {
           report_id: reports[3]?.id,
-          username: "Operator",
+          user_id: 14,
           type: "private",
           text: "Scheduled maintenance for tomorrow."
         }
@@ -681,8 +687,8 @@ export const seedDefaultComments = async (): Promise<void> => {
 
       for (const comment of comments) {
         await runQuery(
-          `INSERT INTO comments (report_id, username, type, text) VALUES (?, ?, ?, ?)`,
-          [comment.report_id, comment.username, comment.type, comment.text]
+          `INSERT INTO comments (report_id, user_id, type, text) VALUES (?, ?, ?, ?)`,
+          [comment.report_id, comment.user_id, comment.type, comment.text]
         );
       }
     }

@@ -105,11 +105,12 @@ CREATE TABLE IF NOT EXISTS companies (
 CREATE TABLE IF NOT EXISTS comments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   report_id INTEGER NOT NULL,
-  username TEXT NOT NULL,
+  user_id INTEGER NOT NULL,
   type TEXT NOT NULL CHECK(type IN ('private','public')),
   text TEXT NOT NULL,
   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE
+  FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE set NULL
 );
 
 -- ============================================

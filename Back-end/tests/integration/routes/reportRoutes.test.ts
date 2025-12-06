@@ -845,7 +845,7 @@ describe("Report Routes Integration Tests", () => {
                 {
                     id: 1,
                     report_id: reportId,
-                    username: "tech_officer",
+                    user_id:11,
                     type: "note",
                     text: "Check the issue",
                     timestamp: new Date().toISOString(),
@@ -853,7 +853,7 @@ describe("Report Routes Integration Tests", () => {
                 {
                     id: 2,
                     report_id: reportId,
-                    username: "ext_maintainer",
+                    user_id:12,
                     type: "update",
                     text: "Started fixing",
                     timestamp: new Date().toISOString(),

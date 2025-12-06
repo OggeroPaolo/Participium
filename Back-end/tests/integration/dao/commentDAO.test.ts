@@ -23,8 +23,8 @@ describe("CommentDAO Unit Test Suite", () => {
 
     it("returns all private comments for a report", async () => {
       const mockComments: Comment[] = [
-        { id: 1, report_id: reportId, username: "alice", type: "private", text: "Private comment 1", timestamp: "2025-12-05T10:00:00Z" },
-        { id: 2, report_id: reportId, username: "bob", type: "private", text: "Private comment 2", timestamp: "2025-12-05T10:05:00Z" },
+        { id: 1, report_id: reportId, user_id: 1, type: "private", text: "Private comment 1", timestamp: "2025-12-05T10:00:00Z" },
+        { id: 2, report_id: reportId, user_id: 2, type: "private", text: "Private comment 2", timestamp: "2025-12-05T10:05:00Z" },
       ];
 
       const getAllMock = vi.spyOn(db, "getAll").mockResolvedValueOnce(mockComments);
