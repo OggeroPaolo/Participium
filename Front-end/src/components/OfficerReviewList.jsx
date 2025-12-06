@@ -14,6 +14,7 @@ import {
   reviewReport,
   getCategories,
   getReport,
+  getCategoryOperators,
 } from "../API/API";
 import { reverseGeocode } from "../utils/geocoding";
 import L from "leaflet";
@@ -31,6 +32,10 @@ function OfficerReviewList() {
   const [reviewAction, setReviewAction] = useState(""); // 'assigned' or 'rejected'
   const [rejectionNote, setRejectionNote] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [availableOfficers, setAvailableOfficers] = useState([]);
+  const [selectedOfficerId, setSelectedOfficerId] = useState(null);
+  const [isLoadingOfficers, setIsLoadingOfficers] = useState(false);
+  const [officerError, setOfficerError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
   const [showImageModal, setShowImageModal] = useState(false);
@@ -60,6 +65,44 @@ function OfficerReviewList() {
     loadReports();
     loadCategories();
   }, []);
+
+  useEffect(() => {
+    if (!showModal || !selectedCategoryId) {
+      setAvailableOfficers([]);
+      setSelectedOfficerId(null);
+      return;
+    }
+
+    let isCurrent = true;
+
+    const fetchOfficers = async () => {
+      try {
+        setIsLoadingOfficers(true);
+        setOfficerError("");
+        const operators = await getCategoryOperators(selectedCategoryId);
+        if (!isCurrent) return;
+        setAvailableOfficers(operators);
+        setSelectedOfficerId((prev) =>
+          operators.some((op) => op.id === prev) ? prev : null
+        );
+      } catch (error) {
+        if (!isCurrent) return;
+        setAvailableOfficers([]);
+        setSelectedOfficerId(null);
+        setOfficerError(error.message || "Failed to load officers for category");
+      } finally {
+        if (isCurrent) {
+          setIsLoadingOfficers(false);
+        }
+      }
+    };
+
+    fetchOfficers();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [selectedCategoryId, showModal]);
 
   const loadCategories = async () => {
     try {
@@ -147,6 +190,9 @@ function OfficerReviewList() {
     setShowModal(true);
     setReviewAction("");
     setRejectionNote("");
+    setSelectedOfficerId(null);
+    setAvailableOfficers([]);
+    setOfficerError("");
     setIsLoadingReportDetails(true);
     setCompleteReportData(null);
 
@@ -183,6 +229,9 @@ function OfficerReviewList() {
     setSelectedReport(null);
     setCompleteReportData(null);
     setSelectedCategoryId(null);
+    setAvailableOfficers([]);
+    setSelectedOfficerId(null);
+    setOfficerError("");
     setReviewAction("");
     setRejectionNote("");
 
@@ -296,6 +345,15 @@ function OfficerReviewList() {
       return;
     }
 
+    if (reviewAction === "assigned" && !selectedOfficerId) {
+      setAlert({
+        show: true,
+        message: "Please select an officer before assigning the report",
+        variant: "warning",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -303,6 +361,7 @@ function OfficerReviewList() {
         status: reviewAction,
         note: reviewAction === "rejected" ? rejectionNote : null,
         categoryId: selectedCategoryId,
+        officerId: reviewAction === "assigned" ? selectedOfficerId : null,
       });
 
       setAlert({
@@ -534,6 +593,58 @@ function OfficerReviewList() {
                 </Form.Select>
               </div>
 
+              <Form.Group className='mb-3'>
+                <Form.Label className='fw-bold'>
+                  Assign to Officer {reviewAction === "assigned" && "*"}
+                </Form.Label>
+                <Form.Select
+                  value={selectedOfficerId || ""}
+                  onChange={(e) =>
+                    setSelectedOfficerId(
+                      e.target.value ? Number(e.target.value) : null
+                    )
+                  }
+                  disabled={isLoadingOfficers || availableOfficers.length === 0}
+                  style={{
+                    display: "inline-block",
+                    width: "100%",
+                    padding: "0.25rem 2rem 0.25rem 0.5rem",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  <option value=''>
+                    {isLoadingOfficers
+                      ? "Loading available officers..."
+                      : availableOfficers.length === 0
+                      ? "No officers available"
+                      : "Select an officer"}
+                  </option>
+                  {availableOfficers.map((officer) => {
+                    const fullName = [officer.first_name, officer.last_name]
+                      .filter(Boolean)
+                      .join(" ");
+                    return (
+                      <option key={officer.id} value={officer.id}>
+                        {fullName || officer.username || `Officer #${officer.id}`}
+                      </option>
+                    );
+                  })}
+                </Form.Select>
+                {officerError && (
+                  <Form.Text className='text-danger d-block mt-1'>
+                    {officerError}
+                  </Form.Text>
+                )}
+                {!officerError &&
+                  !isLoadingOfficers &&
+                  availableOfficers.length === 0 && (
+                    <Form.Text className='text-muted d-block mt-1'>
+                      No officers are linked to this category. Please select a
+                      different category or add officers from the admin panel.
+                    </Form.Text>
+                  )}
+              </Form.Group>
+
               <hr />
 
               <Form onSubmit={handleSubmitReview}>
@@ -591,7 +702,8 @@ function OfficerReviewList() {
                     disabled={
                       isSubmitting ||
                       !reviewAction ||
-                      (reviewAction === "rejected" && !rejectionNote.trim())
+                      (reviewAction === "rejected" && !rejectionNote.trim()) ||
+                      (reviewAction === "assigned" && !selectedOfficerId)
                     }
                     className='confirm-button'
                   >

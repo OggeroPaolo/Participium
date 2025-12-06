@@ -143,6 +143,75 @@ async function getCategories() {
   }
 }
 
+// Get operators (internal officers) for a category
+async function getCategoryOperators(categoryId) {
+  if (!categoryId) {
+    throw new Error("Category ID is required to fetch operators");
+  }
+
+  try {
+    const response = await fetch(`${URI}/categories/${categoryId}/operators`, {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return [];
+    }
+
+    if (response.ok) {
+      return await response.json();
+    } else {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || "Failed to fetch operators for the category"
+      );
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
+// Get external maintainers filtered by category/company
+async function getExternalMaintainers(filters = {}) {
+  try {
+    const params = new URLSearchParams();
+    if (filters.categoryId) {
+      params.append("categoryId", filters.categoryId);
+    }
+    if (filters.companyId) {
+      params.append("companyId", filters.companyId);
+    }
+    const queryString = params.toString() ? `?${params.toString()}` : "";
+
+    const response = await fetch(`${URI}/external-maintainers${queryString}`, {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return [];
+    }
+
+    if (response.ok) {
+      return await response.json();
+    } else {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error ||
+          errorData.errors?.[0] ||
+          "Failed to fetch external maintainers"
+      );
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
 // Get list of approved reports in the short format
 async function getApprovedReports() {
   try {
@@ -249,7 +318,7 @@ async function getPendingReports() {
 
 // Review a report (approve or reject)
 async function reviewReport(reportId, reviewData) {
-  const { status, note, categoryId } = reviewData;
+  const { status, note, categoryId, officerId } = reviewData;
 
   try {
     const body = {
@@ -262,6 +331,10 @@ async function reviewReport(reportId, reviewData) {
 
     if (categoryId) {
       body.categoryId = categoryId;
+    }
+
+    if (officerId) {
+      body.officerId = officerId;
     }
 
     const response = await fetch(`${URI}/pub_relations/reports/${reportId}`, {
@@ -318,6 +391,8 @@ export {
   getInternalUsers,
   getUserData,
   getCategories,
+  getCategoryOperators,
+  getExternalMaintainers,
   getApprovedReports,
   createReport,
   getReport,
