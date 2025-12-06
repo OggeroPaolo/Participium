@@ -199,12 +199,6 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
     validateAssignExternalMaintainer,
     verifyFirebaseToken([ROLES.TECH_OFFICER]),
     async (req: Request, res: Response) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            //Extract the validation error messages 
-            const extractedErrors = errors.array().map(err => err.msg);
-            return res.status(400).json({ errors: extractedErrors });
-        }
         try {
             const reportId = Number(req.params.reportId);
             const user = (req as Request & { user: User }).user;
@@ -372,12 +366,6 @@ router.get("/report/:reportId/internal-comments",
     validateReportId,
     verifyFirebaseToken([ROLES.EXT_MAINTAINER, ROLES.TECH_OFFICER]),
     async (req: Request, res: Response) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            //Extract the validation error messages 
-            const extractedErrors = errors.array().map(err => err.msg);
-            return res.status(400).json({ errors: extractedErrors });
-        }
         try {
             const reportId = Number(req.params.reportId);
             const comments = await commentDAO.getPrivateCommentsByReportId(reportId);

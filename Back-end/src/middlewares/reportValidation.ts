@@ -29,7 +29,11 @@ export const validateCreateReport = [
 export const validateReportId = [
     param("reportId").isInt().withMessage("reportId must be a valid integer"),
     (req: Request, res: Response, next: NextFunction) => {
-        validationResult(req);
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const extractedErrors = errors.array().map(err => err.msg);
+            return res.status(400).json({ errors: extractedErrors });
+        }
         next();
     }
 ];
@@ -62,7 +66,8 @@ export const validateAssignExternalMaintainer = [
     (req: Request, res: Response, next: NextFunction) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            const extractedErrors = errors.array().map(err => err.msg);
+            return res.status(400).json({ errors: extractedErrors });
         }
         next();
     }
