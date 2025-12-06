@@ -8,7 +8,7 @@ import type { ReportMap } from "../models/reportMap.js";
 import OperatorDAO from "../dao/OperatorDAO.js";
 import { ROLES } from "../models/userRoles.js";
 import type { User } from "../models/user.js"
-import { validateAssignExternalMaintainer, validateCreateReport, validateExternalMaintainerUpdateStatus, validateReportId, validateGetReports, validateOfficersGetReports } from "../middlewares/reportValidation.js";
+import { validateAssignExternalMaintainer, validateCreateReport, validateExternalMaintainerUpdateStatus, validateReportId, validateGetReports, validateOfficersGetReports, validateCreateComment } from "../middlewares/reportValidation.js";
 import { upload } from "../config/multer.js";
 import cloudinary from "../config/cloudinary.js";
 import { unlink, rename } from "fs/promises";
@@ -17,6 +17,7 @@ import sharp from 'sharp';
 import type { ReportFilters } from "../dao/ReportDAO.js";
 import { ReportStatus } from "../models/reportStatus.js";
 import CommentDAO from "../dao/CommentDAO.js";
+import type { CreateCommentDTO } from "../dto/CommentDTO.js";
 
 const router = Router();
 const reportDAO = new ReportDAO();
@@ -115,6 +116,30 @@ router.get("/reports",
         }
     }
 )
+
+//POST /reports/:reportId/comments
+router.post("/reports/:reportId/comments",
+    validateCreateComment,
+    verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]),
+    async (req: Request, res: Response) => {
+        try {
+            const user = (req as Request & { user: User }).user;
+
+            const data: CreateCommentDTO = {
+                user_id: Number(user.id),
+                report_id: Number(req.body.report_id),
+                type: req.body.type,
+                text: req.body.text
+            };
+            const createdComment = await commentDAO.createComment(data);
+
+            return res.status(201).json({ comment: createdComment });
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
 
 //POST /reports
 router.post("/reports",

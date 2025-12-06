@@ -2,6 +2,20 @@ import { body, param, validationResult } from 'express-validator';
 import type { Request, Response, NextFunction } from 'express';
 import { ReportStatus } from '../models/reportStatus.js';
 
+export const validateCreateComment = [
+    param("report_id").isInt().withMessage("report_id must be a valid integer integer"),
+    body("type").isString().notEmpty().withMessage("type is required"),
+    body("text").isString().notEmpty().withMessage("text is required"),
+    (req: Request, res: Response, next: NextFunction) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const extractedErrors = errors.array().map(err => err.msg);
+            return res.status(400).json({ errors: extractedErrors });
+        }
+        next();
+    }
+];
+
 export const validateCreateReport = [
     body("category_id").isInt().withMessage("category_id must be an integer"),
     body("title").isString().notEmpty().withMessage("title is required"),
