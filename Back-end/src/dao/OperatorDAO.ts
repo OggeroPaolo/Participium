@@ -1,8 +1,15 @@
 import { runQuery, getAll, getOne } from "../config/database.js"
 import type { User } from "../models/user.js"
 import UserDAO from "../dao/UserDAO.js";
+import mapToExternalUserDTO, { type ExternalUserDTO } from "../dto/externalUserDTO.js";
 
 const userDao = new UserDAO();
+
+export interface ExternalMaintainerFilters {
+  categoryId?: number;
+  companyId?: number;
+}
+
 
 export default class OperatorDao {
 
@@ -58,4 +65,50 @@ export default class OperatorDao {
 
     return operators;
   }
+
+  async getExternalMaintainersByFilter(
+    filters: ExternalMaintainerFilters = {}
+  ): Promise<ExternalUserDTO[]> {
+    const conditions: string[] = ["r.type = 'external_maintainer'"];
+    const params: any[] = [];
+
+    // Filter by companyId
+    if (typeof filters.companyId === "number" && !isNaN(filters.companyId)) {
+      conditions.push("c.id = ?");
+      params.push(filters.companyId);
+    }
+
+    // Filter by categoryId
+    if (typeof filters.categoryId === "number" && !isNaN(filters.categoryId)) {
+      conditions.push("c.category_id = ?");
+      params.push(filters.categoryId);
+    }
+
+    // Build query
+    let query = `
+    SELECT
+      u.*,
+      r.name AS role_name,
+      r.type AS role_type,
+      c.category_id AS category_id,
+      c.id AS company_id,
+      c.name AS company_name,
+      c.category_id AS company_category_id
+    FROM users u
+    JOIN roles r ON r.id = u.role_id
+    LEFT JOIN companies c ON c.id = r.company_id
+  `;
+
+    if (conditions.length > 0) {
+      query += " WHERE " + conditions.join(" AND ");
+    }
+
+    // Execute query  
+    const users = await getAll(query, params);
+    // Map DB rows to DTO
+    return users.map(mapToExternalUserDTO);
+  }
+
+
+
 }

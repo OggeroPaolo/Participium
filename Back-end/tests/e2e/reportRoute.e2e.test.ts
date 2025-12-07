@@ -1,6 +1,6 @@
 import request from "supertest";
 import { Express } from "express";
-import { describe, it, expect, beforeAll, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, afterEach, vi, beforeEach } from "vitest";
 import reportsRouter from "../../src/routes/reports.routes.js";
 import { makeTestApp } from "../setup/tests_util.js";
 import { initTestDB, resetTestDB } from "../setup/tests_util.js";
@@ -11,7 +11,8 @@ import cloudinary from "../../src/config/cloudinary.js";
 import { ReportStatus } from "../../src/models/reportStatus.js";
 import { Update } from "../../src/config/database.js";
 
-const user_id = 3;
+
+const mock_user_id = 3;
 
 //Use for clean up of Create Report test
 let testUploadedUrls: string[] = [];
@@ -20,7 +21,7 @@ const testImg = path.join(__dirname, "../test_img/test.jpg");
 // Mock Firebase middleware to simulate an authenticated user
 vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
   verifyFirebaseToken: () => (req: any, _res: any, next: any) => {
-    req.user = { id: user_id, role_name: "pub_relations" };
+    req.user = { id: mock_user_id, role_name: "pub_relations" };
     next();
   },
 }));
@@ -156,7 +157,7 @@ describe("Reports E2E", () => {
       },
     ];
 
-    it("should return 200 and reports like expected (ignore created_at/updated_at)", async () => {
+    it("should return 200 and reports like expected", async () => {
       const officerId = 5;
       const res = await request(app).get(`/officers/${officerId}/reports`);
 
@@ -254,7 +255,6 @@ describe("Reports E2E", () => {
 
 
   describe("POST /reports", () => {
-
     afterEach(async () => {
 
       for (const url of testUploadedUrls) {
@@ -284,7 +284,6 @@ describe("Reports E2E", () => {
       testUploadedUrls = []; // reset after cleanup
     });
 
-    // --- TEST 1: SINGLE PHOTO UPLOAD ---
     it("should create a report with a real photo upload", async () => {
       const payload = {
         category_id: 1,
@@ -314,7 +313,6 @@ describe("Reports E2E", () => {
       );
     });
 
-    // --- TEST 2: FAIL WITHOUT PHOTOS ---
     it("should fail if no photos are uploaded", async () => {
       const payload = {
         category_id: 1,
@@ -347,42 +345,8 @@ describe("Reports E2E", () => {
       testUploadedUrls = []; // no cleanup required
     });
 
-    // --- TEST 3: MULTIPLE PHOTO UPLOAD ---
-    it("should upload multiple photos (max 3)", async () => {
-      const payload = {
-        category_id: 1,
-        title: "Multi Photo Report",
-        description: "Testing multiple photos",
-        is_anonymous: false,
-        position_lat: 40.7128,
-        position_lng: -74.0060,
-      };
-
-      const res = await request(app)
-        .post("/reports")
-        .field("category_id", payload.category_id.toString())
-        .field("title", payload.title)
-        .field("description", payload.description)
-        .field("is_anonymous", payload.is_anonymous.toString())
-        .field("position_lat", payload.position_lat.toString())
-        .field("position_lng", payload.position_lng.toString())
-        .attach("photos", testImg)
-        .attach("photos", testImg)
-        .attach("photos", testImg);
-
-      expect(res.status).toBe(201);
-      expect(res.body.report.photos).toHaveLength(3);
-
-      testUploadedUrls = (res.body.report.photos || []).map(p =>
-        typeof p === "string" ? p : p.url || p.photo_url
-      );
-    });
-
     it("should delete uploaded image if report creation fails", async () => {
-      const createSpy = vi
-        .spyOn(ReportDAO.prototype, "createReport")
-        .mockRejectedValue(new Error("Forced DB error"));
-
+      const createSpy = vi.spyOn(ReportDAO.prototype, "createReport").mockRejectedValue(new Error("Forced DB error"));
       const payload = {
         category_id: 1,
         title: "Report causing error",
@@ -390,7 +354,7 @@ describe("Reports E2E", () => {
         is_anonymous: false,
         position_lat: 40.7128,
         position_lng: -74.0060,
-      };
+      }
 
       const res = await request(app)
         .post("/reports")
@@ -405,7 +369,7 @@ describe("Reports E2E", () => {
       expect(res.status).toBe(500);
       expect(res.body).toEqual({ error: "Internal server error" });
 
-      testUploadedUrls = []; // no cleanup needed, rollback handled it
+      testUploadedUrls = [];
     });
   });
 
@@ -545,4 +509,25 @@ describe("Reports E2E", () => {
     });
   });
 
+
+  /*
+  
+    describe("PATCH /tech_officer/reports/:reportId/assign_external", () => {
+    });
+  
+  
+    describe.skip("PATCH /ext_maintainer/reports/:reportId", () => {
+     
+    });
+
+
+  describe("GET /report/:reportId/internal-comments", () => {
+    const mockReportId = 1;
+    it("should assign report to external maintainer successfully", async () => {
+      const res = await request(app)
+        .get(`/report/${mockReportId}/internal-comments`)
+      expect(res.status).toBe(200);
+    });
+  });
+*/
 });

@@ -8,7 +8,7 @@ import type { ReportMap } from "../models/reportMap.js";
 import OperatorDAO from "../dao/OperatorDAO.js";
 import { ROLES } from "../models/userRoles.js";
 import type { User } from "../models/user.js"
-import { validateAssignExternalMaintainer, validateCreateReport, validateExternalMaintainerUpdateStatus, validateReportId, validateGetReports, validateOfficersGetReports } from "../middlewares/reportValidation.js";
+import { validateAssignExternalMaintainer, validateCreateReport, validateExternalMaintainerUpdateStatus, validateReportId, validateGetReports, validateOfficersGetReports, validateCreateComment } from "../middlewares/reportValidation.js";
 import { upload } from "../config/multer.js";
 import cloudinary from "../config/cloudinary.js";
 import { unlink, rename } from "fs/promises";
@@ -17,6 +17,7 @@ import sharp from 'sharp';
 import type { ReportFilters } from "../dao/ReportDAO.js";
 import { ReportStatus } from "../models/reportStatus.js";
 import CommentDAO from "../dao/CommentDAO.js";
+import type { CreateCommentDTO } from "../dto/CommentDTO.js";
 
 const router = Router();
 const reportDAO = new ReportDAO();
@@ -95,11 +96,7 @@ router.get("/reports",
     validateGetReports,
     async (req: Request, res: Response) => {
         try {
-            const status = req.query.status as string | undefined;
-
-            if (status && !Object.values(ReportStatus).includes(status as ReportStatus)) {
-                return res.status(400).json({ error: "Invalid status filter" });
-            }
+            const status = req.query.status as string;
 
             const filters: ReportFilters = {};
             if (status) {
@@ -120,6 +117,30 @@ router.get("/reports",
     }
 )
 
+//POST /reports/:reportId/comments
+router.post("/reports/:reportId/comments",
+    validateCreateComment,
+    verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]),
+    async (req: Request, res: Response) => {
+        try {
+            const user = (req as Request & { user: User }).user;
+
+            const data: CreateCommentDTO = {
+                user_id: Number(user.id),
+                report_id: Number(req.body.report_id),
+                type: req.body.type,
+                text: req.body.text
+            };
+            const createdComment = await commentDAO.createComment(data);
+
+            return res.status(201).json({ comment: createdComment });
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
+
 //POST /reports
 router.post("/reports",
     verifyFirebaseToken([ROLES.CITIZEN]),
@@ -130,10 +151,6 @@ router.post("/reports",
 
         try {
             const files = req.files as Express.Multer.File[];
-            if (!files || files.length === 0) {
-                console.log(files)
-                return res.status(400).json({ error: "At least one photo is required" });
-            }
 
             for (const file of files) {
                 const newPath = file.path + path.extname(file.originalname); // add extension
@@ -196,8 +213,6 @@ router.post("/reports",
                     console.error("Error deleting image during rollback:", delErr);
                 }
             }
-
-            console.log(error);
             return res.status(500).json({ error: "Internal server error" });
         }
 
@@ -218,7 +233,7 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
             const report = await reportDAO.getReportById(reportId);
             if (!report) return res.status(404).json({ error: "Report not found" });
 
-            if (report.status !== 'assigned') {
+            if (report.status !== ReportStatus.Assigned) {
                 return res.status(403).json({
                     error: `You are not allowed to assign to an external maintainer if the report is not in already in assigned status`
                 });
@@ -264,9 +279,9 @@ router.patch("/ext_maintainer/reports/:reportId",
             const report = await reportDAO.getReportById(reportId);
             if (!report) return res.status(404).json({ error: "Report not found" });
 
-            if (report.status !== 'assigned' &&
-                report.status !== 'in_progress' &&
-                report.status !== 'suspended') {
+            if (report.status !== ReportStatus.Assigned &&
+                report.status !== ReportStatus.InProgress &&
+                report.status !== ReportStatus.Suspended) {
                 return res.status(403).json({
                     error: `You are not allowed to change status of a report not in assigned/in_progress/suspended state`
                 });

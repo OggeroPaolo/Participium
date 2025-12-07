@@ -29,19 +29,23 @@ describe("GET /roles (E2E)", () => {
     const expectedRoles = [
       { name: "Municipal_public_relations_officer", type: "pub_relations" },
       { name: "Water_utility_officer", type: "tech_officer" },
-      { name: "External Maintainer", type: "external_maintainer" }
+      { name: "Enel Worker", type: "external_maintainer" }
     ];
 
     const res = await request(app).get("/roles");
 
     expect(res.status).toBe(200);
 
-    expect(res.body).toEqual(
-      expect.arrayContaining(
-        expectedRoles.map(role => expect.objectContaining(role))
-      )
-    );
+    expect(Array.isArray(res.body)).toBe(true);
+    expectedRoles.forEach(role => {
+      expect(res.body).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining(role)
+        ])
+      );
+    });
   });
+
 
   it("should return 204 if no roles exist", async () => {
 

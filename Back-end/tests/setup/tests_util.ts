@@ -95,7 +95,6 @@ export async function resetTestDB(): Promise<void> {
     const tables = await getAll<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
     );
-
     for (const { name } of tables) {
       await runQuery(`DELETE FROM ${name}`);
     }
