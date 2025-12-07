@@ -69,7 +69,7 @@ function App() {
               isAuthenticated ? (
                 user?.role_name === "Admin" ? (
                   <Navigate replace to='/user-list' />
-                ) : user?.role_type === "tech_officer" ? (
+                ) : (user?.role_type === "tech_officer" || user?.role_type === "external_maintainer") ? (
                   <Navigate replace to='/tech-assigned-reports' />
                 ) : (
                   <Navigate replace to='/' />
@@ -140,7 +140,7 @@ function App() {
           <Route
             path='/tech-assigned-reports'
             element={
-              user?.role_type === "tech_officer" ? (
+              (user?.role_type === "tech_officer" || user?.role_type === "external_maintainer") ? (
                 <TechAssignedReports />
               ) : (
                 <Navigate replace to='/' />

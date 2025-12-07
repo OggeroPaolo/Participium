@@ -311,6 +311,66 @@ async function getAssignedReports(officerId) {
   }
 }
 
+// Update status of a report
+async function updateStatus(reportId, status) {
+  try {
+    const body = {
+      status: status,
+    };
+
+    const response = await fetch(`${URI}/ext_maintainer/reports/${reportId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${await getBearerToken()}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || errorData.errors?.[0] || "Failed to update status"
+      );
+    }
+
+    return await response.json();
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
+// Get comments for a report as an internal user
+async function getCommentsInternal(reportId) {
+  try {
+    const response = await fetch(
+      `${URI}/report/${reportId}/internal-comments`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `${await getBearerToken()}`,
+        },
+      }
+    );
+
+    if (response.status === 204) {
+      return [];
+    }
+
+    if (response.ok) {
+      const internalComments = await response.json();
+      console.log(internalComments);
+      return Array.isArray(internalComments.comments)
+        ? internalComments.comments
+        : [];
+    } else {
+      throw new Error("Failed to fetch internal comments");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
 export {
   handleSignup,
   createInternalUser,
@@ -324,4 +384,6 @@ export {
   getPendingReports,
   reviewReport,
   getAssignedReports,
+  updateStatus,
+  getCommentsInternal,
 };

@@ -1,6 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import useUserStore from "../store/userStore";
-import { getAssignedReports, getCategories, getReport } from "../API/API";
+import {
+  getAssignedReports,
+  getCategories,
+  getCommentsInternal,
+  getReport,
+  updateStatus,
+} from "../API/API";
 import {
   Container,
   Card,
@@ -9,6 +15,7 @@ import {
   Button,
   Spinner,
   Alert,
+  Form,
 } from "react-bootstrap";
 import { reverseGeocode } from "../utils/geocoding";
 import L from "leaflet";
@@ -31,6 +38,12 @@ function TechAssignedReports() {
   const [loadingDone, setLoadingDone] = useState(false);
   const [categoryMap, setCategoryMap] = useState({});
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // comment section states
+  const [modalPage, setModalPage] = useState("info");
+  const [comments, setComments] = useState([]);
 
   // string formatter for status
   // can be pending_approval, assigned, in_progress, suspended, rejected, resolved
@@ -122,10 +135,11 @@ function TechAssignedReports() {
     try {
       // Fetch complete report details including photos
       const completeReport = await getReport(report.id);
-      console.log(completeReport);
+      const internalComments = await getCommentsInternal(report.id);
 
       const reportData = completeReport.report || completeReport;
       setCompleteReportData(reportData);
+      setComments(internalComments);
     } catch (error) {
       console.error("Failed to load complete report:", error);
       setAlert({
@@ -221,6 +235,31 @@ function TechAssignedReports() {
       "Other": "secondary", // Gray - Misc (grouped with infrastructure)
     };
     return colors[category] || "secondary";
+  };
+
+  const handleSetStatus = async (e) => {
+    e.preventDefault();
+
+    setIsSubmitting(true);
+
+    try {
+      await updateStatus(completeReportData.id, selectedStatus);
+
+      setAlert({
+        show: true,
+        message: "Status updated successfully",
+        variant: "success",
+      });
+
+      // Reload reports list
+      await getAssignedReports();
+      handleCloseModal();
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      setAlert({ show: true, message: error.message, variant: "danger" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -334,103 +373,217 @@ function TechAssignedReports() {
         </div>
       )}
 
-      {/* Review Modal */}
+      {/* Review and comments Modal */}
       <Modal show={showModal} onHide={handleCloseModal} size='lg' centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Review Report</Modal.Title>
+        <Modal.Header className='modal-header-clean'>
+          <button
+            type='button'
+            className='btn-close modal-close-top-right'
+            onClick={handleCloseModal}
+          />
+          <div className='modal-tabs-container'>
+            <button
+              className={`modal-tab ${modalPage === "info" ? "active" : ""}`}
+              onClick={() => setModalPage("info")}
+            >
+              Report Info
+            </button>
+
+            <button
+              className={`modal-tab ${
+                modalPage === "comments" ? "active" : ""
+              }`}
+              onClick={() => setModalPage("comments")}
+            >
+              Comments
+            </button>
+          </div>
         </Modal.Header>
         <Modal.Body>
-          {isLoadingReportDetails ? (
+          {/* spinner if report is loading*/}
+          {isLoadingReportDetails && (
             <div className='text-center py-5'>
               <Spinner animation='border' role='status'>
                 <span className='visually-hidden'>Loading...</span>
               </Spinner>
               <p className='mt-3'>Loading report details...</p>
             </div>
-          ) : completeReportData ? (
-            <>
-              <h5 className='fw-bold mb-3'>{completeReportData.title}</h5>
+          )}
 
-              <div className='mb-3'>
-                <strong>Description:</strong>
-                <p className='mt-2'>{completeReportData.description}</p>
-              </div>
-
-              <div className='mb-3'>
-                <strong>Location:</strong>
-                <p className='mt-1'>
-                  <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
-                  {reportAddresses[completeReportData.id] ||
-                    "Loading address..."}
-                </p>
-                {/* Minimal read-only map */}
-                <div
-                  ref={mapRef}
-                  style={{
-                    width: "100%",
-                    height: "250px",
-                    borderRadius: "8px",
-                    border: "1px solid #dee2e6",
-                    marginTop: "10px",
-                  }}
-                />
-              </div>
-
-              <div className='mb-3'>
-                <strong>Reported by:</strong>{" "}
-                {completeReportData.is_anonymous
-                  ? "Anonymous"
-                  : completeReportData.user?.username ||
-                    completeReportData.user?.complete_name ||
-                    "Unknown"}
-              </div>
-
-              <div className='mb-3'>
-                <strong>Submitted on:</strong>{" "}
-                {new Date(completeReportData.created_at).toLocaleString()}
-              </div>
-
-              {completeReportData.photos &&
-                completeReportData.photos.length > 0 && (
-                  <div className='mb-3'>
-                    <strong>Photos:</strong>
-                    <div className='d-flex gap-2 mt-2 flex-wrap'>
-                      {completeReportData.photos.map((photo, index) => (
-                        <img
-                          key={index}
-                          src={photo.url}
-                          alt={`Report photo ${index + 1}`}
-                          className='img-preview'
-                          onClick={() => handleImageClick(photo.url)}
-                          style={{ cursor: "pointer" }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-              <div className='mb-3'>
-                <strong>Category:</strong> {completeReportData.category.name}
-              </div>
-
-              <div className='mb-3'>
-                <strong>Status:</strong>{" "}
-                {statusColumns[completeReportData.status]}
-              </div>
-
-              <hr />
-
-              <div className='d-flex justify-content-end gap-2 mt-4'>
-                <Button variant='secondary' onClick={handleCloseModal}>
-                  Cancel
-                </Button>
-              </div>
-            </>
-          ) : (
+          {/* report loading is done but report GET failed */}
+          {!isLoadingReportDetails && !completeReportData && (
             <div className='text-center py-5'>
               <p className='text-muted'>Failed to load report details</p>
             </div>
           )}
+
+          {/* report is available */}
+          {!isLoadingReportDetails &&
+            completeReportData &&
+            /* modal page with report info */
+            (modalPage === "info" ? (
+              <>
+                <h5 className='fw-bold mb-3'>{completeReportData.title}</h5>
+
+                <div className='mb-3'>
+                  <strong>Description:</strong>
+                  <p className='mt-2'>{completeReportData.description}</p>
+                </div>
+
+                <div className='mb-3'>
+                  <strong>Location:</strong>
+                  <p className='mt-1'>
+                    <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
+                    {reportAddresses[completeReportData.id] ||
+                      "Loading address..."}
+                  </p>
+                  {/* Minimal read-only map */}
+                  <div
+                    ref={mapRef}
+                    style={{
+                      width: "100%",
+                      height: "250px",
+                      borderRadius: "8px",
+                      border: "1px solid #dee2e6",
+                      marginTop: "10px",
+                    }}
+                  />
+                </div>
+
+                <div className='mb-3'>
+                  <strong>Reported by:</strong>{" "}
+                  {completeReportData.is_anonymous
+                    ? "Anonymous"
+                    : completeReportData.user?.username ||
+                      completeReportData.user?.complete_name ||
+                      "Unknown"}
+                </div>
+
+                <div className='mb-3'>
+                  <strong>Submitted on:</strong>{" "}
+                  {new Date(completeReportData.created_at).toLocaleString()}
+                </div>
+
+                {completeReportData.photos &&
+                  completeReportData.photos.length > 0 && (
+                    <div className='mb-3'>
+                      <strong>Photos:</strong>
+                      <div className='d-flex gap-2 mt-2 flex-wrap'>
+                        {completeReportData.photos.map((photo, index) => (
+                          <img
+                            key={index}
+                            src={photo.url}
+                            alt={`Report photo ${index + 1}`}
+                            className='img-preview'
+                            onClick={() => handleImageClick(photo.url)}
+                            style={{ cursor: "pointer" }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                <div className='mb-3'>
+                  <strong>Category:</strong> {completeReportData.category.name}
+                </div>
+
+                <Form onSubmit={handleSetStatus}>
+                  <div className='mb-3'>
+                    <strong>Status:</strong>{" "}
+                    <Form.Select
+                      name='status'
+                      required
+                      style={{
+                        display: "inline-block",
+                        width: "auto",
+                        padding: "0.25rem 2rem 0.25rem 0.5rem",
+                        fontSize: "0.9rem",
+                      }}
+                      onChange={(e) => setSelectedStatus(e.target.value)}
+                      disabled={
+                        statusColumns[completeReportData.status] === "Resolved"
+                      }
+                    >
+                      <option>
+                        {statusColumns[completeReportData.status]}
+                      </option>
+                      {Object.keys(statusColumns).map((s) => (
+                        <option key={s} value={s}>
+                          {statusColumns[s]}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </div>
+
+                  <hr />
+
+                  <div className='d-flex justify-content-end gap-2 mt-4'>
+                    <Button
+                      variant='secondary'
+                      onClick={handleCloseModal}
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
+                    {statusColumns[completeReportData.status] !==
+                      "Resolved" && (
+                      <Button
+                        type='submit'
+                        disabled={isSubmitting}
+                        className='confirm-button'
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <span className='spinner-border spinner-border-sm me-2' />
+                            Submitting...
+                          </>
+                        ) : (
+                          "Update status"
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </Form>
+              </>
+            ) : (
+              /* modal page with comment section */
+              <>
+                {comments.length !== 0 ? (
+                  <>
+                    {comments.map((c, i) => (
+                      <div key={i} className='mb-3 pb-2 border-bottom'>
+                        <div className='d-flex justify-content-between align-items-start'>
+                          <div className='d-flex align-items-center'>
+                            <div
+                              style={{
+                                width: "14px",
+                                height: "14px",
+                                borderRadius: "50%",
+                                backgroundColor: "#0350b5",
+                                marginRight: "8px",
+                              }}
+                            ></div>
+
+                            <strong className='me-2'>{c.username}</strong>
+                          </div>
+
+                          <small className='text-muted'>
+                            {new Date(c.timestamp).toLocaleString()}
+                          </small>
+                        </div>
+
+                        <div className='mt-1'>
+                          <p className='mb-0 text-dark'>{c.text}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  /* no comments */
+                  <p className='text-muted'>No comments yet</p>
+                )}
+              </>
+            ))}
         </Modal.Body>
       </Modal>
 

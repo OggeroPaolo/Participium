@@ -199,6 +199,45 @@ html {
   z-index: 9999;
 }
 
+/* styles for tabs in report details*/
+.modal-header-clean {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+  position: relative;
+}
+
+.modal-close-top-right {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.modal-tabs-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 0 4px 0;
+  margin-top: 12px;
+}
+
+.modal-tab {
+  background: none;
+  border: none;
+  padding: 6px 14px;
+  font-size: 1.1rem;
+  color: #6c757d;
+  cursor: pointer;
+}
+
+.modal-tab.active {
+  color: #0d6efd;
+  font-weight: 600;
+  border-bottom: 2px solid #0d6efd;
+}
+
 /* Mobile styles */
 @media (max-width: 991px) {
   .cit-desktop-layout {
