@@ -384,6 +384,40 @@ async function getAssignedReports(officerId) {
   }
 }
 
+// Assign an external maintainer to a report
+async function assignExternalMaintainer(reportId, externalMaintainerId) {
+  if (!externalMaintainerId) {
+    throw new Error("External maintainer id is required");
+  }
+
+  try {
+    const response = await fetch(
+      `${URI}/tech_officer/reports/${reportId}/assign_external`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${await getBearerToken()}`,
+        },
+        body: JSON.stringify({ externalMaintainerId }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error ||
+          errorData.errors?.[0] ||
+          "Failed to assign external maintainer"
+      );
+    }
+
+    return await response.json();
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
 export {
   handleSignup,
   createInternalUser,
@@ -399,4 +433,5 @@ export {
   getPendingReports,
   reviewReport,
   getAssignedReports,
+  assignExternalMaintainer,
 };

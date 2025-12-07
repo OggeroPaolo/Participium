@@ -1,6 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import useUserStore from "../store/userStore";
-import { getAssignedReports, getCategories, getReport } from "../API/API";
+import {
+  getAssignedReports,
+  getCategories,
+  getReport,
+  getExternalMaintainers,
+  assignExternalMaintainer,
+} from "../API/API";
 import {
   Container,
   Card,
@@ -9,6 +15,7 @@ import {
   Button,
   Spinner,
   Alert,
+  Form,
 } from "react-bootstrap";
 import { reverseGeocode } from "../utils/geocoding";
 import L from "leaflet";
@@ -31,6 +38,32 @@ function TechAssignedReports() {
   const [loadingDone, setLoadingDone] = useState(false);
   const [categoryMap, setCategoryMap] = useState({});
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
+const [externalMaintainers, setExternalMaintainers] = useState([]);
+const [selectedExternalMaintainer, setSelectedExternalMaintainer] = useState(null);
+const [isLoadingMaintainers, setIsLoadingMaintainers] = useState(false);
+const [maintainersError, setMaintainersError] = useState("");
+const [assigningExternal, setAssigningExternal] = useState(false);
+const assignedReportOwnerId =
+  completeReportData?.assigned_to?.id ??
+  completeReportData?.assignedTo?.id ??
+  (typeof completeReportData?.assigned_to === "number"
+    ? completeReportData.assigned_to
+    : typeof completeReportData?.assignedTo === "number"
+    ? completeReportData.assignedTo
+    : null);
+const canAssignExternal =
+  Boolean(
+    completeReportData &&
+      completeReportData.status === "assigned" &&
+      assignedReportOwnerId === userId
+  );
+const reportCategoryName =
+  completeReportData?.category?.name ||
+  (completeReportData?.category_id &&
+    categoryMap[completeReportData.category_id]) ||
+  (completeReportData?.category_id
+    ? `Category ${completeReportData.category_id}`
+    : "");
 
   // string formatter for status
   // can be pending_approval, assigned, in_progress, suspended, rejected, resolved
@@ -118,6 +151,9 @@ function TechAssignedReports() {
     setShowModal(true);
     setIsLoadingReportDetails(true);
     setCompleteReportData(null);
+    setExternalMaintainers([]);
+    setSelectedExternalMaintainer(null);
+    setMaintainersError("");
 
     try {
       // Fetch complete report details including photos
@@ -141,6 +177,10 @@ function TechAssignedReports() {
   const handleCloseModal = () => {
     setShowModal(false);
     setCompleteReportData(null);
+    setExternalMaintainers([]);
+    setSelectedExternalMaintainer(null);
+    setMaintainersError("");
+    setAssigningExternal(false);
 
     // Clean up map
     if (mapInstanceRef.current) {
@@ -157,6 +197,44 @@ function TechAssignedReports() {
   const handleCloseImageModal = () => {
     setShowImageModal(false);
     setSelectedImage(null);
+  };
+
+  const handleAssignExternalMaintainer = async () => {
+    if (!completeReportData) return;
+
+    if (!selectedExternalMaintainer) {
+      setAlert({
+        show: true,
+        message: "Please select an external maintainer before assigning",
+        variant: "warning",
+      });
+      return;
+    }
+
+    setAssigningExternal(true);
+    try {
+      await assignExternalMaintainer(
+        completeReportData.id,
+        selectedExternalMaintainer
+      );
+      setAlert({
+        show: true,
+        message: "Report assigned to external maintainer successfully",
+        variant: "success",
+      });
+      await loadReports();
+      handleCloseModal();
+    } catch (error) {
+      console.error("Failed to assign external maintainer:", error);
+      setAlert({
+        show: true,
+        message:
+          error.message || "Failed to assign report to external maintainer",
+        variant: "danger",
+      });
+    } finally {
+      setAssigningExternal(false);
+    }
   };
 
   // Initialize map when report data is loaded
@@ -207,6 +285,63 @@ function TechAssignedReports() {
       }
     }, 100);
   }, [completeReportData]);
+
+  useEffect(() => {
+    if (
+      !showModal ||
+      !completeReportData ||
+      completeReportData.status !== "assigned"
+    ) {
+      setExternalMaintainers([]);
+      setSelectedExternalMaintainer(null);
+      setMaintainersError("");
+      setIsLoadingMaintainers(false);
+      return;
+    }
+
+    if (assignedReportOwnerId !== userId) {
+      setExternalMaintainers([]);
+      setSelectedExternalMaintainer(null);
+      setMaintainersError("");
+      setIsLoadingMaintainers(false);
+      return;
+    }
+
+    const categoryId =
+      completeReportData.category?.id || completeReportData.category_id;
+    if (!categoryId) return;
+
+    let active = true;
+    const fetchMaintainers = async () => {
+      try {
+        setIsLoadingMaintainers(true);
+        setMaintainersError("");
+        const list = await getExternalMaintainers({ categoryId });
+        if (!active) return;
+        setExternalMaintainers(list);
+        setSelectedExternalMaintainer((prev) =>
+          list.some((m) => m.id === prev) ? prev : null
+        );
+      } catch (error) {
+        if (!active) return;
+        setExternalMaintainers([]);
+        setSelectedExternalMaintainer(null);
+        setMaintainersError(
+          error.message || "Failed to load external maintainers"
+        );
+      } finally {
+        if (active) {
+          setIsLoadingMaintainers(false);
+        }
+      }
+    };
+
+    fetchMaintainers();
+
+    return () => {
+      active = false;
+    };
+  }, [showModal, completeReportData, userId, assignedReportOwnerId]);
 
   const getCategoryBadge = (category) => {
     const colors = {
@@ -417,6 +552,88 @@ function TechAssignedReports() {
                 <strong>Status:</strong>{" "}
                 {statusColumns[completeReportData.status]}
               </div>
+
+              {canAssignExternal && (
+                <div className='mb-3'>
+                  <div className='d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-2'>
+                    <strong>Assign to External Maintainer</strong>
+                    {reportCategoryName && (
+                      <span className='badge bg-light text-dark mt-2 mt-md-0'>
+                        Category: {reportCategoryName}
+                      </span>
+                    )}
+                  </div>
+                  <Form.Select
+                    className='mt-2'
+                    value={selectedExternalMaintainer || ""}
+                    onChange={(e) =>
+                      setSelectedExternalMaintainer(
+                        e.target.value ? Number(e.target.value) : null
+                      )
+                    }
+                    disabled={
+                      isLoadingMaintainers || externalMaintainers.length === 0
+                    }
+                  >
+                    <option value=''>
+                      {isLoadingMaintainers
+                        ? "Loading external maintainers..."
+                        : externalMaintainers.length === 0
+                        ? "No external maintainers available"
+                        : "Select an external maintainer"}
+                    </option>
+                    {externalMaintainers.map((maintainer) => {
+                      const maintainerName =
+                        maintainer.fullName ||
+                        maintainer.username ||
+                        `Maintainer #${maintainer.id}`;
+                      const optionLabel = `${maintainerName} — ${
+                        maintainer.companyName || "Unknown company"
+                      }${
+                        reportCategoryName ? ` • ${reportCategoryName}` : ""
+                      }`;
+                      return (
+                        <option key={maintainer.id} value={maintainer.id}>
+                          {optionLabel}
+                        </option>
+                      );
+                    })}
+                  </Form.Select>
+                  {maintainersError && (
+                    <Form.Text className='text-danger d-block mt-1'>
+                      {maintainersError}
+                    </Form.Text>
+                  )}
+                  {!maintainersError &&
+                    !isLoadingMaintainers &&
+                    externalMaintainers.length === 0 && (
+                      <Form.Text className='text-muted d-block mt-1'>
+                        No external maintainers handle this category yet.
+                      </Form.Text>
+                    )}
+                  <div className='d-flex justify-content-end mt-3'>
+                    <Button
+                      variant='primary'
+                      onClick={handleAssignExternalMaintainer}
+                      disabled={
+                        assigningExternal ||
+                        isLoadingMaintainers ||
+                        !selectedExternalMaintainer
+                      }
+                      className='confirm-button'
+                    >
+                      {assigningExternal ? (
+                        <>
+                          <span className='spinner-border spinner-border-sm me-2' />
+                          Assigning...
+                        </>
+                      ) : (
+                        "Assign to External"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               <hr />
 
