@@ -63,6 +63,18 @@ export const validateOfficersGetReports = [
     }
 ];
 
+export const validateExternalMaintainerGetReports = [
+    param("externalMaintainerId").isInt().withMessage("externalMaintainerId must be a valid integer"),
+    (req: Request, res: Response, next: NextFunction) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const extractedErrors = errors.array().map(err => err.msg);
+            return res.status(400).json({ errors: extractedErrors });
+        }
+        next();
+    }
+];
+
 
 export const validateGetReports = [
     (req: Request, res: Response, next: NextFunction) => {

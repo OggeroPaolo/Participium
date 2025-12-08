@@ -8,6 +8,7 @@ export interface ReportFilters {
   status?: string;
   officerId?: number;
   userId?: number;
+  externalUser?: number;
 }
 
 export default class ReportDao {
@@ -27,6 +28,10 @@ export default class ReportDao {
     if (typeof filters.userId === "number") {
       conditions.push("user_id = ?");
       params.push(filters.userId);
+    }
+    if (typeof filters.externalUser === "number") {
+      conditions.push("external_user = ?");
+      params.push(filters.externalUser);
     }
 
     let query = "SELECT * FROM reports";

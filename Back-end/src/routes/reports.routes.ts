@@ -8,7 +8,7 @@ import type { ReportMap } from "../models/reportMap.js";
 import OperatorDAO from "../dao/OperatorDAO.js";
 import { ROLES } from "../models/userRoles.js";
 import type { User } from "../models/user.js"
-import { validateAssignExternalMaintainer, validateCreateReport, validateExternalMaintainerUpdateStatus, validateReportId, validateGetReports, validateOfficersGetReports, validateCreateComment } from "../middlewares/reportValidation.js";
+import { validateAssignExternalMaintainer, validateCreateReport, validateExternalMaintainerUpdateStatus, validateReportId, validateGetReports, validateOfficersGetReports, validateCreateComment, validateExternalMaintainerGetReports } from "../middlewares/reportValidation.js";
 import { upload } from "../config/multer.js";
 import cloudinary from "../config/cloudinary.js";
 import { unlink, rename } from "fs/promises";
@@ -64,13 +64,37 @@ router.get("/reports/:reportId",
     }
 );
 
+//GET /ext_maintainer/:externalMaintainerId/reports
+router.get("/ext_maintainer/:externalMaintainerId/reports",
+    verifyFirebaseToken([ROLES.EXT_MAINTAINER]),
+    validateExternalMaintainerGetReports,
+    async (req: Request, res: Response) => {
+        try {
+            const externalMaintainerId = Number(req.params.externalMaintainerId);
+            const filters: ReportFilters = { externalUser: externalMaintainerId };
+
+            const reports = await reportDAO.getReportsByFilters(filters);
+
+            if (Array.isArray(reports) && reports.length === 0) {
+                return res.status(204).send();
+            }
+
+            return res.status(200).json({ reports });
+
+
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
+
 //GET /officers/:officerId/reports
 router.get("/officers/:officerId/reports",
-    verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]),
+    verifyFirebaseToken([ROLES.TECH_OFFICER]),
     validateOfficersGetReports,
     async (req: Request, res: Response) => {
         try {
-            //TODO: Verification on params
             const officerId = Number(req.params.officerId);
             const filters: ReportFilters = { officerId: officerId };
 
