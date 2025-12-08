@@ -127,7 +127,7 @@ router.post("/reports/:reportId/comments",
 
             const data: CreateCommentDTO = {
                 user_id: Number(user.id),
-                report_id: Number(req.body.report_id),
+                report_id: Number(req.params.reportId),
                 type: req.body.type,
                 text: req.body.text
             };

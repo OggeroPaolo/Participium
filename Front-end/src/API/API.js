@@ -395,6 +395,28 @@ async function getCommentsInternal(reportId) {
   }
 }
 
+// Create a new comment
+async function createComment(reportId, type, comment) {
+  const response = await fetch(`${URI}/reports/${reportId}/comments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${await getBearerToken()}`,
+    },
+    body: JSON.stringify({
+      type: type,
+      text: comment,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error?.[0] || "Failed to post comment");
+  }
+
+  return await response.json();
+}
+
 export {
   handleSignup,
   createInternalUser,
@@ -411,4 +433,5 @@ export {
   getExternalAssignedReports,
   updateStatus,
   getCommentsInternal,
+  createComment,
 };

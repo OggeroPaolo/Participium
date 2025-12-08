@@ -30,10 +30,12 @@ function Home() {
               <Col md={8} lg={6} className='text-center'>
                 <h3 className='mb-3'>Welcome, {user?.first_name}!</h3>
                 <p className='text-muted'>
-                  {user?.role_name === "Admin" 
+                  {user?.role_name === "Admin"
                     ? "Admin dashboard features coming soon."
-                    : user?.role_name === "Operator"
+                    : user?.role_type === "tech_officer"
                     ? "Operator dashboard features coming soon."
+                    : user?.role_type === "external_maintainer"
+                    ? "Discover the features of Participium."
                     : "Loading..."}
                 </p>
               </Col>

@@ -3,7 +3,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { ReportStatus } from '../models/reportStatus.js';
 
 export const validateCreateComment = [
-    param("report_id").isInt().withMessage("report_id must be a valid integer integer"),
+    param("reportId").isInt().withMessage("reportId must be a valid integer integer"),
     body("type").isString().notEmpty().withMessage("type is required"),
     body("text").isString().notEmpty().withMessage("text is required"),
     (req: Request, res: Response, next: NextFunction) => {
