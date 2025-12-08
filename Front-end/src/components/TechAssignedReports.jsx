@@ -43,6 +43,8 @@ const [selectedExternalMaintainer, setSelectedExternalMaintainer] = useState(nul
 const [isLoadingMaintainers, setIsLoadingMaintainers] = useState(false);
 const [maintainersError, setMaintainersError] = useState("");
 const [assigningExternal, setAssigningExternal] = useState(false);
+const assignableStatuses = ["assigned", "in_progress", "suspended"];
+
 const assignedReportOwnerId =
   completeReportData?.assigned_to?.id ??
   completeReportData?.assignedTo?.id ??
@@ -54,7 +56,7 @@ const assignedReportOwnerId =
 const canAssignExternal =
   Boolean(
     completeReportData &&
-      completeReportData.status === "assigned" &&
+      assignableStatuses.includes(completeReportData.status) &&
       assignedReportOwnerId === userId
   );
 const reportCategoryName =
@@ -64,6 +66,54 @@ const reportCategoryName =
   (completeReportData?.category_id
     ? `Category ${completeReportData.category_id}`
     : "");
+const currentExternalMaintainerId =
+  typeof completeReportData?.external_user === "object"
+    ? completeReportData.external_user?.id
+    : typeof completeReportData?.external_user === "number"
+    ? completeReportData.external_user
+    : null;
+const currentExternalMaintainerLabel =
+  typeof completeReportData?.external_user === "object"
+    ? completeReportData.external_user.complete_name ||
+      completeReportData.external_user.username ||
+      (currentExternalMaintainerId
+        ? `Maintainer #${currentExternalMaintainerId}`
+        : null)
+    : currentExternalMaintainerId
+    ? `Maintainer #${currentExternalMaintainerId}`
+    : null;
+const currentExternalMaintainerCompany =
+  typeof completeReportData?.external_user === "object"
+    ? completeReportData.external_user.company_name || null
+    : null;
+const currentExternalMaintainerOption =
+  currentExternalMaintainerId &&
+  externalMaintainers.find((m) => m.id === currentExternalMaintainerId);
+const maintainerOptions =
+  currentExternalMaintainerId &&
+  !externalMaintainers.some((m) => m.id === currentExternalMaintainerId)
+    ? [
+        {
+          id: currentExternalMaintainerId,
+          fullName:
+            currentExternalMaintainerLabel ||
+            `Maintainer #${currentExternalMaintainerId}`,
+          username:
+            currentExternalMaintainerLabel ||
+            `Maintainer #${currentExternalMaintainerId}`,
+          companyName:
+            currentExternalMaintainerCompany ||
+            currentExternalMaintainerOption?.companyName ||
+            null,
+        },
+        ...externalMaintainers,
+      ]
+    : externalMaintainers;
+const isAssignButtonDisabled =
+  assigningExternal ||
+  isLoadingMaintainers ||
+  !selectedExternalMaintainer ||
+  selectedExternalMaintainer === currentExternalMaintainerId;
 
   // string formatter for status
   // can be pending_approval, assigned, in_progress, suspended, rejected, resolved
@@ -112,19 +162,19 @@ const reportCategoryName =
     }
   };
 
-  const loadReports = async () => {
-    try {
-      const reportList = await getAssignedReports(userId);
-      setReports(reportList);
+const loadReports = async () => {
+  try {
+    const reportList = await getAssignedReports(userId);
+    setReports(reportList);
 
-      // load addresses in background, one by one
-      loadAddressesInBackground(reportList);
-    } catch (error) {
-      console.error("Failed to load reports:", error);
-    } finally {
-      setLoadingDone(true);
-    }
-  };
+    // load addresses in background, one by one
+    loadAddressesInBackground(reportList);
+  } catch (error) {
+    console.error("Failed to load reports:", error);
+  } finally {
+    setLoadingDone(true);
+  }
+};
 
   const loadAddressesInBackground = async (reportList) => {
     reportList.forEach(async (report) => {
@@ -199,6 +249,13 @@ const reportCategoryName =
     setSelectedImage(null);
   };
 
+  useEffect(() => {
+    if (!showModal) return;
+    setSelectedExternalMaintainer(
+      currentExternalMaintainerId ? currentExternalMaintainerId : null
+    );
+  }, [showModal, currentExternalMaintainerId]);
+
   const handleAssignExternalMaintainer = async () => {
     if (!completeReportData) return;
 
@@ -206,6 +263,15 @@ const reportCategoryName =
       setAlert({
         show: true,
         message: "Please select an external maintainer before assigning",
+        variant: "warning",
+      });
+      return;
+    }
+
+    if (selectedExternalMaintainer === currentExternalMaintainerId) {
+      setAlert({
+        show: true,
+        message: "Please select a different external maintainer before assigning",
         variant: "warning",
       });
       return;
@@ -290,7 +356,7 @@ const reportCategoryName =
     if (
       !showModal ||
       !completeReportData ||
-      completeReportData.status !== "assigned"
+      !assignableStatuses.includes(completeReportData.status)
     ) {
       setExternalMaintainers([]);
       setSelectedExternalMaintainer(null);
@@ -552,6 +618,16 @@ const reportCategoryName =
                 <strong>Status:</strong>{" "}
                 {statusColumns[completeReportData.status]}
               </div>
+              {currentExternalMaintainerId && (
+                <div className='mb-2 text-muted small'>
+                  Currently assigned to: {currentExternalMaintainerLabel}
+                  {currentExternalMaintainerCompany && (
+                    <span className='ms-1'>
+                      ({currentExternalMaintainerCompany})
+                    </span>
+                  )}
+                </div>
+              )}
 
               {canAssignExternal && (
                 <div className='mb-3'>
@@ -582,7 +658,7 @@ const reportCategoryName =
                         ? "No external maintainers available"
                         : "Select an external maintainer"}
                     </option>
-                    {externalMaintainers.map((maintainer) => {
+                    {maintainerOptions.map((maintainer) => {
                       const maintainerName =
                         maintainer.fullName ||
                         maintainer.username ||
@@ -605,6 +681,14 @@ const reportCategoryName =
                     </Form.Text>
                   )}
                   {!maintainersError &&
+                    selectedExternalMaintainer === currentExternalMaintainerId &&
+                    currentExternalMaintainerId !== null && (
+                      <Form.Text className='text-muted d-block mt-1'>
+                        Select a different external maintainer to enable
+                        assignment.
+                      </Form.Text>
+                    )}
+                  {!maintainersError &&
                     !isLoadingMaintainers &&
                     externalMaintainers.length === 0 && (
                       <Form.Text className='text-muted d-block mt-1'>
@@ -615,11 +699,7 @@ const reportCategoryName =
                     <Button
                       variant='primary'
                       onClick={handleAssignExternalMaintainer}
-                      disabled={
-                        assigningExternal ||
-                        isLoadingMaintainers ||
-                        !selectedExternalMaintainer
-                      }
+                      disabled={isAssignButtonDisabled}
                       className='confirm-button'
                     >
                       {assigningExternal ? (

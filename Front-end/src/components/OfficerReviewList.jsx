@@ -590,63 +590,62 @@ function OfficerReviewList() {
                 </Form.Select>
               </div>
 
-              {reviewAction === "assigned" && (
-                <Form.Group className='mb-3'>
-                  <Form.Label className='fw-bold'>
-                    Assign to Officer <span className='fw-normal'>(optional)</span>
-                  </Form.Label>
-                  <Form.Select
-                    value={selectedOfficerId || ""}
-                    onChange={(e) =>
-                      setSelectedOfficerId(
-                        e.target.value ? Number(e.target.value) : null
-                      )
-                    }
-                    disabled={
-                      isLoadingOfficers || availableOfficers.length === 0
-                    }
-                    style={{
-                      display: "inline-block",
-                      width: "100%",
-                      padding: "0.25rem 2rem 0.25rem 0.5rem",
-                      fontSize: "0.9rem",
-                    }}
-                  >
-                    <option value=''>
-                      {isLoadingOfficers
-                        ? "Loading available officers..."
-                        : availableOfficers.length === 0
-                        ? "No officers available"
-                        : "Let system auto-assign"}
-                    </option>
-                    {availableOfficers.map((officer) => {
-                      const fullName = [officer.first_name, officer.last_name]
-                        .filter(Boolean)
-                        .join(" ");
-                      return (
-                        <option key={officer.id} value={officer.id}>
-                          {fullName ||
-                            officer.username ||
-                            `Officer #${officer.id}`}
-                        </option>
-                      );
-                    })}
-                  </Form.Select>
-                  {officerError && (
-                    <Form.Text className='text-danger d-block mt-1'>
-                      {officerError}
+              <Form.Group className='mb-3'>
+                <Form.Label className='fw-bold'>
+                  Assign to Officer{" "}
+                  <span className='fw-normal'>(optional when assigning)</span>
+                </Form.Label>
+                <Form.Select
+                  value={selectedOfficerId || ""}
+                  onChange={(e) =>
+                    setSelectedOfficerId(
+                      e.target.value ? Number(e.target.value) : null
+                    )
+                  }
+                  disabled={
+                    isLoadingOfficers || availableOfficers.length === 0
+                  }
+                  style={{
+                    display: "inline-block",
+                    width: "100%",
+                    padding: "0.25rem 2rem 0.25rem 0.5rem",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  <option value=''>
+                    {isLoadingOfficers
+                      ? "Loading available officers..."
+                      : availableOfficers.length === 0
+                      ? "No officers available"
+                      : "Let system auto-assign"}
+                  </option>
+                  {availableOfficers.map((officer) => {
+                    const fullName = [officer.first_name, officer.last_name]
+                      .filter(Boolean)
+                      .join(" ");
+                    return (
+                      <option key={officer.id} value={officer.id}>
+                        {fullName ||
+                          officer.username ||
+                          `Officer #${officer.id}`}
+                      </option>
+                    );
+                  })}
+                </Form.Select>
+                {officerError && (
+                  <Form.Text className='text-danger d-block mt-1'>
+                    {officerError}
+                  </Form.Text>
+                )}
+                {!officerError &&
+                  !isLoadingOfficers &&
+                  availableOfficers.length === 0 && (
+                    <Form.Text className='text-muted d-block mt-1'>
+                      No officers are linked to this category. Leave this empty
+                      to let the backend auto-assign.
                     </Form.Text>
                   )}
-                  {!officerError &&
-                    !isLoadingOfficers &&
-                    availableOfficers.length === 0 && (
-                      <Form.Text className='text-muted d-block mt-1'>
-                        No officers are linked to this category. Leave this empty
-                        to let the backend auto-assign.
-                      </Form.Text>
-                    )}
-                </Form.Group>
-              )}
+              </Form.Group>
 
               <hr />
 
