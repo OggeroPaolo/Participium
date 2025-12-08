@@ -8,15 +8,6 @@ function Home() {
   const { user, isAuthenticated } = useUserStore();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      // Redirect public relations officer to their review page
-      if (user.role_name === "Municipal_public_relations_officer") {
-        navigate("/review-reports");
-      }
-    }
-  }, [isAuthenticated, user, navigate]);
-
   return (
     <>
       {isAuthenticated ? (
@@ -36,6 +27,8 @@ function Home() {
                     ? "Operator dashboard features coming soon."
                     : user?.role_type === "external_maintainer"
                     ? "Discover the features of Participium."
+                    : user?.role_name === "Municipal_public_relations_officer"
+                    ? "Municipal officer dashboard features coming soon."
                     : "Loading..."}
                 </p>
               </Col>
