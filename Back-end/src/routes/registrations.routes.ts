@@ -112,7 +112,7 @@ router.post("/verify-code",
 
         // Create user in Firebase + DB
         try {
-            const newUser = await createUserWithFirebase(pending.userData, password, userDao);
+            const newUser = await createUserWithFirebase({...pending.userData, password }, userDao);
 
             // Cleanup the user from the pending user map
             removePendingUser(email);

@@ -10,9 +10,9 @@ export async function createUserWithFirebase(
     firstName: string;
     lastName: string;
     username: string;
+    password: string;
     role_id?: number;
   },
-  password: string,
   userDaoInstance: UserDAO
 ) {
   // Controllo conflitti email/username a priori
@@ -24,7 +24,7 @@ export async function createUserWithFirebase(
   // Creo utente in Firebase
   const firebaseUser = await firebaseAdmin.auth().createUser({
     email: userData.email,
-    password: password,
+    password: userData.password,
     displayName: `${userData.firstName} ${userData.lastName}`,
   });
 
