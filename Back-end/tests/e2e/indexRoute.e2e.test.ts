@@ -7,6 +7,9 @@ import OperatorDAO from "../../src/dao/OperatorDAO.js";
 import RolesDao from "../../src/dao/RolesDAO.js";
 import * as userService from "../../src/services/userService.js";
 import { makeTestApp } from "../setup/tests_util.js";
+import * as emailService from "../../src/services/emailService.js";
+import * as pendingUsers from "../../src/services/pendingUsersService.js";
+import * as passwordEnc from "../../src/services/passwordEncryptionSercive.js";
 
 // Mock firebase token verification middleware
 vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
@@ -21,30 +24,45 @@ describe("Integrated Routes E2E  (check if all routes are correctly mount)", () 
     app = makeTestApp(appRouter);
   });
 
-  // === User registration test ===
-  it("POST /user-registrations should create a new user successfully", async () => {
-    const mockUser = { id: "u1" } as any;
+  it("POST /user-registrations", async () => {
+    // mock DAO
+    vi.spyOn(UserDAO.prototype, "findUserByEmailOrUsername")
+      .mockResolvedValue(null);
 
-    const spy = vi
-      .spyOn(userService, "createUserWithFirebase")
-      .mockResolvedValue(mockUser);
+    // mock email
+    vi.spyOn(emailService, "sendVerificationEmail")
+      .mockResolvedValue();
 
-    const res = await request(app).post("/user-registrations").send({
-      firstName: "John",
-      lastName: "Doe",
-      username: "johndoe",
-      email: "john@example.com",
-      password: "password123",
+    // mock pending user service
+    vi.spyOn(pendingUsers, "savePendingUser")
+      .mockImplementation(() => { });
+
+    vi.spyOn(passwordEnc, "encrypt").mockReturnValue({
+      encrypted: "encryptedData",
+      iv: "fakeIv",
+      tag: "fakeTag"
     });
+    const res = await request(app)
+      .post("/user-registrations")
+      .send({
+        firstName: "Alice",
+        lastName: "Operator",
+        username: "aliceop",
+        email: "alice@example.com",
+        password: "password123",
+      });
 
-    expect(res.status).toBe(201);
+    expect(res.status).toBe(200);
     expect(res.body).toEqual({
-      message: "User data saved successfully",
-      userId: "u1",
+      message: "Verification code sent to your email",
     });
 
-    spy.mockRestore();
+    expect(UserDAO.prototype.findUserByEmailOrUsername).toHaveBeenCalled();
+    expect(pendingUsers.savePendingUser).toHaveBeenCalled();
+    expect(emailService.sendVerificationEmail).toHaveBeenCalled();
   });
+
+
 
   // === Operator registration test ===
   it("POST /operator-registrations should create a new operator successfully", async () => {
@@ -93,29 +111,29 @@ describe("Integrated Routes E2E  (check if all routes are correctly mount)", () 
   // === Operators list test ===
   it("GET /operators should return operators list", async () => {
     const mockOperators: any[] = [
-  {
-    id: 1,
-    firebase_uid: "uid1",
-    first_name: "Alice",
-    last_name: "Smith",
-    email: "alice@example.com",
-    username: "operator1",
-    role_id: 2,
-    role_name: "technical_office_operator",
-    role_type: "operator",
-  },
-  {
-    id: 2,
-    firebase_uid: "uid2",
-    first_name: "Bob",
-    last_name: "Johnson",
-    email: "bob@example.com",
-    username: "operator2",
-    role_id: 2,
-    role_name: "technical_office_operator",
-    role_type: "operator",
-  },
-];
+      {
+        id: 1,
+        firebase_uid: "uid1",
+        first_name: "Alice",
+        last_name: "Smith",
+        email: "alice@example.com",
+        username: "operator1",
+        role_id: 2,
+        role_name: "technical_office_operator",
+        role_type: "operator",
+      },
+      {
+        id: 2,
+        firebase_uid: "uid2",
+        first_name: "Bob",
+        last_name: "Johnson",
+        email: "bob@example.com",
+        username: "operator2",
+        role_id: 2,
+        role_name: "technical_office_operator",
+        role_type: "operator",
+      },
+    ];
 
 
     const spy = vi.spyOn(OperatorDAO.prototype, "getOperators").mockResolvedValue(mockOperators);

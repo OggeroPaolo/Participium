@@ -139,7 +139,6 @@ router.post("/verify-code",
 );
 
 
-
 router.post("/resend-code",
     [
         body("email").isEmail().normalizeEmail({ gmail_remove_dots: false }),
