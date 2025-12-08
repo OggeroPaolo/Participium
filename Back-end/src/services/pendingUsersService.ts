@@ -36,3 +36,7 @@ export const updateCode = (email: string, newHashedCode: string) => {
     user.hashedCode = newHashedCode;
     user.expiresAt = Date.now() + 30 * 60 * 1000;
 };
+
+export function clearPendingUsers() {
+    pendingUsers.clear();
+}

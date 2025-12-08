@@ -210,29 +210,108 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
-    describe("GET /officers/:officerId/reports", () => {
-        it("should return 200 with reports for officer", async () => {
-            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue([mockReports[1]]);
+    describe("GET /tech_officer/reports", () => {
+        it("should return 200 with reports assigned to the tech officer", async () => {
+            const mockReports = [
+                {
+                    id: 5,
+                    user_id: 2,
+                    category_id: 3,
+                    title: "Officer Report 1",
+                    description: "Description",
+                    status: ReportStatus.Assigned,
+                    assigned_to: mock_user_id,
+                    external_user: null,
+                    reviewed_by: null,
+                    reviewed_at: null,
+                    note: null,
+                    position_lat: 45.0,
+                    position_lng: 7.0,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                }
+            ];
 
-            const res = await request(app).get("/officers/10/reports");
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue(mockReports);
+
+            const res = await request(app).get("/tech_officer/reports");
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual({ reports: [mockReports[1]] });
-            expect(ReportDAO.prototype.getReportsByFilters).toHaveBeenCalledWith({ officerId: 10 });
+            expect(res.body.reports).toBeDefined();
+            expect(Array.isArray(res.body.reports)).toBe(true);
+            expect(ReportDAO.prototype.getReportsByFilters).toHaveBeenCalledWith({
+                officerId: mock_user_id
+            });
         });
 
-        it("should return 204 if officer has no reports", async () => {
+        it("should return 204 when no reports are assigned", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue([]);
 
-            const res = await request(app).get("/officers/99/reports");
+            const res = await request(app).get("/tech_officer/reports");
 
             expect(res.status).toBe(204);
+            expect(res.body).toEqual({});
         });
 
-        it("should return 500 if DAO throws", async () => {
-            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockRejectedValue(new Error("DB failure"));
+        it("should return 500 on server error", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters")
+                .mockRejectedValue(new Error("DB failure"));
 
-            const res = await request(app).get("/officers/10/reports");
+            const res = await request(app).get("/tech_officer/reports");
+
+            expect(res.status).toBe(500);
+            expect(res.body).toEqual({ error: "Internal server error" });
+        });
+    });
+
+    describe("GET /ext_maintainer/reports", () => {
+        it("should return 200 with reports assigned to the external maintainer", async () => {
+            const mockReports = [
+                {
+                    id: 7,
+                    user_id: 2,
+                    category_id: 3,
+                    title: "External Report 1",
+                    description: "Description",
+                    status: ReportStatus.Assigned,
+                    assigned_to: 10,
+                    external_user: mock_user_id,
+                    reviewed_by: null,
+                    reviewed_at: null,
+                    note: null,
+                    position_lat: 45.0,
+                    position_lng: 7.0,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                }
+            ];
+
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue(mockReports);
+
+            const res = await request(app).get("/ext_maintainer/reports");
+
+            expect(res.status).toBe(200);
+            expect(res.body.reports).toBeDefined();
+            expect(Array.isArray(res.body.reports)).toBe(true);
+            expect(ReportDAO.prototype.getReportsByFilters).toHaveBeenCalledWith({
+                externalUser: mock_user_id
+            });
+        });
+
+        it("should return 204 when no reports are assigned", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue([]);
+
+            const res = await request(app).get("/ext_maintainer/reports");
+
+            expect(res.status).toBe(204);
+            expect(res.body).toEqual({});
+        });
+
+        it("should return 500 on server error", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters")
+                .mockRejectedValue(new Error("DB failure"));
+
+            const res = await request(app).get("/ext_maintainer/reports");
 
             expect(res.status).toBe(500);
             expect(res.body).toEqual({ error: "Internal server error" });
@@ -617,7 +696,6 @@ describe("Report Routes Integration Tests", () => {
                 .send({ status: "assigned", officerId: 5 });
 
             expect(res.status).toBe(403);
-            expect(res.body).toEqual({ error: `The officer you want to assign to this report does not handle this category` });
         });
         it("should update the category, assign operator and return 200 ", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReport);

@@ -8,7 +8,7 @@ import type { ReportMap } from "../models/reportMap.js";
 import OperatorDAO from "../dao/OperatorDAO.js";
 import { ROLES } from "../models/userRoles.js";
 import type { User } from "../models/user.js"
-import { validateAssignExternalMaintainer, validateCreateReport, validateExternalMaintainerUpdateStatus, validateReportId, validateGetReports, validateOfficersGetReports, validateCreateComment, validateExternalMaintainerGetReports } from "../middlewares/reportValidation.js";
+import { validateAssignExternalMaintainer, validateCreateReport, validateExternalMaintainerUpdateStatus, validateReportId, validateGetReports, validateCreateComment } from "../middlewares/reportValidation.js";
 import { upload } from "../config/multer.js";
 import cloudinary from "../config/cloudinary.js";
 import { unlink, rename } from "fs/promises";
@@ -64,14 +64,13 @@ router.get("/reports/:reportId",
     }
 );
 
-//GET /ext_maintainer/:externalMaintainerId/reports
-router.get("/ext_maintainer/:externalMaintainerId/reports",
+//GET /ext_maintainer/reports
+router.get("/ext_maintainer/reports",
     verifyFirebaseToken([ROLES.EXT_MAINTAINER]),
-    validateExternalMaintainerGetReports,
     async (req: Request, res: Response) => {
         try {
-            const externalMaintainerId = Number(req.params.externalMaintainerId);
-            const filters: ReportFilters = { externalUser: externalMaintainerId };
+            const user = (req as Request & { user: User }).user;
+            const filters: ReportFilters = { externalUser: user.id };
 
             const reports = await reportDAO.getReportsByFilters(filters);
 
@@ -89,14 +88,13 @@ router.get("/ext_maintainer/:externalMaintainerId/reports",
     }
 );
 
-//GET /officers/:officerId/reports
-router.get("/officers/:officerId/reports",
+//GET /tech_officer/reports
+router.get("/tech_officer/reports",
     verifyFirebaseToken([ROLES.TECH_OFFICER]),
-    validateOfficersGetReports,
     async (req: Request, res: Response) => {
         try {
-            const officerId = Number(req.params.officerId);
-            const filters: ReportFilters = { officerId: officerId };
+            const user = (req as Request & { user: User }).user;
+            const filters: ReportFilters = { officerId: user.id };
 
             const reports = await reportDAO.getReportsByFilters(filters);
 
@@ -392,7 +390,7 @@ router.patch("/pub_relations/reports/:reportId",
                     assigneeId = officerId
                 } else {
                     return res.status(403).json({
-                        error: `The officer you want to assign to this report does not handle this category`
+                        error: `The officer you want to assign to this report does not handle this category or doesn't exist`
                     });
                 }
             }
