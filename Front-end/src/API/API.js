@@ -287,9 +287,9 @@ async function reviewReport(reportId, reviewData) {
 }
 
 // Get assigned reports for technical officer review
-async function getAssignedReports(officerId) {
+async function getAssignedReports() {
   try {
-    const response = await fetch(`${URI}/officers/${officerId}/reports`, {
+    const response = await fetch(`${URI}/tech_officer/reports`, {
       method: "GET",
       headers: {
         Authorization: `${await getBearerToken()}`,
@@ -312,9 +312,9 @@ async function getAssignedReports(officerId) {
 }
 
 // Get assigned reports for external maintainer review
-async function getExternalAssignedReports(officerId) {
+async function getExternalAssignedReports() {
   try {
-    const response = await fetch(`${URI}/todo/${officerId}/reports`, {
+    const response = await fetch(`${URI}/ext_maintainer/reports`, {
       method: "GET",
       headers: {
         Authorization: `${await getBearerToken()}`,
@@ -336,7 +336,7 @@ async function getExternalAssignedReports(officerId) {
   }
 }
 
-// Update status of a report
+// Update status of a report (external maintainer only)
 async function updateStatus(reportId, status) {
   try {
     const body = {

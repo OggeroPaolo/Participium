@@ -99,7 +99,7 @@ function TechAssignedReports() {
 
   const loadReports = async () => {
     try {
-      const reportList = await getAssignedReports(userId);
+      const reportList = await getAssignedReports();
       setReports(reportList);
 
       // load addresses in background, one by one
