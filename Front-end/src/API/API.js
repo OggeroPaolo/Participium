@@ -360,13 +360,9 @@ async function reviewReport(reportId, reviewData) {
 }
 
 // Get assigned reports for technical officer review
-async function getAssignedReports(officerId) {
-  if (!officerId) {
-    throw new Error("Officer ID is required to fetch assigned reports");
-  }
-
+async function getAssignedReports() {
   try {
-    const response = await fetch(`${URI}/officers/${officerId}/reports`, {
+    const response = await fetch(`${URI}/tech_officer/reports`, {
       method: "GET",
       headers: {
         Authorization: `${await getBearerToken()}`,
