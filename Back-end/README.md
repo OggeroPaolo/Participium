@@ -62,7 +62,7 @@ The project uses **SQLite** with the following structure:
 
 ### Default Data
 The database is automatically seeded with:
-- 3 role types: citizen, operator, admin
+- 5 role types: citizen, pub_relations, tech_officer, external_maintainer, admin
 - 9 categories: Water Supply, Architectural Barriers, Sewer System, etc.
 
 
@@ -655,6 +655,7 @@ Authorization: Bearer <firebase-token>
     "username": "operator_user1",
     "first_name": "John",
     "last_name": "Amber",
+    "role_type": "tech_officer",
     "role_name": "Water_Utility_Office_Staff",
     "profile_photo_url": null,
     "telegram_username": null,
@@ -671,6 +672,7 @@ Authorization: Bearer <firebase-token>
     "username": "operator_user2",
     "first_name": "Jane",
     "last_name": "Smith",
+    "role_type": "tech_officer",
     "role_name": "Water_Utility_Office_Staff",
     "profile_photo_url": null,
     "telegram_username": null,
@@ -713,6 +715,91 @@ Returned when the authenticated user is not an admin.
 ```json
 {
   "error": "Failed to retrieve operators"
+}
+```
+
+**GET `/categories/:categoryId/operators`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+- **Request Parameters:** categoryId: Integer
+
+- **Success Response (200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "firebase_uid": "uid_operator1",
+    "email": "operator1@example.com",
+    "username": "operator_user1",
+    "first_name": "John",
+    "last_name": "Amber",
+    "role_type": "tech_officer",
+    "role_name": "Water_Utility_Office_Staff",
+    "profile_photo_url": null,
+    "telegram_username": null,
+    "email_notifications_enabled": 1,
+    "is_active": 1,
+    "created_at": "2025-11-08 11:46:55",
+    "updated_at": "2025-11-08 11:46:55",
+    "last_login_at": null
+  },
+  {
+    "id": 2,
+    "firebase_uid": "uid_operator2",
+    "email": "operator2@example.com",
+    "username": "operator_user2",
+    "first_name": "Jane",
+    "last_name": "Smith",
+    "role_type": "tech_officer",
+    "role_name": "Water_Utility_Office_Staff",
+    "profile_photo_url": null,
+    "telegram_username": null,
+    "email_notifications_enabled": 1,
+    "is_active": 1,
+    "created_at": "2025-11-08 11:46:55",
+    "updated_at": "2025-11-08 11:46:55",
+    "last_login_at": null
+  }
+]
+```
+
+- **No Content Response (204 No Content):**
+```json
+// Empty response body
+```
+
+- **Error Response (400 Bad Request):**
+```json
+{
+  "error": "Invalid request data"
+}
+```
+
+- **Error Response (401 Unauthorized):**
+Returned when no valid authentication token is provided.
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+- **Error Response (403 Forbidden):**
+Returned when the authenticated user is not an admin.
+```json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+
+- **Error Response (500 Internal Server Error):**
+```json
+{
+  "error": "Database connection failed"
 }
 ```
 
@@ -1053,7 +1140,7 @@ Authorization: Bearer <firebase-token>
 }
 ```
 
-**PATCH `/reports/{reportId}`**
+**PATCH `/pub_relations/reports/{reportId}`**
 
 * **Request Headers:**
 
@@ -1071,7 +1158,8 @@ Authorization: Bearer <firebase-token>
 {
   "status": "rejected",
   "note": "Insufficient details",
-  "categoryId": 3
+  "categoryId": 3,
+  "officerId": 7
 }
 ```
 
@@ -1082,6 +1170,7 @@ Authorization: Bearer <firebase-token>
 | status     | Always required                      | ["assigned", "rejected"] |
 | note       | Required when `status` is `rejected` | string                   |
 | categoryId | Optional                             | integer                  |
+| OfficerId  | Optional                             | integer                  |
 
 * **Success Response (200 OK):**
 
@@ -1109,11 +1198,14 @@ Authorization: Bearer <firebase-token>
 ```
 
 * **Error Response (403 Forbidden):**
-  Returned when the authenticated user is not a public relations officer.
+  Returned when the authenticated user is not a public relations officer, or when the officerId passed corresponds to an officer of a different category from that of the report or the officer doesn't exist
 
 ```json
 {
   "error": "Forbidden: insufficient permissions"
+}
+{
+  "error": "The officer you want to assign to this report does not handle this category or doesn't exist"
 }
 ```
 
