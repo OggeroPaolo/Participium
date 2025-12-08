@@ -272,6 +272,81 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
+
+    describe("POST /reports/:reportId/comments", () => {
+        const reportId = 5;
+
+        const mockComment = {
+            id: 99,
+            report_id: reportId,
+            user_id: mock_user_id,
+            type: "private",
+            text: "Internal note",
+            timestamp: new Date().toISOString(),
+        };
+
+        it("creates a comment and returns 201", async () => {
+            vi.spyOn(CommentDAO.prototype, "createComment")
+                .mockResolvedValueOnce(mockComment);
+
+            const res = await request(app)
+                .post(`/reports/${reportId}/comments`)
+                .send({
+                    type: "private",
+                    text: "Internal note",
+                });
+
+            expect(res.status).toBe(201);
+            expect(res.body).toEqual({ comment: mockComment });
+
+            expect(CommentDAO.prototype.createComment).toHaveBeenCalledWith({
+                user_id: mock_user_id,
+                report_id: reportId,
+                type: "private",
+                text: "Internal note",
+            });
+        });
+
+        it("returns 400 when validation fails (missing text)", async () => {
+            const res = await request(app)
+                .post(`/reports/${reportId}/comments`)
+                .send({
+                    type: "private",
+                });
+
+            expect(res.status).toBe(400);
+            expect(res.body.errors).toContain("text is required");
+        });
+
+        it("returns 400 when reportId is invalid", async () => {
+            const res = await request(app)
+                .post(`/reports/abc/comments`)
+                .send({
+                    type: "private",
+                    text: "ok",
+                });
+
+            expect(res.status).toBe(400);
+            expect(res.body.errors).toContain("reportId must be a valid integer");
+        });
+
+        it("returns 500 when DAO throws", async () => {
+            vi.spyOn(CommentDAO.prototype, "createComment")
+                .mockRejectedValueOnce(new Error("DB error"));
+
+            const res = await request(app)
+                .post(`/reports/${reportId}/comments`)
+                .send({
+                    type: "private",
+                    text: "Test",
+                });
+
+            expect(res.status).toBe(500);
+            expect(res.body).toEqual({ error: "Internal server error" });
+        });
+    });
+
+
     describe("POST /reports", () => {
         const mockCreatedReport = {
             id: 1,
@@ -845,7 +920,7 @@ describe("Report Routes Integration Tests", () => {
                 {
                     id: 1,
                     report_id: reportId,
-                    user_id:11,
+                    user_id: 11,
                     type: "note",
                     text: "Check the issue",
                     timestamp: new Date().toISOString(),
@@ -853,7 +928,7 @@ describe("Report Routes Integration Tests", () => {
                 {
                     id: 2,
                     report_id: reportId,
-                    user_id:12,
+                    user_id: 12,
                     type: "update",
                     text: "Started fixing",
                     timestamp: new Date().toISOString(),

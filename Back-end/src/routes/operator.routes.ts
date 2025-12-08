@@ -112,6 +112,7 @@ router.post("/operator-registrations",
   }
 );
 
+// GET external maintainers with optional filters
 router.get("/external-maintainers",
   verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.PUB_RELATIONS, ROLES.ADMIN]),
   [

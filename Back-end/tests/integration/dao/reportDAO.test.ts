@@ -303,11 +303,16 @@ describe("ReportDao", () => {
             reviewed_last_name: "Verdi",
             reviewed_username: "averdi",
 
+            // external user
+            external_user_id: 40,
+            external_first_name: "Marco",
+            external_last_name: "Neri",
+            external_username: "mneri",
+
             // first photo
             photo_url: "url1.jpg",
-            photo_ordering: 1
-
-        }
+            photo_ordering: 1,
+        };
 
         it("should return complete report with photos", async () => {
             const mockRows = [
@@ -315,13 +320,11 @@ describe("ReportDao", () => {
                 {
                     ...baseRow,
                     photo_url: "url2.jpg",
-                    photo_ordering: 2
-                }
+                    photo_ordering: 2,
+                },
             ];
 
-            const spy = vi
-                .spyOn(db, "getAll")
-                .mockResolvedValue(mockRows);
+            const spy = vi.spyOn(db, "getAll").mockResolvedValue(mockRows);
 
             const result = await dao.getCompleteReportById(1);
 
@@ -336,43 +339,51 @@ describe("ReportDao", () => {
             expect(result.user).toEqual({
                 id: 10,
                 complete_name: "Mario Rossi",
-                username: "mrossi"
+                username: "mrossi",
             });
 
             // category
             expect(result.category).toEqual({
                 id: 5,
-                name: "Road Issue"
+                name: "Road Issue",
             });
 
             // assigned_to
             expect(result.assigned_to).toEqual({
                 id: 20,
                 complete_name: "Luigi Bianchi",
-                username: "lbianchi"
+                username: "lbianchi",
             });
 
             // reviewed_by
             expect(result.reviewed_by).toEqual({
                 id: 30,
                 complete_name: "Anna Verdi",
-                username: "averdi"
+                username: "averdi",
+            });
+
+            // external_user
+            expect(result.external_user).toEqual({
+                id: 40,
+                complete_name: "Marco Neri",
+                username: "mneri",
             });
 
             // photos
             expect(result.photos).toEqual([
                 { url: "url1.jpg", ordering: 1 },
-                { url: "url2.jpg", ordering: 2 }
+                { url: "url2.jpg", ordering: 2 },
             ]);
         });
 
-        it("should handle assigned_to and reviewed_by being null", async () => {
+        it("should handle assigned_to, reviewed_by and external_user being null", async () => {
             const mockRows = [
                 {
                     ...baseRow,
                     assigned_user_id: null,
                     reviewed_user_id: null,
-                }
+                    external_user_id: null,
+                },
             ];
 
             vi.spyOn(db, "getAll").mockResolvedValue(mockRows);
@@ -381,6 +392,7 @@ describe("ReportDao", () => {
 
             expect(result.assigned_to).toBeUndefined();
             expect(result.reviewed_by).toBeUndefined();
+            expect(result.external_user).toBeUndefined();
         });
 
         it("should return report without photos if none exist", async () => {
@@ -388,8 +400,8 @@ describe("ReportDao", () => {
                 {
                     ...baseRow,
                     photo_url: null,
-                    photo_ordering: null
-                }
+                    photo_ordering: null,
+                },
             ];
 
             vi.spyOn(db, "getAll").mockResolvedValue(mockRows);
