@@ -87,39 +87,42 @@ describe("Reports E2E", () => {
   describe("GET /reports/:reportId", () => {
     const expectedReport = {
       id: 1,
-      user: { id: 1, complete_name: 'John Doe', username: 'JohnDoe' },
-      category: { id: 7, name: 'Roads and Urban Furnishings' },
-      title: 'Neglected street corner',
-      description: 'This area near Porta Nuova has been neglected and many people use it as a urinal, can something be done about it.',
-      status: 'pending_approval',
+      user: { id: 1, complete_name: "John Doe", username: "JohnDoe" },
+      category: { id: 7, name: "Roads and Urban Furnishings" },
+      title: "Neglected street corner",
+      description:
+        "This area near Porta Nuova has been neglected and many people use it as a urinal, can something be done about it.",
+      status: "pending_approval",
       is_anonymous: false,
       position_lat: 45.0608,
       position_lng: 7.67613,
       photos: [
         {
-          ordering: 1, url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/fl_original/v1764143988/Participium-demo/z7z4f0oppqissfj2fd0y.jpg",
+          ordering: 1,
+          url: "https://res.cloudinary.com/di9n3y9dd/raw/upload/fl_original/v1764143988/Participium-demo/z7z4f0oppqissfj2fd0y.jpg",
         },
       ],
     };
 
-    it("should return 200 with report data (ignoring created_at and updated_at)", async () => {
+    it("should return 200 with report data", async () => {
       const res = await request(app).get("/reports/1");
 
       expect(res.status).toBe(200);
 
       const report = res.body.report;
 
-      // Compare all keys except created_at and updated_at
-      expect(report.id).toBe(expectedReport.id);
-      expect(report.user).toEqual(expectedReport.user);
-      expect(report.category).toEqual(expectedReport.category);
-      expect(report.title).toBe(expectedReport.title);
-      expect(report.description).toBe(expectedReport.description);
-      expect(report.status).toBe(expectedReport.status);
-      expect(report.is_anonymous).toBe(expectedReport.is_anonymous);
-      expect(report.position_lat).toBe(expectedReport.position_lat);
-      expect(report.position_lng).toBe(expectedReport.position_lng);
-      expect(report.photos).toEqual(expectedReport.photos);
+      // Remove fields we do NOT test
+      const {
+        created_at,
+        updated_at,
+        assigned_to,
+        reviewed_by,
+        external_user,
+        ...cleaned
+      } = report;
+
+      // Compare only the desired fields
+      expect(cleaned).toEqual(expectedReport);
     });
 
     it("should return 404 if report not found", async () => {
@@ -135,12 +138,14 @@ describe("Reports E2E", () => {
     it("should return 500 on server error", async () => {
       vi.spyOn(ReportDAO.prototype, "getCompleteReportById")
         .mockRejectedValueOnce(new Error("DB failure"));
+
       const res = await request(app).get("/reports/1");
 
       expect(res.status).toBe(500);
       expect(res.body).toEqual({ error: "Internal server error" });
     });
   });
+
 
   describe("GET /officers/:officerId/reports", () => {
     const expectedReports = [
@@ -510,6 +515,7 @@ describe("Reports E2E", () => {
   });
 
 
+
   /*
   
     describe("PATCH /tech_officer/reports/:reportId/assign_external", () => {
@@ -527,6 +533,23 @@ describe("Reports E2E", () => {
       const res = await request(app)
         .get(`/report/${mockReportId}/internal-comments`)
       expect(res.status).toBe(200);
+    });
+  });
+
+  describe("POST /reports/:reportId/comments", () => {
+    const reportId = 3;
+
+    it("creates a comment successfully", async () => {
+      const res = await request(app)
+        .post(`/reports/${reportId}/comments`)
+        .send({
+          type: "private",
+          text: "internal note",
+        });
+
+      expect(res.status).toBe(201);
+      console.log(res.body);
+
     });
   });
 */
