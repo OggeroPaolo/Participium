@@ -46,7 +46,7 @@ router.get("/reports/map/accepted",
 
 //GET /reports/:reportId
 router.get("/reports/:reportId",
-    verifyFirebaseToken([ROLES.CITIZEN, ROLES.PUB_RELATIONS, ROLES.TECH_OFFICER]),
+    verifyFirebaseToken([ROLES.CITIZEN, ROLES.PUB_RELATIONS, ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]),
     validateReportId,
     async (req: Request, res: Response) => {
         try {
@@ -66,7 +66,7 @@ router.get("/reports/:reportId",
 
 //GET /officers/:officerId/reports
 router.get("/officers/:officerId/reports",
-    verifyFirebaseToken([ROLES.TECH_OFFICER]),
+    verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]),
     validateOfficersGetReports,
     async (req: Request, res: Response) => {
         try {

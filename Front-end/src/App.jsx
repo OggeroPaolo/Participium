@@ -15,6 +15,7 @@ import ReportCreation from "./components/ReportCreation.jsx";
 import ReportInfo from "./components/ReportInfo.jsx";
 import OfficerReviewList from "./components/OfficerReviewList.jsx";
 import TechAssignedReports from "./components/TechAssignedReports.jsx";
+import ExtAssignedReports from "./components/ExtAssignedReports.jsx";
 
 function App() {
   // Sync Zustand store with Firebase auth state
@@ -67,13 +68,18 @@ function App() {
             path='login'
             element={
               isAuthenticated ? (
-                user?.role_name === "Admin" ? (
-                  <Navigate replace to='/user-list' />
-                ) : (user?.role_type === "tech_officer" || user?.role_type === "external_maintainer") ? (
-                  <Navigate replace to='/tech-assigned-reports' />
-                ) : (
-                  <Navigate replace to='/' />
-                )
+                <>
+                  {user?.role_name === "Admin" && (
+                    <Navigate replace to='/user-list' />
+                  )}
+                  {user?.role_type === "tech_officer" && (
+                    <Navigate replace to='/tech-assigned-reports' />
+                  )}
+                  {user?.role_type === "external_maintainer" && (
+                    <Navigate replace to='/ext-assigned-reports' />
+                  )}
+                  {user?.role_name === "Citizen" && <Navigate replace to='/' />}
+                </>
               ) : (
                 <Login />
               )
@@ -140,8 +146,20 @@ function App() {
           <Route
             path='/tech-assigned-reports'
             element={
-              (user?.role_type === "tech_officer" || user?.role_type === "external_maintainer") ? (
+              user?.role_type === "tech_officer" ? (
                 <TechAssignedReports />
+              ) : (
+                <Navigate replace to='/' />
+              )
+            }
+          />
+
+          {/* External maintainer specific routes */}
+          <Route
+            path='/ext-assigned-reports'
+            element={
+              user?.role_type === "external_maintainer" ? (
+                <ExtAssignedReports />
               ) : (
                 <Navigate replace to='/' />
               )

@@ -57,10 +57,23 @@ function Header(props) {
                       <Nav.Link href='/user-list'>User List</Nav.Link>
                     </>
                   )}
-                  <div className='nav-divider d-sm-none'></div>
                   {user?.role_name === "Citizen" && (
                     <>
                       <Nav.Link href='/create-report'>New Report</Nav.Link>
+                    </>
+                  )}
+                  {user?.role_type === "tech_officer" && (
+                    <>
+                      <Nav.Link href='/tech-assigned-reports'>
+                        Assigned reports
+                      </Nav.Link>
+                    </>
+                  )}
+                  {user?.role_type === "external_maintainer" && (
+                    <>
+                      <Nav.Link href='/ext-assigned-reports'>
+                        Assigned reports
+                      </Nav.Link>
                     </>
                   )}
                   <Nav.Link href='#' onClick={handleLogout}>
