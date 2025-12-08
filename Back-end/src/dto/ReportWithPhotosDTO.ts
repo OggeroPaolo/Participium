@@ -22,6 +22,7 @@ export type CompleteReportDTO = {
   description: string;
   status: string;
   assigned_to?: ReportUserDTO | undefined;
+  external_user?: ReportUserDTO | undefined;
   reviewed_by?: ReportUserDTO | undefined;
   reviewed_at?: string | undefined;
   note?: string | undefined;
