@@ -5,6 +5,7 @@ import {
   getCategories,
   getCommentsInternal,
   getReport,
+  createComment,
 } from "../API/API";
 import {
   Container,
@@ -38,9 +39,16 @@ function TechAssignedReports() {
   const [categoryMap, setCategoryMap] = useState({});
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
 
-  // comment section states
+  // comment section variables
   const [modalPage, setModalPage] = useState("info");
   const [comments, setComments] = useState([]);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [newComment, setNewComment] = useState("");
+
+  const author_type =
+    user?.role_type === "tech_officer"
+      ? "External Maintainer"
+      : "Technical Officer";
 
   // string formatter for status
   // can be pending_approval, assigned, in_progress, suspended, rejected, resolved
@@ -227,6 +235,35 @@ function TechAssignedReports() {
 
     return () => clearTimeout(timeout);
   }, [completeReportData, modalPage, showModal]);
+
+  // handle posting of new comments
+  const writeComment = async (e) => {
+    e.preventDefault();
+
+    if (!newComment.trim()) return;
+
+    setIsSubmittingComment(true);
+
+    try {
+      await createComment(completeReportData.id, "private", newComment);
+      
+      // clear textarea
+      setNewComment("");
+
+      // reload comments
+      const newComments = await getCommentsInternal(completeReportData.id);
+      setComments(newComments)
+    } catch (error) {
+      setAlert({
+        show: true,
+        message: error.message,
+        variant: "danger",
+      });
+      handleCloseModal();
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
 
   const getCategoryBadge = (category) => {
     const colors = {
@@ -495,12 +532,17 @@ function TechAssignedReports() {
                                   width: "14px",
                                   height: "14px",
                                   borderRadius: "50%",
-                                  backgroundColor: "#0350b5",
+                                  backgroundColor:
+                                    c.user_id === userId
+                                      ? "#F5E078"
+                                      : "#0350b5",
                                   marginRight: "8px",
                                 }}
                               ></div>
 
-                              <strong className='me-2'>{c.username}</strong>
+                              <strong className='me-2'>
+                                {c.user_id === userId ? "Me" : author_type}
+                              </strong>
                             </div>
 
                             <small className='text-muted'>
@@ -518,6 +560,37 @@ function TechAssignedReports() {
                     /* no comments */
                     <p className='text-muted'>No comments yet</p>
                   )}
+
+                  <Form className='pt-3' onSubmit={writeComment}>
+                    <Form.Group className='mb-3'>
+                      <Form.Control
+                        as='textarea'
+                        rows={2}
+                        placeholder='Write a comment'
+                        onChange={(e) => setNewComment(e.target.value)}
+                        value={newComment}
+                      />
+                    </Form.Group>
+
+                    <hr />
+
+                    <div className='d-flex justify-content-end'>
+                      <Button
+                        className='confirm-button'
+                        type='submit'
+                        disabled={isSubmittingComment}
+                      >
+                        {isSubmittingComment ? (
+                          <>
+                            <span className='spinner-border spinner-border-sm me-2' />
+                            Posting...
+                          </>
+                        ) : (
+                          "Post comment"
+                        )}
+                      </Button>
+                    </div>
+                  </Form>
                 </>
               )}
             </>

@@ -390,7 +390,7 @@ router.patch("/pub_relations/reports/:reportId",
                     assigneeId = officerId
                 } else {
                     return res.status(403).json({
-                        error: `The officer you want to assign to this report does not handle this category`
+                        error: `The officer you want to assign to this report does not handle this category or doesn't exist`
                     });
                 }
             }
