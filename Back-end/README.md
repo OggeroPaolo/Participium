@@ -516,17 +516,10 @@ Authorization: Bearer <firebase-token>
 }
 ```
 
-- **Success Response (201 Created):**
+- **Success Response (200):**
 ```json
 {
-  "message": "User data saved successfully",
-  "userId": "XPbEc2V01QhOQm6YRNlYNo57aQl1"
-}
-```
-- **Error Response (500 Internal Server Error):**
-```json
-{
-  "error": "Internal server error"
+  "message": "Verification code sent to your email"
 }
 ```
 - **Error Response (400 Bad Request):**
@@ -535,16 +528,108 @@ Authorization: Bearer <firebase-token>
   "error": "Invalid request data"
 }
 ```
+- **Error Response (422 Unprocessable Entity):**
+```json
+{
+  "error": "Email or username already in use"
+}
+```
+- **Error Response (500 Internal Server Error):**
+```json
+{
+  "error": "Internal server error"
+}
+```
+
+**POST `/verify-code`**
+
+- **Request Parameters:** None
+
+- **Request Body content:**
+```json
+{
+  "email": "mario.rossi@gmail.com",
+  "code": "3784"
+}
+```
+
+- **Success Response (201 Created):**
+```json
+{
+  "message": "User verified and registered successfully",
+  "userId": 12
+}
+```
+- **Error Response (400 Bad Request):**
+```json
+{
+  "error": "Invalid request data"
+}
+{
+  "error": "No pending verification for this email"
+}
+```
+- **Error Response (401 Unauthorized):**
+```json
+{
+  "error": "Invalid verification code"
+}
+```
 - **Error Response (409 Conflict):**
 ```json
 {
   "error": "User already registered"
 }
 ```
+- **Error Response (410 Expired):**
+```json
+{
+  "error": "Verification code expired"
+}
+```
 - **Error Response (422 Unprocessable Entity):**
 ```json
 {
   "error": "Email or username already in use"
+}
+```
+- **Error Response (500 Internal Server Error):**
+```json
+{
+  "error": "Internal server error"
+}
+```
+
+**POST `/resend-code`**
+
+- **Request Parameters:** None
+
+- **Request Body content:**
+```json
+{
+  "email": "mario.rossi@gmail.com"
+}
+```
+
+- **Success Response (200):**
+```json
+{
+  "message": "Code resent via email"
+}
+```
+- **Error Response (400 Bad Request):**
+```json
+{
+  "error": "Invalid request data"
+}
+{
+  "error": "No pending verification for this email"
+}
+```
+- **Error Response (500 Internal Server Error):**
+```json
+{
+  "error": "Internal server error"
 }
 ```
 

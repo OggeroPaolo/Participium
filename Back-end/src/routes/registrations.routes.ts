@@ -6,7 +6,7 @@ import { createUserWithFirebase, UserAlreadyExistsError, EmailOrUsernameConflict
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { savePendingUser, getPendingUser, removePendingUser, updateCode } from "../services/pendingUsersService.js";
-import { sendVerificationEmail } from "../services/emailService.js";
+import { sendVerificationEmail, resendVerificationEmail } from "../services/emailService.js";
 import { encrypt, decrypt, codeSalt } from "../services/passwordEncryptionSercive.js";
 
 const router = Router();
@@ -67,7 +67,9 @@ router.post("/user-registrations",
             });
 
         } catch (error: any) {
-            console.log(error)
+            if (error instanceof EmailOrUsernameConflictError) {
+                return res.status(422).json({ error: error.message });
+            }
             return res.status(500).json({ error: "Internal server error" });
         }
     }
@@ -167,7 +169,7 @@ router.post("/resend-code",
             updateCode(email, hashedCode);
 
             // Check if code has expired
-            await sendVerificationEmail(email, code);
+            await resendVerificationEmail(email, code);
 
             return res.status(200).json({
                 message: "Code resent via email"
