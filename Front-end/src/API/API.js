@@ -311,6 +311,31 @@ async function getAssignedReports(officerId) {
   }
 }
 
+// Get assigned reports for external maintainer review
+async function getExternalAssignedReports(officerId) {
+  try {
+    const response = await fetch(`${URI}/todo/${officerId}/reports`, {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return [];
+    }
+
+    if (response.ok) {
+      const assignedReports = await response.json();
+      return assignedReports.reports || assignedReports;
+    } else {
+      throw new Error("Failed to fetch assigned reports");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
 // Update status of a report
 async function updateStatus(reportId, status) {
   try {
@@ -359,7 +384,6 @@ async function getCommentsInternal(reportId) {
 
     if (response.ok) {
       const internalComments = await response.json();
-      console.log(internalComments);
       return Array.isArray(internalComments.comments)
         ? internalComments.comments
         : [];
@@ -384,6 +408,7 @@ export {
   getPendingReports,
   reviewReport,
   getAssignedReports,
+  getExternalAssignedReports,
   updateStatus,
   getCommentsInternal,
 };

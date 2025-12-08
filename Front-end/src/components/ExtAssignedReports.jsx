@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from "react";
 import useUserStore from "../store/userStore";
 import {
-  getAssignedReports,
+  getExternalAssignedReports,
   getCategories,
   getCommentsInternal,
   getReport,
+  updateStatus,
 } from "../API/API";
 import {
   Container,
@@ -20,7 +21,7 @@ import { reverseGeocode } from "../utils/geocoding";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-function TechAssignedReports() {
+function ExtAssignedReports() {
   const { user } = useUserStore();
   const userId = user.id;
   const mapRef = useRef(null);
@@ -37,6 +38,8 @@ function TechAssignedReports() {
   const [loadingDone, setLoadingDone] = useState(false);
   const [categoryMap, setCategoryMap] = useState({});
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // comment section states
   const [modalPage, setModalPage] = useState("info");
@@ -91,7 +94,7 @@ function TechAssignedReports() {
 
   const loadReports = async () => {
     try {
-      const reportList = await getAssignedReports(userId);
+      const reportList = await getExternalAssignedReports(userId);
       setReports(reportList);
 
       // load addresses in background, one by one
@@ -241,6 +244,31 @@ function TechAssignedReports() {
       "Other": "secondary", // Gray - Misc (grouped with infrastructure)
     };
     return colors[category] || "secondary";
+  };
+
+  const handleSetStatus = async (e) => {
+    e.preventDefault();
+
+    setIsSubmitting(true);
+
+    try {
+      await updateStatus(completeReportData.id, selectedStatus);
+
+      setAlert({
+        show: true,
+        message: "Status updated successfully",
+        variant: "success",
+      });
+
+      // Reload reports list
+      await getExternalAssignedReports();
+      handleCloseModal();
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      setAlert({ show: true, message: error.message, variant: "danger" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -474,10 +502,65 @@ function TechAssignedReports() {
                     <strong>Category:</strong>{" "}
                     {completeReportData.category.name}
                   </div>
-                  <div className='mb-3'>
-                    <strong>Status:</strong>{" "}
-                    {statusColumns[completeReportData.status]}
-                  </div>
+
+                  <Form onSubmit={handleSetStatus}>
+                    <div className='mb-3'>
+                      <strong>Status:</strong>{" "}
+                      <Form.Select
+                        name='status'
+                        required
+                        style={{
+                          display: "inline-block",
+                          width: "auto",
+                          padding: "0.25rem 2rem 0.25rem 0.5rem",
+                          fontSize: "0.9rem",
+                        }}
+                        onChange={(e) => setSelectedStatus(e.target.value)}
+                        disabled={
+                          statusColumns[completeReportData.status] ===
+                          "Resolved"
+                        }
+                      >
+                        <option>
+                          {statusColumns[completeReportData.status]}
+                        </option>
+                        {Object.keys(statusColumns).map((s) => (
+                          <option key={s} value={s}>
+                            {statusColumns[s]}
+                          </option>
+                        ))}
+                      </Form.Select>
+                    </div>
+
+                    <hr />
+
+                    <div className='d-flex justify-content-end gap-2 mt-4'>
+                      <Button
+                        variant='secondary'
+                        onClick={handleCloseModal}
+                        disabled={isSubmitting}
+                      >
+                        Cancel
+                      </Button>
+                      {statusColumns[completeReportData.status] !==
+                        "Resolved" && (
+                        <Button
+                          type='submit'
+                          disabled={isSubmitting}
+                          className='confirm-button'
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <span className='spinner-border spinner-border-sm me-2' />
+                              Submitting...
+                            </>
+                          ) : (
+                            "Update status"
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  </Form>
                 </>
               )}
 
@@ -553,4 +636,4 @@ function TechAssignedReports() {
   );
 }
 
-export default TechAssignedReports;
+export default ExtAssignedReports;
