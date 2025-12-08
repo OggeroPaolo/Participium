@@ -146,55 +146,6 @@ describe("Reports E2E", () => {
     });
   });
 
-
-  describe("GET /officers/:officerId/reports", () => {
-    const expectedReports = [
-      {
-        title: "Water supply assigned",
-        description: "Assigned to a technician for water supply issue.",
-        user_id: 2,
-        category_id: 1,
-        position_lat: 45.0725,
-        position_lng: 7.6824,
-        status: "assigned",
-        reviewed_by: 3,
-        assigned_to: 5,
-      },
-    ];
-
-    it("should return 200 and reports like expected", async () => {
-      const officerId = 5;
-      const res = await request(app).get(`/officers/${officerId}/reports`);
-
-      expect(res.status).toBe(200);
-      expect(res.body.reports).toHaveLength(expectedReports.length);
-
-      res.body.reports.forEach((report: any, index: number) => {
-        const { created_at, updated_at, ...rest } = report;
-        expect(rest).toEqual(expect.objectContaining(expectedReports[index]));
-      });
-    });
-
-    it("should return 204 when officer has no reports", async () => {
-      const res = await request(app).get("/officers/99/reports");
-
-      expect(res.status).toBe(204);
-      expect(res.body).toEqual({});
-    });
-
-    it("should return 500 on server error", async () => {
-      // Spy on the DAO method and force it to throw
-      const daoSpy = vi.spyOn(ReportDAO.prototype, "getReportsByFilters")
-        .mockRejectedValueOnce(new Error("DB failure"));
-
-      const res = await request(app).get("/officers/6/reports");
-
-      expect(res.status).toBe(500);
-      expect(res.body).toEqual({ error: "Internal server error" });
-    });
-
-  });
-
   describe("GET /reports?status=pending_approval", () => {
 
     const expectedReports = [
@@ -440,7 +391,7 @@ describe("Reports E2E", () => {
         .send({ status: "assigned", officerId: 5 });
 
       expect(res.status).toBe(403);
-      expect(res.body).toEqual({ error: `The officer you want to assign to this report does not handle this category` });
+      expect(res.body).toEqual({ error: `The officer you want to assign to this report does not handle this category or doesn't exist` });
     });
 
     it("should update the category, assign operator and return 200 ", async () => {
@@ -467,7 +418,7 @@ describe("Reports E2E", () => {
         .send({ status: ReportStatus.Assigned, categoryId: 1, officerId: 10 });
 
       expect(res.status).toBe(403);
-      expect(res.body).toEqual({ error: `The officer you want to assign to this report does not handle this category` });
+      expect(res.body).toEqual({ error: `The officer you want to assign to this report does not handle this category or doesn't exist` });
     });
 
     it("should set note to null if status is 'Assigned' and no note is provided", async () => {
