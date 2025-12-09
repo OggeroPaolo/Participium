@@ -524,6 +524,28 @@ async function createComment(reportId, type, comment) {
   return await response.json();
 }
 
+// verify email
+async function verifyEmail(email, code) {
+  const response = await fetch(`${URI}/verify-code`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${await getBearerToken()}`,
+    },
+    body: JSON.stringify({
+      email: email,
+      code: code,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error?.[0] || "Failed to verify code");
+  }
+
+  return await response.json();
+}
+
 export {
   handleSignup,
   createInternalUser,
@@ -544,4 +566,5 @@ export {
   assignExternalMaintainer,
   getCommentsInternal,
   createComment,
+  verifyEmail,
 };

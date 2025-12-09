@@ -16,6 +16,7 @@ import ReportInfo from "./components/ReportInfo.jsx";
 import OfficerReviewList from "./components/OfficerReviewList.jsx";
 import TechAssignedReports from "./components/TechAssignedReports.jsx";
 import ExtAssignedReports from "./components/ExtAssignedReports.jsx";
+import EmailCode from "./components/EmailCode.jsx";
 
 function App() {
   // Sync Zustand store with Firebase auth state
@@ -80,7 +81,7 @@ function App() {
                   )}
                   {user?.role_name === "Citizen" && <Navigate replace to='/' />}
                   {user?.role_name === "Municipal_public_relations_officer" && (
-                    <Navigate replace to="/review-reports" />
+                    <Navigate replace to='/review-reports' />
                   )}
                 </>
               ) : (
@@ -88,6 +89,7 @@ function App() {
               )
             }
           />
+          <Route path='/email-verification' element={<EmailCode />} />
 
           {/* Admin route protection */}
           <Route
