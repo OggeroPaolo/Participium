@@ -94,6 +94,7 @@ describe("Reports E2E", () => {
         "This area near Porta Nuova has been neglected and many people use it as a urinal, can something be done about it.",
       status: "pending_approval",
       is_anonymous: false,
+      address: "Via Paolo Sacchi Santa Maria delle Grazie, 10125 Torino",
       position_lat: 45.0608,
       position_lng: 7.67613,
       photos: [
@@ -161,6 +162,7 @@ describe("Reports E2E", () => {
         reviewed_at: null,
         note: null,
         is_anonymous: 0,
+        address: "Via Paolo Sacchi Santa Maria delle Grazie, 10125 Torino",
         position_lat: 45.0608,
         position_lng: 7.67613
       },
@@ -246,6 +248,7 @@ describe("Reports E2E", () => {
         title: "E2E Test Report",
         description: "Testing photo upload with Vitest",
         is_anonymous: 0,
+        address: "Broadway 260, 10000 New York",
         position_lat: 40.7128,
         position_lng: -74.0060,
       };
@@ -256,6 +259,7 @@ describe("Reports E2E", () => {
         .field("title", payload.title)
         .field("description", payload.description)
         .field("is_anonymous", payload.is_anonymous.toString())
+        .field("address", payload.address.toString())
         .field("position_lat", payload.position_lat.toString())
         .field("position_lng", payload.position_lng.toString())
         .attach("photos", testImg);
@@ -275,6 +279,7 @@ describe("Reports E2E", () => {
         title: "No Photos Report",
         description: "Testing report without photos",
         is_anonymous: false,
+        address: "Broadway 260, 10000 New York",
         position_lat: 40.7128,
         position_lng: -74.0060,
       };
@@ -285,6 +290,7 @@ describe("Reports E2E", () => {
         .field("title", payload.title)
         .field("description", payload.description)
         .field("is_anonymous", payload.is_anonymous.toString())
+        .field("address", payload.address.toString())
         .field("position_lat", payload.position_lat.toString())
         .field("position_lng", payload.position_lng.toString());
 
@@ -308,6 +314,7 @@ describe("Reports E2E", () => {
         title: "Report causing error",
         description: "This should trigger rollback",
         is_anonymous: false,
+        address: "Broadway 260, 10000 New York",
         position_lat: 40.7128,
         position_lng: -74.0060,
       }
@@ -318,6 +325,7 @@ describe("Reports E2E", () => {
         .field("title", payload.title)
         .field("description", payload.description)
         .field("is_anonymous", payload.is_anonymous.toString())
+        .field("address", payload.address.toString())
         .field("position_lat", payload.position_lat.toString())
         .field("position_lng", payload.position_lng.toString())
         .attach("photos", testImg);
@@ -448,6 +456,7 @@ describe("Reports E2E", () => {
         reviewed_by: null,
         reviewed_at: null,
         note: "Initial note",
+        address: "Via vai 9, 10125 Torino",
         position_lat: 40.0,
         position_lng: -70.0,
         created_at: new Date().toISOString(),

@@ -27,6 +27,7 @@ export type CompleteReportDTO = {
   reviewed_at?: string | undefined;
   note?: string | undefined;
   is_anonymous: boolean;
+  address: string;
   position_lat: number;
   position_lng: number;
   created_at: string;

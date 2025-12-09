@@ -239,12 +239,14 @@ async function getApprovedReports() {
 
 // Create a new report
 async function createReport(reportData, lat, lng) {
-  const { title, description, category, photos } = reportData;
+  const { title, description, category, photos, address } = reportData;
 
   const formData = new FormData();
   formData.append("category_id", category);
   formData.append("title", title);
   formData.append("description", description);
+  //TODO: Check if the address is collected in reportData
+  formData.append("address", address);
   formData.append("position_lat", lat);
   formData.append("position_lng", lng);
   formData.append("is_anonymous", false);

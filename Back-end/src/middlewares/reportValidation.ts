@@ -21,6 +21,7 @@ export const validateCreateReport = [
     body("category_id").isInt().withMessage("category_id must be an integer"),
     body("title").isString().notEmpty().withMessage("title is required"),
     body("description").isString().notEmpty().withMessage("description is required"),
+    body("address").isString().notEmpty().withMessage("address is required"),
     body("position_lat").isFloat().withMessage("position_lat must be a number"),
     body("position_lng").isFloat().withMessage("position_lng must be a number"),
     body("is_anonymous").isBoolean().withMessage("is_anonymous must be a boolean"),

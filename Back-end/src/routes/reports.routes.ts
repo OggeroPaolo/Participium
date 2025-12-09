@@ -206,6 +206,7 @@ router.post("/reports",
                 title: req.body.title,
                 description: req.body.description,
                 is_anonymous: req.body.is_anonymous === 'true' || req.body.is_anonymous === true,
+                address: req.body.address,
                 position_lat: Number(req.body.position_lat),
                 position_lng: Number(req.body.position_lng),
                 photos: uploadedUrls
