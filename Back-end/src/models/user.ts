@@ -9,6 +9,7 @@ export interface User {
     telegram_username?: string | null;
     email_notifications_enabled?: number;
     is_active?: number;
+    is_verified?: number;
     created_at?: string;
     updated_at?: string;
     last_login_at?: string | null;

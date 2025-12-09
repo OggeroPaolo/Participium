@@ -11,6 +11,7 @@ export async function createUserWithFirebase(
     lastName: string;
     username: string;
     password: string;
+    hashedCode?: string;
     role_id?: number;
   },
   userDaoInstance: UserDAO
@@ -46,6 +47,7 @@ export async function createUserWithFirebase(
       lastName: userData.lastName,
       username: userData.username,
       email: userData.email,
+      hashedCode: userData.hashedCode,
       role_id: userData.role_id,
     });
 

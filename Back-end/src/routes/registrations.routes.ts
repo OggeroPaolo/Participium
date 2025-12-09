@@ -5,9 +5,8 @@ import UserDAO from "../dao/UserDAO.js";
 import { createUserWithFirebase, UserAlreadyExistsError, EmailOrUsernameConflictError } from "../services/userService.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { savePendingUser, getPendingUser, removePendingUser, updateCode } from "../services/pendingUsersService.js";
 import { sendVerificationEmail, resendVerificationEmail } from "../services/emailService.js";
-import { encrypt, decrypt, codeSalt } from "../services/passwordEncryptionSercive.js";
+import { codeSalt } from "../services/passwordEncryptionSercive.js";
 
 const router = Router();
 const userDao = new UserDAO();
@@ -38,27 +37,13 @@ router.post("/user-registrations",
                 throw new EmailOrUsernameConflictError("Email or username already in use");
             }
 
-            const pendingUser = getPendingUser(email);
-            if (pendingUser) {
-                throw new EmailOrUsernameConflictError("A user is already pending for this email, please verify the account using the code sent via email or generate a new one");
-            }
-
             // Create verification code.
             const code = crypto.randomInt(1000, 9999).toString();
 
             // Hash the code using bcrypt
             const hashedCode = await bcrypt.hash(code, codeSalt);
-            const encryptedPassword = encrypt(password);
 
-            // Store user data with password + hashed code in memory for 30 minutes 
-            // (probably not good to save password in plain text, but you need it later to create the firebase account, otherwise you would have to hash it and also hash it when the user logs in, 
-            // but this way firebase stores the hash of the hash and i dont know how goot it is)
-            savePendingUser(email, {
-                hashedCode,
-                encryptedPassword,
-                userData: { firstName, lastName, username, email },
-                expiresAt: Date.now() + 30 * 60 * 1000, // 30 minutes from now
-            });
+            const newUser = await createUserWithFirebase({firstName, lastName, username, email, password, hashedCode }, userDao);
 
             await sendVerificationEmail(email, code);
 
@@ -67,7 +52,14 @@ router.post("/user-registrations",
             });
 
         } catch (error: any) {
+            console.log(error)
             if (error instanceof EmailOrUsernameConflictError) {
+                return res.status(422).json({ error: error.message });
+            }
+            if (error instanceof UserAlreadyExistsError) {
+                return res.status(409).json({ error: error.message });
+            }
+            if (error.code === "auth/email-already-exists") {
                 return res.status(422).json({ error: error.message });
             }
             return res.status(500).json({ error: "Internal server error" });
@@ -91,36 +83,36 @@ router.post("/verify-code",
 
         const { email, code } = req.body;
 
-        const pending = getPendingUser(email);
-        if (!pending) {
-            return res.status(400).json({ error: "No pending verification for this email" });
+        const codeExpiry = await userDao.findCodeExpiryByEmail(email);
+
+        if (!codeExpiry) {
+            return res.status(404).json({ error: "Create an account before verifying it" });
         }
 
         // Check if code has expired
-        if (Date.now() > pending.expiresAt) {
-            removePendingUser(email);
+        if (Date.now() > codeExpiry.code_expires_at.getTime()) {
             return res.status(410).json({ error: "Verification code expired" });
         }
 
         // Verify if code matches the hash
-        const codeMatches = await bcrypt.compare(code, pending.hashedCode);
+        const codeMatches = await bcrypt.compare(code, codeExpiry.hashedCode);
         if (!codeMatches) {
             return res.status(401).json({ error: "Invalid verification code" });
         }
 
-        const password = decrypt(pending.encryptedPassword);
-
-        // Create user in Firebase + DB
+        // Set the user as verified
         try {
-            const newUser = await createUserWithFirebase({...pending.userData, password }, userDao);
+            const wasUpdated = await userDao.verifyUserByEmail(email);
 
-            // Cleanup the user from the pending user map
-            removePendingUser(email);
-
-            return res.status(201).json({
-                message: "User verified and registered successfully",
-                userId: newUser.id,
-            });
+            if (wasUpdated) {
+                return res.status(201).json({
+                    message: "User verified successfully",
+                });
+            } else {
+                return res.status(400).json({
+                    message: "User NOT verified successfully",
+                });
+            }
 
 
         } catch (error: any) {
@@ -155,8 +147,8 @@ router.post("/resend-code",
             const { email } = req.body;
 
             // Check if there is a pending user for the given email
-            const pending = getPendingUser(email);
-            if (!pending) {
+            const codeExpiry = await userDao.findCodeExpiryByEmail(email);
+            if (codeExpiry?.is_verified !== 0) {
                 return res.status(400).json({ error: "No pending verification for this email" });
             }
 
@@ -165,7 +157,13 @@ router.post("/resend-code",
             const hashedCode = await bcrypt.hash(code, codeSalt);
 
             // Update verification code for pending user
-            updateCode(email, hashedCode);
+            const wasUpdated = await userDao.updateCodeByEmail(email, hashedCode);
+
+            if (!wasUpdated) {
+                return res.status(400).json({
+                    message: "New code was not generated"
+                });
+            }
 
             // Check if code has expired
             await resendVerificationEmail(email, code);

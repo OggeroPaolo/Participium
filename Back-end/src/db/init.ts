@@ -196,6 +196,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
         username: "JohnDoe",
         first_name: "John",
         last_name: "Doe",
+        is_verified: 1,
         role_id: roleMap["Citizen"]
       },
       {
@@ -204,6 +205,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
         username: "JaneSmith",
         first_name: "Jane",
         last_name: "Smith",
+        is_verified: 1,
         role_id: roleMap["Municipal_public_relations_officer"]
       },
       {
@@ -212,6 +214,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
         username: "pub-relations",
         first_name: "Daniel",
         last_name: "Hartman",
+        is_verified: 1,
         role_id: roleMap["Municipal_public_relations_officer"]
       },
       {
@@ -220,6 +223,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
         username: "operator-sewer",
         first_name: "Lena",
         last_name: "Alvarez",
+        is_verified: 1,
         role_id: roleMap["Sewer_system_officer"]
       },
       {
@@ -228,6 +232,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
         username: "operator-water",
         first_name: "Ethan",
         last_name: "Caldwell",
+        is_verified: 1,
         role_id: roleMap["Water_utility_officer"]
       },
       {
@@ -236,6 +241,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
         username: "operator-water2",
         first_name: "Marcus",
         last_name: "Bennett",
+        is_verified: 1,
         role_id: roleMap["Water_utility_officer"]
       },
       {
@@ -244,6 +250,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
         username: "operator-architectural",
         first_name: "Gigi",
         last_name: "Proietti",
+        is_verified: 1,
         role_id: roleMap["Architectural_barriers_officer"]
       },
       {
@@ -252,6 +259,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
         username: "operator-lightning",
         first_name: "Max",
         last_name: "Casper",
+        is_verified: 1,
         role_id: roleMap["Public_lightning_officer"]
       },
       {
@@ -260,6 +268,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
         username: "operator-waste",
         first_name: "Joe",
         last_name: "Simpson",
+        is_verified: 1,
         role_id: roleMap["Waste_officer"]
       },
       {
@@ -268,6 +277,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
         username: "operator-urban",
         first_name: "Lewis",
         last_name: "Hamilton",
+        is_verified: 1,
         role_id: roleMap["Road_signs_urban_furnishings_officer"]
       },
       {
@@ -276,6 +286,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
         username: "operator-green",
         first_name: "Pablo",
         last_name: "Jullones",
+        is_verified: 1,
         role_id: roleMap["Public_green_areas_playgrounds_officer"]
       },
       {
@@ -284,6 +295,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
         username: "EmilyCarter",
         first_name: "Emily",
         last_name: "Carter",
+        is_verified: 1,
         role_id: roleMap["Admin"]
       },
       {
@@ -292,6 +304,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
         username: "GabeNewell",
         first_name: "Gabe",
         last_name: "Newell",
+        is_verified: 1,
         role_id: roleMap["Enel Worker"]
       },
       {
@@ -300,6 +313,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
         username: "CarlosSainz",
         first_name: "Carlos",
         last_name: "Sainz",
+        is_verified: 1,
         role_id: roleMap["Apex Worker"]
       },
     ];
@@ -308,9 +322,9 @@ export const seedDefaultUsers = async (): Promise<void> => {
       const existing = await getOne<{ id: number }>("SELECT id FROM users WHERE email = ?", [user.email]);
       if (!existing) {
         await runQuery(
-          `INSERT INTO users (firebase_uid, email, username, first_name, last_name, role_id)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [user.firebase_uid, user.email, user.username, user.first_name, user.last_name, user.role_id]
+          `INSERT INTO users (firebase_uid, email, username, first_name, last_name, is_verified, role_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [user.firebase_uid, user.email, user.username, user.first_name, user.last_name, user.is_verified, user.role_id]
         );
       }
     }
