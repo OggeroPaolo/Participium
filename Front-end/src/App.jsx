@@ -79,6 +79,9 @@ function App() {
                     <Navigate replace to='/ext-assigned-reports' />
                   )}
                   {user?.role_name === "Citizen" && <Navigate replace to='/' />}
+                  {user?.role_name === "Municipal_public_relations_officer" && (
+                    <Navigate replace to="/review-reports" />
+                  )}
                 </>
               ) : (
                 <Login />

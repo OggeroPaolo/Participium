@@ -102,7 +102,7 @@ function ExtAssignedReports() {
 
   const loadReports = async () => {
     try {
-      const reportList = await getExternalAssignedReports(userId);
+      const reportList = await getExternalAssignedReports();
       setReports(reportList);
 
       // load addresses in background, one by one
@@ -269,7 +269,8 @@ function ExtAssignedReports() {
       });
 
       // Reload reports list
-      await getExternalAssignedReports();
+      const reloadedReports = await getExternalAssignedReports();
+      setReports(reloadedReports);
       handleCloseModal();
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -559,13 +560,15 @@ function ExtAssignedReports() {
                           "Resolved"
                         }
                       >
-                        <option>
+                        <option key="0" value={statusColumns[completeReportData.status]}>
                           {statusColumns[completeReportData.status]}
                         </option>
                         {Object.keys(statusColumns).map((s) => (
-                          <option key={s} value={s}>
-                            {statusColumns[s]}
-                          </option>
+                          statusColumns[completeReportData.status] !== statusColumns[s] && (
+                            <option key={s} value={s}>
+                              {statusColumns[s]}
+                            </option>
+                          )
                         ))}
                       </Form.Select>
                     </div>
