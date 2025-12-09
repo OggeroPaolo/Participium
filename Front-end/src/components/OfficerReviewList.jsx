@@ -16,7 +16,6 @@ import {
   getReport,
   getCategoryOperators,
 } from "../API/API";
-import { reverseGeocode } from "../utils/geocoding";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -24,7 +23,6 @@ function OfficerReviewList() {
   const [reports, setReports] = useState([]);
   const [categories, setCategories] = useState([]);
   const [categoryMap, setCategoryMap] = useState({});
-  const [reportAddresses, setReportAddresses] = useState({});
   const [selectedReport, setSelectedReport] = useState(null);
   const [completeReportData, setCompleteReportData] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -40,26 +38,9 @@ function OfficerReviewList() {
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [visibleCount, setVisibleCount] = useState(3);
   const [isLoadingInitial, setIsLoadingInitial] = useState(true);
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
-
-  // constants to handle ready reports and show them
-  const groupedReadyReports = [];
-  for (let i = 0; i < reports.length; i += visibleCount) {
-    const group = reports.slice(i, i + visibleCount);
-
-    // Only include groups where all addresses are loaded
-    if (group.every((r) => reportAddresses[r.id])) {
-      groupedReadyReports.push(...group);
-    } else {
-      break; // stop at the first incomplete batch
-    }
-  }
-
-  const isLoadingReports =
-    reports.length > 0 && groupedReadyReports.length === 0;
 
   useEffect(() => {
     loadReports();
@@ -126,32 +107,6 @@ function OfficerReviewList() {
       const reportList = await getPendingReports();
       setReports(reportList);
 
-      // // Fetch addresses for all reports
-      // const addresses = {};
-      // for (const report of reportList) {
-      //   // Backend returns position_lat and position_lng (not position.lat/lng)
-      //   if (report.position_lat && report.position_lng) {
-      //     try {
-      //       const address = await reverseGeocode(
-      //         report.position_lat,
-      //         report.position_lng
-      //       );
-      //       addresses[report.id] = address;
-      //     } catch (error) {
-      //       console.error(`Failed to geocode report ${report.id}:`, error);
-      //       addresses[
-      //         report.id
-      //       ] = `${report.position_lat}, ${report.position_lng}`;
-      //     }
-      //   } else {
-      //     console.warn(`Report ${report.id} missing position data`);
-      //     addresses[report.id] = "Location not available";
-      //   }
-      // }
-      // setReportAddresses(addresses);
-
-      // load addresses in background, one by one
-      loadAddressesInBackground(reportList);
     } catch (error) {
       console.error("Failed to load reports:", error);
       setAlert({
@@ -162,27 +117,6 @@ function OfficerReviewList() {
     } finally {
       setIsLoadingInitial(false);
     }
-  };
-
-  const loadAddressesInBackground = async (reportList) => {
-    reportList.forEach(async (report) => {
-      try {
-        const address = await reverseGeocode(
-          report.position_lat,
-          report.position_lng
-        );
-
-        setReportAddresses((prev) => ({
-          ...prev,
-          [report.id]: address,
-        }));
-      } catch (error) {
-        setReportAddresses((prev) => ({
-          ...prev,
-          [report.id]: `${report.position_lat}, ${report.position_lng}`,
-        }));
-      }
-    });
   };
 
   const handleReportClick = async (report) => {
@@ -303,9 +237,7 @@ function OfficerReviewList() {
 
   //add city border to map
   useEffect(() => {
-    console.log("before if")
     if (!mapInstanceRef.current) return;
-    console.log("after if")
   
     async function loadGeoJSON() {
       try {
@@ -432,18 +364,8 @@ function OfficerReviewList() {
         </Card>
       ) : (
         <div className='row g-3'>
-          {isLoadingReports ? (
-            <div
-              className='d-flex justify-content-center align-items-center'
-              style={{ minHeight: "80vh" }}
-            >
-              <div className='spinner-border text-primary' role='status'>
-                <span className='visually-hidden'>Loading...</span>
-              </div>
-            </div>
-          ) : (
             <>
-              {groupedReadyReports.slice(0, visibleCount).map((report) => (
+              {reports.map((report) => (
                 <div key={report.id} className='col-12 col-md-6 col-lg-4'>
                   <Card
                     className='shadow-sm report-card h-100'
@@ -464,7 +386,7 @@ function OfficerReviewList() {
 
                       <div className='small mb-2'>
                         <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
-                        {reportAddresses[report.id] || "Loading address..."}
+                        {report.address}
                       </div>
                       <div className='small text-muted'>
                         <i className='bi bi-calendar3'></i>{" "}
@@ -475,21 +397,6 @@ function OfficerReviewList() {
                 </div>
               ))}
             </>
-          )}
-        </div>
-      )}
-
-      {/* Button for more reports */}
-
-      {visibleCount < reports.length && (
-        <div className='text-center mt-4'>
-          <Button
-            className='confirm-button'
-            onClick={() => setVisibleCount((prev) => prev + 3)}
-            disabled={visibleCount > groupedReadyReports.length}
-          >
-            Load more
-          </Button>
         </div>
       )}
 
@@ -519,8 +426,7 @@ function OfficerReviewList() {
                 <strong>Location:</strong>
                 <p className='mt-1'>
                   <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
-                  {reportAddresses[completeReportData.id] ||
-                    "Loading address..."}
+                  {completeReportData.address}
                 </p>
                 {/* Minimal read-only map */}
                 <div
