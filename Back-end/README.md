@@ -1062,7 +1062,7 @@ Authorization: Bearer <firebase-token>
 
 ```json
 {
-  "error": "You are not allowed to assign to an external maintainer if the report is not in already in assigned status"
+  "error": "You are not allowed to assign to an external maintainer if the report is not in assigned/in_progress/suspended state"
 }
 ```
 * **Error Response (403 Forbidden):**
