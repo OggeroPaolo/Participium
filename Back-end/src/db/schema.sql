@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS reports (
   reviewed_at DATETIME,
   note TEXT,
   is_anonymous INTEGER DEFAULT 0,
+  address TEXT NOT NULL,
   position_lat REAL NOT NULL,
   position_lng REAL NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

@@ -4,6 +4,7 @@ export type CreateReportDTO = {
     title: string;
     description: string;
     is_anonymous: boolean;
+    address: string,
     position_lat: number;
     position_lng: number;
     photos?: string[];

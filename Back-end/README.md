@@ -137,6 +137,7 @@ Authorization: Bearer <firebase-token>
             "title": "Neglected street corner",
             "description": "This area near Porta Nuova has been neglected and many people use it as a urinal, can something be done about it.",
             "user_id": 1,
+            "address": "Via Paolo Sacchi Santa Maria delle Grazie, 10125 Torino",
             "position_lat": 45.06080,
             "position_lng": 7.67613,
             "status": "pending_approval"
@@ -191,6 +192,7 @@ Authorization: Bearer <firebase-token>
   "title": "Broken streetlight",
   "description": "The streetlight near 5th avenue is out for several days.",
   "is_anonymous": false,
+  "address": "Via Vai 9",
   "position_lat": 45.12345,
   "position_lng": 9.12345,
   "photos": [
@@ -214,6 +216,7 @@ Authorization: Bearer <firebase-token>
         "reviewed_at": null,
         "note": null,
         "is_anonymous": false,
+        "address": "Via camposanto 3",
         "position_lat": 45.0632,
         "position_lng": 7.6835,
         "created_at": "2025-11-24 18:10:20",
@@ -275,6 +278,7 @@ status: pending_approval, assigned, in_progress, suspended, rejected, resolved
         "reviewed_at": null,
         "note": null,
         "is_anonymous": false,
+        "address": "Via camposanto 3",
         "position_lat": 45.0632,
         "position_lng": 7.6835,
         "created_at": "2025-11-24 18:10:20",
@@ -366,17 +370,14 @@ Authorization: Bearer <firebase-token>
   "error": "Unauthorized"
 }
 ```
-
-
-
-**GET `/officers/:officerId/reports`**
+**GET `/ext_maintainer/reports`**
 
 * **Request Headers:** 
 ```http
 Authorization: Bearer <firebase-token>
 ```
 
-* **Request Parameters:** officerId
+* **Request Parameters:** None
 
 * **Success Response (200 OK):**
 ```json
@@ -393,6 +394,7 @@ Authorization: Bearer <firebase-token>
         "reviewed_at": null,
         "note": null,
         "is_anonymous": false,
+        "address": "Via camposanto 3",
         "position_lat": 45.0632,
         "position_lng": 7.6835,
         "created_at": "2025-11-24 18:10:20",
@@ -407,11 +409,62 @@ Authorization: Bearer <firebase-token>
 // Empty response body
 ```
 
-* **Error Response (400 Bad Request):**
+* **Error Response (500 Internal Server Error):**
+
 ```json
 {
-  "error": "officerId must be a valid integer"
+  "error": "Internal server Error"
 }
+```
+
+* **Error Response (401 Unauthorized):**
+
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
+### Roles
+
+
+**GET `/tech_officer/reports`**
+
+* **Request Headers:** 
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** None
+
+* **Success Response (200 OK):**
+```json
+"reports": [
+        {
+        "id": 10,
+        "user_id": 1,
+        "category_id": 2,
+        "title": "\"Broken street light on 5th avenue\"",
+        "description": "\"The street light on 5th avenue is broken and needs urgent repair.\"",
+        "status": "pending_approval",
+        "assigned_to": null,
+        "reviewed_by": null,
+        "reviewed_at": null,
+        "note": null,
+        "is_anonymous": false,
+        "address": "Via camposanto 3",
+        "position_lat": 45.0632,
+        "position_lng": 7.6835,
+        "created_at": "2025-11-24 18:10:20",
+        "updated_at": "2025-11-24 18:10:20"
+    }
+]
+```
+
+* **No Content Response (204 No Content):**
+
+```json
+// Empty response body
 ```
 
 * **Error Response (500 Internal Server Error):**
@@ -1009,7 +1062,7 @@ Authorization: Bearer <firebase-token>
 
 ```json
 {
-  "error": "You are not allowed to assign to an external maintainer if the report is not in already in assigned status"
+  "error": "You are not allowed to assign to an external maintainer if the report is not in assigned/in_progress/suspended state"
 }
 ```
 * **Error Response (403 Forbidden):**

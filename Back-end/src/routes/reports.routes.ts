@@ -206,6 +206,7 @@ router.post("/reports",
                 title: req.body.title,
                 description: req.body.description,
                 is_anonymous: req.body.is_anonymous === 'true' || req.body.is_anonymous === true,
+                address: req.body.address,
                 position_lat: Number(req.body.position_lat),
                 position_lng: Number(req.body.position_lng),
                 photos: uploadedUrls
@@ -255,9 +256,11 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
             const report = await reportDAO.getReportById(reportId);
             if (!report) return res.status(404).json({ error: "Report not found" });
 
-            if (report.status !== ReportStatus.Assigned) {
+            if (report.status !== ReportStatus.Assigned &&
+                report.status !== ReportStatus.InProgress &&
+                report.status !== ReportStatus.Suspended ) {
                 return res.status(403).json({
-                    error: `You are not allowed to assign to an external maintainer if the report is not in already in assigned status`
+                    error: `You are not allowed to assign to an external maintainer if the report is not in assigned/in_progress/suspended state`
                 });
             }
 

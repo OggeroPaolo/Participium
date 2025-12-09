@@ -46,7 +46,7 @@ export default class ReportDao {
 
   async getAcceptedReportsForMap(): Promise<ReportMap[]> {
     const sql = `
-      SELECT r.id, r.title, u.first_name, u.last_name, u.username, r.position_lat, r.position_lng
+      SELECT r.id, r.title, u.first_name, u.last_name, u.username, r.address, r.position_lat, r.position_lng
       FROM reports r
       JOIN users u ON r.user_id = u.id
       WHERE r.status != 'pending_approval' AND r.status != 'rejected'
@@ -222,6 +222,7 @@ export default class ReportDao {
       reviewed_at: baseRow.reviewed_at ?? undefined,
       note: baseRow.note ?? undefined,
       is_anonymous: Boolean(baseRow.is_anonymous),
+      address: baseRow.address,
       position_lat: baseRow.position_lat,
       position_lng: baseRow.position_lng,
       created_at: baseRow.created_at,
@@ -239,10 +240,10 @@ export default class ReportDao {
 
       const insertReportSql = `
       INSERT INTO reports (
-        user_id, category_id, title, description,
+        user_id, category_id, title, description, address,
         position_lat, position_lng, is_anonymous, status, created_at, updated_at
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, 'pending_approval', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       )
     `;
 
@@ -251,6 +252,7 @@ export default class ReportDao {
         data.category_id,
         data.title,
         data.description,
+        data.address,
         data.position_lat,
         data.position_lng,
         data.is_anonymous ? 1 : 0

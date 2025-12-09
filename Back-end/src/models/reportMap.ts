@@ -4,6 +4,7 @@ export type ReportMap = {
     first_name: string;
     last_name: string;
     username: string;
+    address: string;
     position_lat: number;
     position_lng: number;
 }
