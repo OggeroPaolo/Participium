@@ -62,7 +62,7 @@ function ReportInfo() {
             <Col md={6} className='ps-3 ms-4'>
               <p>
                 <i className='bi bi-geo-alt-fill text-danger me-2'></i>{" "}
-                <b>Position:</b> {report.position_lat}, {report.position_lng}
+                <b>Address:</b> {report.address}
               </p>
               <p>
                 <i className='bi bi-person-fill me-2'></i> <b>Reported by:</b>{" "}
