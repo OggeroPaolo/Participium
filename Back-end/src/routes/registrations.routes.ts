@@ -85,8 +85,8 @@ router.post("/verify-code",
 
         const codeExpiry = await userDao.findCodeExpiryByEmail(email);
 
-        if (!codeExpiry) {
-            return res.status(404).json({ error: "Create an account before verifying it" });
+        if (!codeExpiry || codeExpiry?.is_verified !== 0) {
+            return res.status(400).json({ error: "No pending verification for this email" });
         }
 
         // Check if code has expired

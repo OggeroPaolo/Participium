@@ -625,19 +625,13 @@ Authorization: Bearer <firebase-token>
   "error": "Invalid request data"
 }
 {
-  "error": "User NOT verified successfully"
+  "error": "No pending verification for this email"
 }
 ```
 - **Error Response (401 Unauthorized):**
 ```json
 {
   "error": "Invalid verification code"
-}
-```
-- **Error Response (404 Not Found):**
-```json
-{
-  "error": "Create an account before verifying it"
 }
 ```
 - **Error Response (410 Expired):**
