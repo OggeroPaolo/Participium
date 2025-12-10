@@ -65,6 +65,21 @@ The database is automatically seeded with:
 - 5 role types: citizen, pub_relations, tech_officer, external_maintainer, admin
 - 9 categories: Water Supply, Architectural Barriers, Sewer System, etc.
 
+### Technical Offices & Categories
+Every technical office is tied to exactly one issue category. During seeding (`seedDefaultOffices`) we create one `technical` office per category plus a single `Organization Office` for public-relations/admin staff. The mapping below is what FAQ PT08 refers to:
+
+- Water Supply – Drinking Water → Water Supply – Drinking Water Office
+- Architectural Barriers → Architectural Barriers Office
+- Sewer System → Sewer System Office
+- Public Lighting → Public Lighting Office
+- Waste → Waste Office
+- Road Signs and Traffic Lights → Road Signs and Traffic Lights Office
+- Roads and Urban Furnishings → Roads and Urban Furnishings Office
+- Public Green Areas and Playgrounds → Public Green Areas and Playgrounds Office
+- Other → Other Office
+
+Each `tech_officer` role points to one of the offices above (see `seedDefaultRoles`), which allows us to filter officers by the category they are allowed to handle.
+
 
 ## API Endpoints
 
