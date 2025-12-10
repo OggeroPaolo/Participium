@@ -2,11 +2,15 @@ import { useActionState, useState } from "react";
 import { Form, Button, Container, Alert, InputGroup } from "react-bootstrap";
 import { handleSignup } from "../API/API";
 import { useNavigate } from "react-router";
+import { useEmailStore } from "../store/emailStore";
 
 function Signup() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConf, setShowPasswordConf] = useState(false);
+
+  // store email with zustand so user does not have to enter it again during verification
+  const { setSignupEmail } = useEmailStore();
 
   const [state, formAction, isPending] = useActionState(submitCredentials, {
     firstName: "",
@@ -34,6 +38,10 @@ function Signup() {
 
     try {
       await handleSignup(credentials);
+
+      // save email
+      setSignupEmail(credentials.email);
+
       setTimeout(() => {
         // redirection to code verification
         navigate("/email-verification");

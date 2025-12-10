@@ -6,19 +6,27 @@ import {
   Col,
   Image,
   Alert,
+  InputGroup,
 } from "react-bootstrap";
 import { verifyEmail } from "../API/API";
 import { Form } from "react-bootstrap";
 import { useState, useRef } from "react";
 import yellowbull from "../assets/yellowbull.png";
 import { useNavigate } from "react-router";
+import { useEmailStore } from "../store/emailStore";
+import { loginWithEmail } from "../firebaseService";
 
 function EmailCode() {
   const [code, setCode] = useState(Array(4).fill(""));
+  const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const inputsRef = useRef([]);
   const navigate = useNavigate();
+
+  // email from zustand store
+  const signupEmail = useEmailStore((state) => state.signupEmail);
 
   const handleChange = (value, index) => {
     // return if it's not a digit
@@ -48,7 +56,14 @@ function EmailCode() {
     const finalCode = code.join("");
 
     try {
-      await verifyEmail("todo", finalCode);
+      await verifyEmail(signupEmail, finalCode);
+
+      // complete login
+      const credentials = {
+        email: signupEmail,
+        password: password,
+      };
+      await loginWithEmail(credentials);
 
       setAlert({
         show: true,
@@ -58,24 +73,28 @@ function EmailCode() {
 
       // navigate if successful
       setTimeout(() => {
-        navigate("/login");
+        navigate("/");
       }, 2500);
     } catch (error) {
       setAlert({ show: true, message: error.message, variant: "danger" });
+
+      // reset field
+      setCode(Array(4).fill(""));
+      setPassword("");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Container className='p-3 mt-4'>
+    <Container className='p-2 mt-3'>
       {alert.show && (
         <div className='w-100 d-flex justify-content-center mt-3'>
           <Alert
             variant={alert.variant}
             dismissible
             onClose={() => setAlert({ ...alert, show: false })}
-            style={{ maxWidth: "620px", width: "100%" }}
+            style={{ maxWidth: "640px", width: "100%" }}
           >
             {alert.message}
           </Alert>
@@ -85,7 +104,7 @@ function EmailCode() {
       <div className='d-flex justify-content-center align-items-center'>
         <Card
           className='p-4 m-4 shadow-sm'
-          style={{ maxWidth: "620px", width: "100%" }}
+          style={{ maxWidth: "640px", width: "100%" }}
         >
           <Row className='justify-content-center mb-3'>
             <Col xs='auto' className='text-center'>
@@ -96,10 +115,14 @@ function EmailCode() {
               />
             </Col>
           </Row>
-          <h4 className='text-center mb-3'>Two-Factor Authentication</h4>
-          <div className='d-flex justify-content-center align-items-center text-muted mb-4'>
-            <i className='bi bi-envelope me-2'></i>
-            <p className='m-0'>Enter the 4-digit code we sent to your email.</p>
+          <h4 className='text-center mb-3'>
+            {" "}
+            <i className='bi bi-envelope me-2'></i>Two-Factor Authentication
+          </h4>
+          <div className='d-flex justify-content-center align-items-start text-muted mb-4 ms-3 me-3'>
+            <p className='m-0'>
+              Enter the 4-digit code we sent to your email and your password.
+            </p>
           </div>
 
           <Form onSubmit={handleSubmit}>
@@ -125,6 +148,29 @@ function EmailCode() {
                 />
               ))}
             </div>
+
+            <Form.Group className='mb-4 pt-2'>
+              <InputGroup>
+                <Form.Control
+                  type={showPassword ? "text" : "password"}
+                  placeholder='Password'
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <Button
+                  variant='outline-secondary'
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <i className='bi bi-eye-slash'></i>
+                  ) : (
+                    <i className='bi bi-eye'></i>
+                  )}
+                </Button>
+              </InputGroup>
+            </Form.Group>
 
             <Button
               type='submit'
