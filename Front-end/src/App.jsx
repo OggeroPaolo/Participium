@@ -89,7 +89,12 @@ function App() {
               )
             }
           />
-          <Route path='/email-verification' element={<EmailCode />} />
+          <Route
+            path='/email-verification'
+            element={
+              !isAuthenticated ? <EmailCode /> : <Navigate replace to='/' />
+            }
+          />
 
           {/* Admin route protection */}
           <Route

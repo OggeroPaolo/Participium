@@ -35,11 +35,12 @@ function Signup() {
     try {
       await handleSignup(credentials);
       setTimeout(() => {
-        // redirection to login
-        navigate("/login");
+        // redirection to code verification
+        navigate("/email-verification");
       }, 2500);
       return {
-        success: "Account created successfully! Redirecting to login...",
+        success:
+          "Account created successfully! Redirecting to email verification...",
       };
     } catch (error) {
       return { error: error.message };

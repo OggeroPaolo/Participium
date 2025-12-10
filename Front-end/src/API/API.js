@@ -532,7 +532,6 @@ async function verifyEmail(email, code) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `${await getBearerToken()}`,
     },
     body: JSON.stringify({
       email: email,
