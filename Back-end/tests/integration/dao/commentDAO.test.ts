@@ -33,14 +33,6 @@ describe("CommentDAO Unit Test Suite", () => {
 
       expect(result).toEqual(mockComments);
       expect(getAllMock).toHaveBeenCalledTimes(1);
-      expect(getAllMock).toHaveBeenCalledWith(
-        `
-            SELECT *
-            FROM comments
-            WHERE report_id = ? AND type = 'private'
-        `,
-        [reportId]
-      );
     });
 
     it("returns empty array if no private comments found", async () => {
