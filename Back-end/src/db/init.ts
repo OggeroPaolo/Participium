@@ -160,8 +160,16 @@ export const seedDefaultRoles = async (): Promise<void> => {
       { name: "Road_signs_urban_furnishings_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Roads and Urban Furnishings")!, company_id: null },
       { name: "Public_green_areas_playgrounds_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Public Green Areas and Playgrounds")!, company_id: null },
       { name: "Admin", type: "admin", office_id: officeMap["Organization Office"]!, company_id: null },
-      { name: "Enel Worker", type: "external_maintainer", office_id: null, company_id: 1 },
-      { name: "Apex Worker", type: "external_maintainer", office_id: null, company_id: 2 }
+      { name: "Perry Worker", type: "external_maintainer", office_id: null, company_id: 1 },
+      { name: "BarrierFix Worker", type: "external_maintainer", office_id: null, company_id: 2 },
+      { name: "SewerFlow Worker", type: "external_maintainer", office_id: null, company_id: 3 },
+      { name: "Enel Worker", type: "external_maintainer", office_id: null, company_id: 4 },
+      { name: "EcoWaste Worker", type: "external_maintainer", office_id: null, company_id: 5 },
+      { name: "TrafficTech Worker", type: "external_maintainer", office_id: null, company_id: 6 },
+      { name: "Apex Worker", type: "external_maintainer", office_id: null, company_id: 7 },
+      { name: "Clean Roads Worker", type: "external_maintainer", office_id: null, company_id: 8 },
+      { name: "GreenCare Worker", type: "external_maintainer", office_id: null, company_id: 9 },
+      { name: "GeneralWorks Worker", type: "external_maintainer", office_id: null, company_id: 10 },
     ];
 
 
@@ -287,13 +295,13 @@ export const seedDefaultUsers = async (): Promise<void> => {
         role_id: roleMap["Admin"]
       },
       {
-        firebase_uid: "jnRaXpgX0TNJHv0Ejd7vTjnM7NI2",
-        email: "enel-worker@example.com",
-        username: "GabeNewell",
-        first_name: "Gabe",
-        last_name: "Newell",
-        role_id: roleMap["Enel Worker"]
-      },
+        firebase_uid: "PdzfTCrdM0SBkEPM4rtqgi1exEJ2",
+        email: "water-worker@example.com",
+        username: "PerryPlumber",
+        first_name: "Perry",
+        last_name: "Platapus",
+        role_id: roleMap["Perry Worker"]
+      }, 
       {
         firebase_uid: "GlPacXZgUBSp83zGzBxkFgmoVmq1",
         email: "apex-worker@example.com",
@@ -302,6 +310,71 @@ export const seedDefaultUsers = async (): Promise<void> => {
         last_name: "Sainz",
         role_id: roleMap["Apex Worker"]
       },
+      {
+        firebase_uid: "nZNdQ4nTose57ldQ5QfQ82GmlSg2",
+        email: "barrier-worker@example.com",
+        username: "StephenKing",
+        first_name: "Stephen",
+        last_name: "King",
+        role_id: roleMap["BarrierFix Worker"]
+      },
+      {
+        firebase_uid: "VNkBGMLx05QWhgJVSG4Iazct54t1",
+        email: "sewer-worker@example.com",
+        username: "JosephCricket",
+        first_name: "Joseph",
+        last_name: "Cricket",
+        role_id: roleMap["SewerFlow Worker"]
+      },
+      {
+        firebase_uid: "jnRaXpgX0TNJHv0Ejd7vTjnM7NI2",
+        email: "enel-worker@example.com",
+        username: "GabeNewell",
+        first_name: "Gabe",
+        last_name: "Newell",
+        role_id: roleMap["Enel Worker"]
+      },
+      {
+        firebase_uid: "6u05OsQj1cgSEtXk37Woql3oo1h2",
+        email: "eco-worker@example.com",
+        username: "GertaTubogor",
+        first_name: "Gerta",
+        last_name: "Tubogor",
+        role_id: roleMap["EcoWaste Worker"]
+      },
+      {
+        firebase_uid: "xaYgBHJ9xXbipabyXKumonKugaR2",
+        email: "traffic-worker@example.com",
+        username: "MatthewSalvidor",
+        first_name: "Matthew",
+        last_name: "Salvidor",
+        role_id: roleMap["TrafficTech Worker"]
+      },
+      {
+        firebase_uid: "q45Hc2wZYYXW9v66j7f8Dpxe28A2",
+        email: "clean-worker@example.com",
+        username: "BenedictCumberbatch",
+        first_name: "Benedict",
+        last_name: "Cumberbatch",
+        role_id: roleMap["Clean Roads Worker"]
+      },
+      {
+        firebase_uid: "2tWT4MFii2SS93eJOanNV4FRMkW2",
+        email: "green-worker@example.com",
+        username: "MichaelAlexander",
+        first_name: "Michael",
+        last_name: "Alexander",
+        role_id: roleMap["GreenCare Worker"]
+      },
+      {
+        firebase_uid: "JOU5ucK2zDULRX5tSGXyzuHSxEu1",
+        email: "general-worker@example.com",
+        username: "PamelaAnderson",
+        first_name: "Pamela",
+        last_name: "Anderson",
+        role_id: roleMap["GeneralWorks Worker"]
+      },
+
     ];
 
     for (const user of users) {
@@ -622,9 +695,18 @@ export const seedDefaultCompanies = async (): Promise<void> => {
     if (!companyCount || companyCount.count === 0) {
 
       const defaultCompanies = [
-        { name: "Enel", category_id: 4 },
-        { name: "Apex Corp", category_id: 7 },
+        { name: "Perry's Plumbers", category_id: 1 },         // Water Supply – Drinking Water
+        { name: "BarrierFix Solutions", category_id: 2 },     // Architectural Barriers
+        { name: "SewerFlow Services", category_id: 3 },       // Sewer System
+        { name: "Enel", category_id: 4 },                     // Public Lighting
+        { name: "EcoWaste Management", category_id: 5 },      // Waste
+        { name: "TrafficTech Signs", category_id: 6 },        // Road Signs and Traffic Lights
+        { name: "Apex Corp", category_id: 7 },                // Roads and Urban Furnishings
+        { name: "Clean Roads", category_id: 7 },              // Roads and Urban Furnishings
+        { name: "GreenCare Parks", category_id: 8 },          // Public Green Areas and Playgrounds
+        { name: "GeneralWorks Co.", category_id: 9 },         // Other
       ];
+
 
       for (const company of defaultCompanies) {
         await runQuery(
@@ -651,60 +733,40 @@ export const seedDefaultComments = async (): Promise<void> => {
       return;
     }
 
-    // Get some reports to link comments to
-    const reports: { id: number; title: string }[] = (await getAll<{ id: number; title: string }>(
-      "SELECT id, title FROM reports LIMIT 5"
-    )) ?? [];
-
-    if (reports.length != 0) {
-
-
-      const comments = [
-        {
-          report_id: reports[0]?.id,
-          user_id: 1,
-          type: "public",
-          text: "This issue needs urgent attention."
-        },
-        {
-          report_id: reports[0]?.id,
-          user_id: 10,
-          type: "private",
-          text: "Assigned to maintenance team."
-        },
-        {
-          report_id: reports[0]?.id,
-          user_id: 14,
-          type: "private",
-          text: "Will be addressed in the next maintenance cycle."
-        },
-        {
-          report_id: reports[1]?.id,
-          user_id: 3,
-          type: "public",
-          text: "I noticed this problem too, it affects traffic."
-        },
-        {
-          report_id: reports[2]?.id,
-          user_id: 2,
-          type: "public",
-          text: "Please fix this as soon as possible."
-        },
-        {
-          report_id: reports[3]?.id,
-          user_id: 14,
-          type: "private",
-          text: "Scheduled maintenance for tomorrow."
-        }
-      ];
-
-      for (const comment of comments) {
-        await runQuery(
-          `INSERT INTO comments (report_id, user_id, type, text) VALUES (?, ?, ?, ?)`,
-          [comment.report_id, comment.user_id, comment.type, comment.text]
-        );
+    const comments = [
+      {
+        report_id: 3,
+        user_id: 1,
+        type: "public",
+        text: "Can we have an expected completion date for the maintenance?"
+      },
+      {
+        report_id: 3,
+        user_id: 10,
+        type: "private",
+        text: "This should be repaired in two days."
+      },
+      {
+        report_id: 4,
+        user_id: 10,
+        type: "private",
+        text: "The municipality ask to also repaint the bench."
+      },
+      {
+        report_id: 3,
+        user_id: 14,
+        type: "private",
+        text: "Ok, I will inform my team."
       }
+    ];
+
+    for (const comment of comments) {
+      await runQuery(
+        `INSERT INTO comments (report_id, user_id, type, text) VALUES (?, ?, ?, ?)`,
+        [comment.report_id, comment.user_id, comment.type, comment.text]
+      );
     }
+
   } catch (error) {
     console.error("Failed to seed default comments", error);
   }
