@@ -561,7 +561,6 @@ async function resendCode(email) {
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.log(errorData);
     throw new Error(errorData.error || "Failed to resend code");
   }
 

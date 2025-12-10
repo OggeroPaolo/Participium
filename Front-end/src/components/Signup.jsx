@@ -1,5 +1,12 @@
 import { useActionState, useState } from "react";
-import { Form, Button, Container, Alert, InputGroup } from "react-bootstrap";
+import {
+  Form,
+  Button,
+  Container,
+  Alert,
+  InputGroup,
+  Modal,
+} from "react-bootstrap";
 import { handleSignup } from "../API/API";
 import { useNavigate } from "react-router";
 import { useEmailStore } from "../store/emailStore";
@@ -8,6 +15,8 @@ function Signup() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConf, setShowPasswordConf] = useState(false);
+  const [pendingModal, setPendingModal] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
 
   // store email with zustand so user does not have to enter it again during verification
   const { setSignupEmail } = useEmailStore();
@@ -51,12 +60,46 @@ function Signup() {
           "Account created successfully! Redirecting to email verification...",
       };
     } catch (error) {
+      // pending user
+      if (error.message.includes("A user is already pending for this email")) {
+        setPendingModal(true);
+        setPendingEmail(credentials.email);
+        return {};
+      }
       return { error: error.message };
     }
   }
 
+  const goVerifyModal = () => {
+    setSignupEmail(pendingEmail);
+    setPendingModal(false);
+    navigate("/email-verification");
+  };
+
   return (
     <>
+      {/* Pending Verification Modal */}
+      <Modal
+        show={pendingModal}
+        centered
+        backdrop='static'
+        className='body-font'
+      >
+        <Modal.Header>
+          <Modal.Title>Email Verification Required</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          An account for <b>{pendingEmail}</b> is already pending verification.
+          <br />
+          Please complete verification using the code previously sent.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button className='confirm-button' onClick={goVerifyModal}>
+            Go to verification
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
       <Container
         fluid
         className='mt-3 ms-1 me-1 d-flex justify-content-center body-font'

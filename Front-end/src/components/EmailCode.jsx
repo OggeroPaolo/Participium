@@ -121,6 +121,7 @@ function EmailCode() {
       // navigate if successful
       setTimeout(() => {
         navigate("/");
+        useEmailStore.getState.clearSignupData();
       }, 2500);
     } catch (error) {
       let message = error.message;
@@ -305,6 +306,7 @@ function EmailCode() {
 
           <Button
             variant='primary'
+            className='confirm-button'
             onClick={handleResendCode}
             disabled={isResending}
           >
