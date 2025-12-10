@@ -121,7 +121,7 @@ function EmailCode() {
       // navigate if successful
       setTimeout(() => {
         navigate("/");
-        useEmailStore.getState.clearSignupData();
+        useEmailStore.getState().clearSignupData();
       }, 2500);
     } catch (error) {
       let message = error.message;

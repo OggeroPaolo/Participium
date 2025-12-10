@@ -127,6 +127,34 @@ describe("POST /user-registrations", () => {
       "A user is already pending for this email, please verify the account using the code sent via email or generate a new one"
     );
   });
+  it("should return 400 if password is missing", async () => {
+    const res = await request(app)
+      .post("/user-registrations")
+      .send({
+        firstName: "John",
+        lastName: "Doe",
+        username: "john123",
+        email: "john@example.com",
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.errors).toContain("Password must be a string");
+  });
+
+  it("should return 400 if username contains invalid characters", async () => {
+    const res = await request(app)
+      .post("/user-registrations")
+      .send({
+        firstName: "John",
+        lastName: "Doe",
+        username: "john!!",
+        email: "john@example.com",
+        password: "123456",
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.errors.length).toBeGreaterThan(0);
+  });
 
   it("should return 500 on unexpected errors", async () => {
     vi.spyOn(UserDAO.prototype, "findUserByEmailOrUsername")
@@ -145,6 +173,7 @@ describe("POST /user-registrations", () => {
     expect(res.status).toBe(500);
     expect(res.body.error).toBe("Internal server error");
   });
+
 });
 
 
@@ -207,7 +236,7 @@ describe("POST /verify-code", () => {
   });
 
   it("should return 400 when no pending entry exists", async () => {
-    vi.spyOn(pendingUsers, "getPendingUser").mockReturnValue(null);
+    vi.spyOn(pendingUsers, "getPendingUser").mockReturnValue(undefined);
 
     const res = await request(app)
       .post("/verify-code")
@@ -221,7 +250,7 @@ describe("POST /verify-code", () => {
   });
 
   it("should return 401 when code is wrong", async () => {
-    vi.spyOn(bcrypt, "compare").mockResolvedValue(false);
+    vi.spyOn(bcrypt, "compare").mockResolvedValue();
 
     const res = await request(app)
       .post("/verify-code")
@@ -258,6 +287,78 @@ describe("POST /verify-code", () => {
     expect(res.body.error).toBe("Verification code expired");
   });
 
+  it("should return 400 if body is invalid", async () => {
+    const res = await request(app)
+      .post("/verify-code")
+      .send({
+        email: "notanemail",
+        code: "abc",
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.errors.length).toBeGreaterThan(0);
+  });
+
+  it("should return 422 if createUserWithFirebase throws EmailOrUsernameConflictError", async () => {
+    vi.spyOn(userService, "createUserWithFirebase")
+      .mockRejectedValue(new userService.EmailOrUsernameConflictError("conflict"));
+
+    const res = await request(app)
+      .post("/verify-code")
+      .send({
+        email: "alice@example.com",
+        code: "1234",
+      });
+
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe("conflict");
+  });
+
+  it("should return 409 if createUserWithFirebase throws UserAlreadyExistsError", async () => {
+    vi.spyOn(userService, "createUserWithFirebase")
+      .mockRejectedValue(new userService.UserAlreadyExistsError("user exists"));
+
+    const res = await request(app)
+      .post("/verify-code")
+      .send({
+        email: "alice@example.com",
+        code: "1234",
+      });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe("user exists");
+  });
+
+  it("should return 422 if Firebase throws auth/email-already-exists error", async () => {
+    vi.spyOn(userService, "createUserWithFirebase")
+      .mockRejectedValue({ code: "auth/email-already-exists", message: "firebase dup" });
+
+    const res = await request(app)
+      .post("/verify-code")
+      .send({
+        email: "alice@example.com",
+        code: "1234",
+      });
+
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe("firebase dup");
+  });
+
+  it("should return 500 on unexpected internal errors during verification", async () => {
+    vi.spyOn(userService, "createUserWithFirebase")
+      .mockRejectedValue(new Error("unexpected failure"));
+
+    const res = await request(app)
+      .post("/verify-code")
+      .send({
+        email: "alice@example.com",
+        code: "1234",
+      });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe("Internal server error");
+  });
+
 });
 
 /* ============================================================
@@ -270,7 +371,12 @@ describe("POST /resend-code", () => {
     vi.spyOn(pendingUsers, "getPendingUser").mockReturnValue({
       hashedCode: "hash",
       encryptedPassword: { encrypted: "", iv: "", tag: "" },
-      userData: {},
+      userData: {
+        username: "aliceop",
+        firstName: "Jane",
+        lastName: "Doe",
+        email: "test@email.com"
+      },
       expiresAt: Date.now() + 10000,
     });
 
@@ -291,7 +397,7 @@ describe("POST /resend-code", () => {
   });
 
   it("should return 400 if no pending entry", async () => {
-    vi.spyOn(pendingUsers, "getPendingUser").mockReturnValue(null);
+    vi.spyOn(pendingUsers, "getPendingUser").mockReturnValue(undefined);
 
     const res = await request(app)
       .post("/resend-code")
@@ -299,6 +405,15 @@ describe("POST /resend-code", () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("No pending verification for this email");
+  });
+
+  it("should return 400 if email format invalid", async () => {
+    const res = await request(app)
+      .post("/resend-code")
+      .send({ email: "invalid-email" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.errors.length).toBeGreaterThan(0);
   });
 
   it("should return 500 on internal errors", async () => {
