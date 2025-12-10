@@ -581,6 +581,12 @@ Authorization: Bearer <firebase-token>
   "error": "Invalid request data"
 }
 ```
+- **Error Response (409 Conflict):**
+```json
+{
+  "error": "User already registered"
+}
+```
 - **Error Response (422 Unprocessable Entity):**
 ```json
 {
@@ -619,7 +625,7 @@ Authorization: Bearer <firebase-token>
   "error": "Invalid request data"
 }
 {
-  "error": "No pending verification for this email"
+  "error": "User NOT verified successfully"
 }
 ```
 - **Error Response (401 Unauthorized):**
@@ -628,10 +634,10 @@ Authorization: Bearer <firebase-token>
   "error": "Invalid verification code"
 }
 ```
-- **Error Response (409 Conflict):**
+- **Error Response (404 Not Found):**
 ```json
 {
-  "error": "User already registered"
+  "error": "Create an account before verifying it"
 }
 ```
 - **Error Response (410 Expired):**

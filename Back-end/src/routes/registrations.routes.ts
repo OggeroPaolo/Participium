@@ -148,7 +148,7 @@ router.post("/resend-code",
 
             // Check if there is a pending user for the given email
             const codeExpiry = await userDao.findCodeExpiryByEmail(email);
-            if (codeExpiry?.is_verified !== 0) {
+            if (!codeExpiry || codeExpiry?.is_verified !== 0) {
                 return res.status(400).json({ error: "No pending verification for this email" });
             }
 
