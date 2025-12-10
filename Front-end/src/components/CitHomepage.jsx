@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import Map from "./Map";
+import CityMap from "./CityMap";
 import { getApprovedReports } from "../API/API";
 import { Container, Col, Row, Card } from "react-bootstrap";
 import { useNavigate } from "react-router";
@@ -87,7 +87,7 @@ function CitHomepage(props) {
           onMouseDown={() => setShowMapOverlay(false)}
           onTouchStart={() => setShowMapOverlay(false)}
         >
-          <Map
+          <CityMap
             center={[45.0703, 7.6869]}
             zoom={13}
             approvedReports={reports}

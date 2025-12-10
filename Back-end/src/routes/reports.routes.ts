@@ -11,8 +11,8 @@ import type { User } from "../models/user.js"
 import { validateAssignExternalMaintainer, validateCreateReport, validateExternalMaintainerUpdateStatus, validateReportId, validateGetReports, validateCreateComment } from "../middlewares/reportValidation.js";
 import { upload } from "../config/multer.js";
 import cloudinary from "../config/cloudinary.js";
-import { unlink, rename } from "fs/promises";
-import path from 'path';
+import { unlink } from "node:fs/promises";
+import path from 'node:path';
 import sharp from 'sharp';
 import type { ReportFilters } from "../dao/ReportDAO.js";
 import { ReportStatus } from "../models/reportStatus.js";
@@ -217,30 +217,34 @@ router.post("/reports",
 
         }
         catch (error) {
+            console.log(error);
             for (const url of uploadedUrls) {
-                try {
-                    // Extract everything after /upload/v123/ and before the extension
-                    const matches = url.match(/\/upload\/(?:v\d+\/)?(.+?)\.([a-zA-Z0-9]+)$/);
-                    let publicId = matches ? matches[1] : null;
-                    const ext = matches ? matches[2] : null; // capture the extension
-
-                    if (publicId && ext) {
-                        // Append the original extension back
-                        publicId = `${publicId}.${ext}`;
-
-                        await cloudinary.uploader.destroy(publicId, {
-                            resource_type: "raw"
-                        });
-                    }
-                } catch (delErr) {
-                    console.error("Error deleting image during rollback:", delErr);
-                }
+                await rollbackCloundinaryImages(url)
             }
             return res.status(500).json({ error: "Internal server error" });
         }
-
-
     });
+
+async function rollbackCloundinaryImages(url: string) {
+    try {
+        // Extract everything after /upload/v123/ and before the extension
+        const matches = new RegExp(/\/upload\/(?:v\d+\/)?(.+?)\.([a-zA-Z0-9]+)$/).exec(url);
+        let publicId = matches ? matches[1] : null;
+        const ext = matches ? matches[2] : null; // capture the extension
+
+        if (publicId && ext) {
+            // Append the original extension back
+            publicId = `${publicId}.${ext}`;
+
+            await cloudinary.uploader.destroy(publicId, {
+                resource_type: "raw"
+            });
+        }
+    } catch (error_) {
+        console.error("Error deleting image during rollback:", error_);
+    }
+
+}
 
 // Patches the external_user field of a report in order to assign it to the correct external mantainer
 router.patch("/tech_officer/reports/:reportId/assign_external",
@@ -258,7 +262,7 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
 
             if (report.status !== ReportStatus.Assigned &&
                 report.status !== ReportStatus.InProgress &&
-                report.status !== ReportStatus.Suspended ) {
+                report.status !== ReportStatus.Suspended) {
                 return res.status(403).json({
                     error: `You are not allowed to assign to an external maintainer if the report is not in assigned/in_progress/suspended state`
                 });
@@ -372,7 +376,7 @@ router.patch("/pub_relations/reports/:reportId",
             if (!report) return res.status(404).json({ error: "Report not found" });
 
             const currentStatus = report.status;
-            const categoryIdFinal = categoryId ? categoryId : report.category_id;
+            const categoryIdFinal = categoryId || report.category_id;
 
             // A public relations officer can only modify if the current status is pending_approval
             if (currentStatus !== "pending_approval") {
