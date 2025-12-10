@@ -78,8 +78,8 @@ router.post("/user-registrations",
 
 router.post("/verify-code",
     [
-        body("email").isEmail().normalizeEmail({ gmail_remove_dots: false }),
-        body("code").isNumeric()
+        body("email").isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage("Email must be valid"),
+        body("code").isNumeric().withMessage("Code must be numeric"),
     ],
     async (req: Request, res: Response) => {
 
@@ -98,6 +98,7 @@ router.post("/verify-code",
 
         // Check if code has expired
         if (Date.now() > pending.expiresAt) {
+            removePendingUser(email);
             return res.status(410).json({ error: "Verification code expired" });
         }
 
