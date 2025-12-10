@@ -98,7 +98,6 @@ router.post("/verify-code",
 
         // Check if code has expired
         if (Date.now() > pending.expiresAt) {
-            removePendingUser(email);
             return res.status(410).json({ error: "Verification code expired" });
         }
 
