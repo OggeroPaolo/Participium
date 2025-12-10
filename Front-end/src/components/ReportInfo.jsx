@@ -29,7 +29,7 @@ function ReportInfo() {
 
   return (
     <>
-      <Container fluid className='mt-4 body-font '>
+      <Container fluid className='mt-4 body-font report-info-container'>
         <h2 className='mb-4 text-center'>
           <b>{report.title}</b>
         </h2>
@@ -44,7 +44,7 @@ function ReportInfo() {
 
         {loadingDone && (
           <Row className='p-4 justify-content-center'>
-            <Col md={5} className='me-2'>
+            <Col xs={12} md={5} className='mb-3 mb-md-0'>
               <Card className='bg-light border-0 shadow-sm'>
                 <Carousel interval={null}>
                   {report.photos.map((img, idx) => {
@@ -59,7 +59,7 @@ function ReportInfo() {
                 </Carousel>
               </Card>
             </Col>
-            <Col md={6} className='ps-3 ms-4'>
+            <Col xs={12} md={6} className='ps-md-3 ms-md-4'>
               <p>
                 <i className='bi bi-geo-alt-fill text-danger me-2'></i>{" "}
                 <b>Address:</b> {report.address}

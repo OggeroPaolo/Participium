@@ -175,7 +175,7 @@ function EmailCode() {
     <Container className='p-2 body-font'>
       <div className='d-flex justify-content-center align-items-center'>
         <Card
-          className='p-4 m-4 shadow-sm'
+          className='p-4 m-4 shadow-sm email-code-card'
           style={{ maxWidth: "640px", width: "100%" }}
         >
           <Row className='justify-content-center mb-3'>
