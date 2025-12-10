@@ -541,7 +541,7 @@ async function verifyEmail(email, code) {
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.error?.[0] || "Failed to verify code");
+    throw new Error(errorData.error || "Failed to verify code");
   }
 
   return await response.json();

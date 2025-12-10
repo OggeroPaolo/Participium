@@ -22,13 +22,14 @@ function EmailCode() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [isCodeVerified, setIsCodeVerified] = useState(false);
   const inputsRef = useRef([]);
   const navigate = useNavigate();
 
   // email from zustand store
   const signupEmail = useEmailStore((state) => state.signupEmail);
 
-  const handleChange = (value, index) => {
+  const handleChange = async (value, index) => {
     // return if it's not a digit
     if (!/^[0-9]?$/.test(value)) return;
 
@@ -40,6 +41,12 @@ function EmailCode() {
     if (value && index < code.length - 1) {
       inputsRef.current[index + 1].focus();
     }
+
+    // verify code automatically when 4 digits are entered
+    const joined = newCode.join("");
+    if (joined.length === 4 && !newCode.includes("")) {
+      await verifyEnteredCode(joined);
+    }
   };
 
   const handleKeyDown = (e, index) => {
@@ -49,15 +56,40 @@ function EmailCode() {
     }
   };
 
+  // verify code only
+  const verifyEnteredCode = async (finalCode) => {
+    try {
+      await verifyEmail(signupEmail, finalCode);
+      setIsCodeVerified(true);
+    } catch (error) {
+      setIsCodeVerified(false);
+      setAlert({
+        show: true,
+        message: error.message,
+        variant: "danger",
+      });
+
+      // reset code fields
+      setCode(Array(4).fill(""));
+      inputsRef.current[0]?.focus();
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!isCodeVerified) {
+      setAlert({
+        show: true,
+        message: "Please enter a valid code first",
+        variant: "danger",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
-    const finalCode = code.join("");
 
     try {
-      await verifyEmail(signupEmail, finalCode);
-
       // complete login
       const credentials = {
         email: signupEmail,
@@ -76,10 +108,16 @@ function EmailCode() {
         navigate("/");
       }, 2500);
     } catch (error) {
-      setAlert({ show: true, message: error.message, variant: "danger" });
+      let message = error.message;
+      // firebase error messages
+      if (error.code === "auth/invalid-credential")
+        message = "Incorrect password.";
+      else if (error.code === "auth/too-many-requests")
+        message = "Too many failed attempts, please try later.";
+
+      setAlert({ show: true, message: message, variant: "danger" });
 
       // reset field
-      setCode(Array(4).fill(""));
       setPassword("");
     } finally {
       setIsSubmitting(false);
@@ -88,19 +126,6 @@ function EmailCode() {
 
   return (
     <Container className='p-2 mt-3'>
-      {alert.show && (
-        <div className='w-100 d-flex justify-content-center mt-3'>
-          <Alert
-            variant={alert.variant}
-            dismissible
-            onClose={() => setAlert({ ...alert, show: false })}
-            style={{ maxWidth: "640px", width: "100%" }}
-          >
-            {alert.message}
-          </Alert>
-        </div>
-      )}
-
       <div className='d-flex justify-content-center align-items-center'>
         <Card
           className='p-4 m-4 shadow-sm'
@@ -148,6 +173,12 @@ function EmailCode() {
                 />
               ))}
             </div>
+            {isCodeVerified && (
+              <div className='text-center mb-3'>
+                <i className='bi bi-check-circle-fill text-success fs-2'></i>
+                <p className='text-success mt-1 mb-0'>Code verified!</p>
+              </div>
+            )}
 
             <Form.Group className='mb-4 pt-2'>
               <InputGroup>
@@ -172,6 +203,19 @@ function EmailCode() {
               </InputGroup>
             </Form.Group>
 
+            {alert.show && (
+              <div className='w-100 d-flex justify-content-center mt-3'>
+                <Alert
+                  variant={alert.variant}
+                  dismissible
+                  onClose={() => setAlert({ ...alert, show: false })}
+                  style={{ maxWidth: "640px", width: "100%" }}
+                >
+                  {alert.message}
+                </Alert>
+              </div>
+            )}
+
             <Button
               type='submit'
               className='confirm-button w-100'
@@ -183,7 +227,7 @@ function EmailCode() {
                   Verifying...
                 </>
               ) : (
-                "Verify"
+                "Verify and login"
               )}
             </Button>
           </Form>
