@@ -121,6 +121,7 @@ function EmailCode() {
       // navigate if successful
       setTimeout(() => {
         navigate("/");
+        useEmailStore.getState().clearSignupData();
       }, 2500);
     } catch (error) {
       let message = error.message;
@@ -171,7 +172,7 @@ function EmailCode() {
   };
 
   return (
-    <Container className='p-2 mt-3'>
+    <Container className='p-2 body-font'>
       <div className='d-flex justify-content-center align-items-center'>
         <Card
           className='p-4 m-4 shadow-sm'
@@ -305,6 +306,7 @@ function EmailCode() {
 
           <Button
             variant='primary'
+            className='confirm-button'
             onClick={handleResendCode}
             disabled={isResending}
           >

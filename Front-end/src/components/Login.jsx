@@ -1,9 +1,12 @@
 import { useActionState, useState } from "react";
 import { Form, Button, Container, InputGroup } from "react-bootstrap";
 import { loginWithEmail } from "../firebaseService";
+import { useEmailStore } from "../store/emailStore";
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
+
+  const { setSignupEmail } = useEmailStore();
 
   const [state, formAction, isPending] = useActionState(submitCredentials, {
     email: "",
@@ -26,6 +29,9 @@ function Login() {
         message = "Incorrect email or password.";
       else if (error.code === "auth/too-many-requests")
         message = "Too many failed attempts, please try later.";
+
+      // save in case of redirection to verification
+      setSignupEmail(credentials.email);
       return { error: message };
     }
   }
@@ -34,7 +40,7 @@ function Login() {
     <>
       <Container
         fluid
-        className='mt-5 ms-1 me-1 d-flex justify-content-center body-font'
+        className='mt-2 ms-1 me-1 d-flex justify-content-center body-font'
       >
         <Container
           className='p-4 mt-5'
@@ -80,7 +86,15 @@ function Login() {
               </InputGroup>
             </Form.Group>
             {state.error && (
-              <p className='text-danger mt-3 mb-2'>{state.error}</p>
+              <>
+                <p className='text-danger mt-3 mb-2'>{state.error}</p>
+                <a
+                  href='/email-verification'
+                  className='text-primary text-decoration-underline'
+                >
+                  Did you verify your email?
+                </a>
+              </>
             )}
             {isPending && (
               <div className='loading-overlay'>
