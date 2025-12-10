@@ -7,8 +7,9 @@ import {
   Image,
   Alert,
   InputGroup,
+  Modal,
 } from "react-bootstrap";
-import { verifyEmail } from "../API/API";
+import { verifyEmail, resendCode } from "../API/API";
 import { Form } from "react-bootstrap";
 import { useState, useRef } from "react";
 import yellowbull from "../assets/yellowbull.png";
@@ -25,6 +26,10 @@ function EmailCode() {
   const [isCodeVerified, setIsCodeVerified] = useState(false);
   const inputsRef = useRef([]);
   const navigate = useNavigate();
+
+  // resend code states
+  const [showExpiredModal, setShowExpiredModal] = useState(false);
+  const [isResending, setIsResending] = useState(false);
 
   // email from zustand store
   const signupEmail = useEmailStore((state) => state.signupEmail);
@@ -63,6 +68,16 @@ function EmailCode() {
       setIsCodeVerified(true);
     } catch (error) {
       setIsCodeVerified(false);
+
+      setShowExpiredModal(true);
+      // code expired (410)
+      if (error.message === "Verification code expired") {
+        setShowExpiredModal(true);
+        setCode(Array(4).fill(""));
+        inputsRef.current[0]?.focus();
+        return;
+      }
+
       setAlert({
         show: true,
         message: error.message,
@@ -121,6 +136,37 @@ function EmailCode() {
       setPassword("");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // resend handler
+  const handleResendCode = async () => {
+    try {
+      setIsResending(true);
+      await resendCode(signupEmail);
+
+      // Close modal
+      setShowExpiredModal(false);
+
+      // Reset verification state
+      setIsCodeVerified(false);
+      setCode(Array(4).fill(""));
+      inputsRef.current[0]?.focus();
+
+      // Inform user
+      setAlert({
+        show: true,
+        message: "A new code has been sent to your email.",
+        variant: "success",
+      });
+    } catch (error) {
+      setAlert({
+        show: true,
+        message: "Failed to resend code. Try again.",
+        variant: "danger",
+      });
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -233,6 +279,46 @@ function EmailCode() {
           </Form>
         </Card>
       </div>
+
+      {/* modal for code expired */}
+      <Modal
+        show={showExpiredModal}
+        onHide={() => setShowExpiredModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Code Expired</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          The verification code has expired. You need to request a new one.
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button
+            variant='secondary'
+            onClick={() => setShowExpiredModal(false)}
+            disabled={isResending}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            variant='primary'
+            onClick={handleResendCode}
+            disabled={isResending}
+          >
+            {isResending ? (
+              <>
+                <span className='spinner-border spinner-border-sm me-2'></span>
+                Sending...
+              </>
+            ) : (
+              "Send Code"
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 }

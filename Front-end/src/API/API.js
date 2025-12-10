@@ -547,6 +547,27 @@ async function verifyEmail(email, code) {
   return await response.json();
 }
 
+// resend code if expired
+async function resendCode(email) {
+  const response = await fetch(`${URI}/resend-code`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: email,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.log(errorData);
+    throw new Error(errorData.error || "Failed to resend code");
+  }
+
+  return await response.json();
+}
+
 export {
   handleSignup,
   createInternalUser,
@@ -568,4 +589,5 @@ export {
   getCommentsInternal,
   createComment,
   verifyEmail,
+  resendCode,
 };
