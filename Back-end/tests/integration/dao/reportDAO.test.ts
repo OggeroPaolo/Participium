@@ -27,6 +27,7 @@ describe("ReportDao", () => {
         position_lng: -70.0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        address: "123 Main St",
     };
 
     describe("getReportsByFilters", () => {
@@ -427,6 +428,7 @@ describe("ReportDao", () => {
             position_lat: 40.0,
             position_lng: 7.0,
             is_anonymous: false,
+            address: "456 Another St",
             photos: ["a.jpg", "b.jpg", "c.jpg"]
         };
 
@@ -458,6 +460,7 @@ describe("ReportDao", () => {
                     dto.category_id,
                     dto.title,
                     dto.description,
+                    dto.address,
                     dto.position_lat,
                     dto.position_lng,
                     0

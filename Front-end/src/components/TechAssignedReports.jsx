@@ -19,7 +19,6 @@ import {
   Alert,
   Form,
 } from "react-bootstrap";
-import { reverseGeocode } from "../utils/geocoding";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -29,7 +28,6 @@ function TechAssignedReports() {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
 
-  const [reportAddresses, setReportAddresses] = useState({});
   const [completeReportData, setCompleteReportData] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [isLoadingReportDetails, setIsLoadingReportDetails] = useState(false);
@@ -138,22 +136,25 @@ const isAssignButtonDisabled =
     resolved: "Resolved",
   };
 
+  const formatAddress = (report) => {
+    if (report?.address) return report.address;
+    if (report?.position_lat && report?.position_lng) {
+      return `${report.position_lat}, ${report.position_lng}`;
+    }
+    return "Address unavailable";
+  };
+
   // Group reports by status
   const reportsByStatus = Object.keys(statusColumns).reduce((acc, status) => {
     acc[status] = reports.filter((r) => r.status === status);
     return acc;
   }, {});
 
-  // Address-ready groups per column
-  const readyReportsByStatus = {};
-  Object.keys(reportsByStatus).forEach((status) => {
-    const list = reportsByStatus[status];
-    readyReportsByStatus[status] = list.filter((r) => reportAddresses[r.id]);
-  });
-
-  const isLoadingReports =
-    reports.length > 0 &&
-    Object.values(readyReportsByStatus).every((arr) => arr.length === 0);
+  const reportCounts = Object.values(reportsByStatus).map(
+    (arr) => arr.length
+  );
+  const maxReportsAvailable =
+    reportCounts.length > 0 ? Math.max(...reportCounts) : 0;
 
   useEffect(() => {
     loadReports();
@@ -179,35 +180,11 @@ const isAssignButtonDisabled =
     try {
       const reportList = await getAssignedReports();
       setReports(reportList);
-
-      // load addresses in background, one by one
-      loadAddressesInBackground(reportList);
     } catch (error) {
       console.error("Failed to load reports:", error);
     } finally {
       setLoadingDone(true);
     }
-  };
-
-  const loadAddressesInBackground = async (reportList) => {
-    reportList.forEach(async (report) => {
-      try {
-        const address = await reverseGeocode(
-          report.position_lat,
-          report.position_lng
-        );
-
-        setReportAddresses((prev) => ({
-          ...prev,
-          [report.id]: address,
-        }));
-      } catch (error) {
-        setReportAddresses((prev) => ({
-          ...prev,
-          [report.id]: `${report.position_lat}, ${report.position_lng}`,
-        }));
-      }
-    });
   };
 
   const handleReportClick = async (report) => {
@@ -519,53 +496,42 @@ const isAssignButtonDisabled =
                 {statusColumns[status]}
               </h5>
 
-              {isLoadingReports ? (
-                <div
-                  className='d-flex justify-content-center align-items-center'
-                  style={{ minHeight: "80vh" }}
-                >
-                  <div className='spinner-border text-primary' role='status'>
-                    <span className='visually-hidden'>Loading...</span>
-                  </div>
-                </div>
-              ) : (
-                readyReportsByStatus[status]
-                  .slice(0, visibleCount)
-                  .map((report) => (
-                    <div key={report.id} className='mb-3'>
-                      <Card
-                        className='shadow-sm report-card h-100'
-                        onClick={() => handleReportClick(report)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <Card.Body>
-                          <div className='d-flex justify-content-between align-items-start mb-2'>
-                            <strong>{report.title}</strong>
-                          </div>
+              {reportsByStatus[status]
+                .slice(0, visibleCount)
+                .map((report) => (
+                  <div key={report.id} className='mb-3'>
+                    <Card
+                      className='shadow-sm report-card h-100'
+                      onClick={() => handleReportClick(report)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <Card.Body>
+                        <div className='d-flex justify-content-between align-items-start mb-2'>
+                          <strong>{report.title}</strong>
+                        </div>
 
-                          <div className='small mb-2'>
-                            <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
-                            {reportAddresses[report.id] || "Loading address..."}
-                          </div>
-                          <div className='small text-muted'>
-                            <i className='bi bi-calendar3'></i>{" "}
-                            {new Date(report.created_at).toLocaleDateString()}
-                          </div>
-                          <div className='mt-2'>
-                            <Badge
-                              bg={getCategoryBadge(
-                                categoryMap[report.category_id]
-                              )}
-                            >
-                              {categoryMap[report.category_id] ||
-                                `Category ${report.category_id}`}
-                            </Badge>
-                          </div>
-                        </Card.Body>
-                      </Card>
-                    </div>
-                  ))
-              )}
+                        <div className='small mb-2'>
+                          <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
+                          {formatAddress(report)}
+                        </div>
+                        <div className='small text-muted'>
+                          <i className='bi bi-calendar3'></i>{" "}
+                          {new Date(report.created_at).toLocaleDateString()}
+                        </div>
+                        <div className='mt-2'>
+                          <Badge
+                            bg={getCategoryBadge(
+                              categoryMap[report.category_id]
+                            )}
+                          >
+                            {categoryMap[report.category_id] ||
+                              `Category ${report.category_id}`}
+                          </Badge>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </div>
+                ))}
             </div>
           ))}
         </div>
@@ -573,10 +539,7 @@ const isAssignButtonDisabled =
 
       {/* Button for more reports */}
 
-      {visibleCount <
-        Math.max(
-          ...Object.values(readyReportsByStatus).map((arr) => arr.length)
-        ) && (
+      {visibleCount < maxReportsAvailable && maxReportsAvailable > 0 && (
         <div className='text-center mt-4'>
           <Button
             className='confirm-button'
@@ -648,8 +611,7 @@ const isAssignButtonDisabled =
                     <strong>Location:</strong>
                     <p className='mt-1'>
                       <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
-                      {reportAddresses[completeReportData.id] ||
-                        "Loading address..."}
+                      {formatAddress(completeReportData)}
                     </p>
                   </div>
                 </>
