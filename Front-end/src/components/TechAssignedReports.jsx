@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import useUserStore from "../store/userStore";
 import {
   getAssignedReports,
@@ -16,11 +16,12 @@ import {
   Modal,
   Button,
   Spinner,
-  Alert,
   Form,
 } from "react-bootstrap";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import PropTypes from 'prop-types';
+import AlertBlock from "./AlertBlock";
 
 function TechAssignedReports() {
   const { user } = useUserStore();
@@ -43,88 +44,107 @@ function TechAssignedReports() {
   const [isLoadingMaintainers, setIsLoadingMaintainers] = useState(false);
   const [maintainersError, setMaintainersError] = useState("");
   const [assigningExternal, setAssigningExternal] = useState(false);
-  const assignableStatuses = ["assigned", "in_progress", "suspended"];
+  const assignableStatuses = new Set(["assigned", "in_progress", "suspended"]);
 
-  const assignedReportOwnerId =
-    completeReportData?.assigned_to?.id ??
-    completeReportData?.assignedTo?.id ??
-    (typeof completeReportData?.assigned_to === "number"
-      ? completeReportData.assigned_to
-      : typeof completeReportData?.assignedTo === "number"
-        ? completeReportData.assignedTo
-        : null);
-  const canAssignExternal =
-    Boolean(
+
+  // --- HELPERS ---
+  const getAssignedReportOwnerId = () => {
+    if (completeReportData?.assigned_to?.id) return completeReportData.assigned_to.id;
+    if (completeReportData?.assignedTo?.id) return completeReportData.assignedTo.id;
+    if (typeof completeReportData?.assigned_to === "number") return completeReportData.assigned_to;
+    if (typeof completeReportData?.assignedTo === "number") return completeReportData.assignedTo;
+    return null;
+  };
+
+  const canAssignToExternal = () => {
+    const ownerId = getAssignedReportOwnerId();
+    return Boolean(
       completeReportData &&
-      assignableStatuses.includes(completeReportData.status) &&
-      assignedReportOwnerId === userId
+      assignableStatuses.has(completeReportData.status) &&
+      ownerId === userId
     );
-  const reportCategoryName =
-    completeReportData?.category?.name ||
-    (completeReportData?.category_id &&
-      categoryMap[completeReportData.category_id]) ||
-    (completeReportData?.category_id
-      ? `Category ${completeReportData.category_id}`
-      : "");
-  const currentExternalMaintainerId =
-    typeof completeReportData?.external_user === "object"
-      ? completeReportData.external_user?.id
-      : typeof completeReportData?.external_user === "number"
-        ? completeReportData.external_user
-        : null;
-  const currentExternalMaintainerLabel =
-    typeof completeReportData?.external_user === "object"
-      ? completeReportData.external_user.complete_name ||
-      completeReportData.external_user.username ||
-      (currentExternalMaintainerId
-        ? `Maintainer #${currentExternalMaintainerId}`
-        : null)
-      : currentExternalMaintainerId
-        ? `Maintainer #${currentExternalMaintainerId}`
-        : null;
-  const currentExternalMaintainerCompany =
-    typeof completeReportData?.external_user === "object"
+  };
+
+  const getReportCategoryName = () => {
+    if (completeReportData?.category?.name) return completeReportData.category.name;
+    if (completeReportData?.category_id && categoryMap[completeReportData.category_id]) {
+      return categoryMap[completeReportData.category_id];
+    }
+    if (completeReportData?.category_id) {
+      return `Category ${completeReportData.category_id}`;
+    }
+    return "";
+  };
+
+  const getCurrentExternalMaintainerId = () => {
+    if (typeof completeReportData?.external_user === "object") {
+      return completeReportData.external_user?.id;
+    }
+    if (typeof completeReportData?.external_user === "number") {
+      return completeReportData.external_user;
+    }
+    return null;
+  };
+
+  const getCurrentExternalMaintainerLabel = () => {
+    const id = getCurrentExternalMaintainerId();
+    if (!id) return null;
+
+    if (typeof completeReportData?.external_user === "object") {
+      return (
+        completeReportData.external_user.complete_name ||
+        completeReportData.external_user.username ||
+        `Maintainer #${id}`
+      );
+    }
+    return `Maintainer #${id}`;
+  };
+
+  const getCurrentExternalMaintainerCompany = () => {
+    return typeof completeReportData?.external_user === "object"
       ? completeReportData.external_user.company_name || null
       : null;
-  const currentExternalMaintainerOption =
-    currentExternalMaintainerId &&
-    externalMaintainers.find((m) => m.id === currentExternalMaintainerId);
-  const maintainerOptions =
-    currentExternalMaintainerId &&
-      !externalMaintainers.some((m) => m.id === currentExternalMaintainerId)
-      ? [
-        {
-          id: currentExternalMaintainerId,
-          fullName:
-            currentExternalMaintainerLabel ||
-            `Maintainer #${currentExternalMaintainerId}`,
-          username:
-            currentExternalMaintainerLabel ||
-            `Maintainer #${currentExternalMaintainerId}`,
-          companyName:
-            currentExternalMaintainerCompany ||
-            currentExternalMaintainerOption?.companyName ||
-            null,
-        },
-        ...externalMaintainers,
-      ]
-      : externalMaintainers;
-  const isAssignButtonDisabled =
-    assigningExternal ||
-    isLoadingMaintainers ||
-    !selectedExternalMaintainer ||
-    selectedExternalMaintainer === currentExternalMaintainerId;
+  };
+
+  const getMaintainerOptions = () => {
+    const id = getCurrentExternalMaintainerId();
+    if (!id || externalMaintainers.some((m) => m.id === id)) {
+      return externalMaintainers;
+    }
+
+    const currentMaintainer = {
+      id,
+      fullName: getCurrentExternalMaintainerLabel() || `Maintainer #${id}`,
+      username: getCurrentExternalMaintainerLabel() || `Maintainer #${id}`,
+      companyName: getCurrentExternalMaintainerCompany() || null,
+    };
+
+    return [currentMaintainer, ...externalMaintainers];
+  };
+
+  const isAssignButtonDisabledState = () => {
+    return (
+      assigningExternal ||
+      isLoadingMaintainers ||
+      !selectedExternalMaintainer ||
+      selectedExternalMaintainer === getCurrentExternalMaintainerId()
+    );
+  };
+
+  const assignedReportOwnerId = getAssignedReportOwnerId();
+  const canAssignExternal = canAssignToExternal();
+  const reportCategoryName = getReportCategoryName();
+  const currentExternalMaintainerId = getCurrentExternalMaintainerId();
+  const currentExternalMaintainerLabel = getCurrentExternalMaintainerLabel();
+  const currentExternalMaintainerCompany = getCurrentExternalMaintainerCompany();
+  const maintainerOptions = getMaintainerOptions();
+  const isAssignButtonDisabled = isAssignButtonDisabledState();
 
   // comment section variables
   const [modalPage, setModalPage] = useState("info");
   const [comments, setComments] = useState([]);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [newComment, setNewComment] = useState("");
-
-  const author_type =
-    user?.role_type === "tech_officer"
-      ? "External Maintainer"
-      : "Technical Officer";
 
   // string formatter for status
   // can be pending_approval, assigned, in_progress, suspended, rejected, resolved
@@ -245,7 +265,7 @@ function TechAssignedReports() {
   useEffect(() => {
     if (!showModal) return;
     setSelectedExternalMaintainer(
-      currentExternalMaintainerId ? currentExternalMaintainerId : null
+      currentExternalMaintainerId || null
     );
   }, [showModal, currentExternalMaintainerId]);
 
@@ -381,11 +401,36 @@ function TechAssignedReports() {
     }
   };
 
+  const fetchExternalMaintainers = useCallback(async (categoryId, activeRef) => {
+    try {
+      setIsLoadingMaintainers(true);
+      setMaintainersError("");
+      const list = await getExternalMaintainers({ categoryId });
+
+      if (!activeRef.current) return;
+
+      setExternalMaintainers(list);
+      setSelectedExternalMaintainer((prev) =>
+        list.some((m) => m.id === prev) ? prev : null
+      );
+    } catch (error) {
+      if (!activeRef.current) return;
+      setExternalMaintainers([]);
+      setSelectedExternalMaintainer(null);
+      setMaintainersError(error.message || "Failed to load external maintainers");
+    } finally {
+      if (activeRef.current) {
+        setIsLoadingMaintainers(false);
+      }
+    }
+  }, []);
+
+
   useEffect(() => {
     if (
       !showModal ||
       !completeReportData ||
-      !assignableStatuses.includes(completeReportData.status)
+      !assignableStatuses.has(completeReportData.status)
     ) {
       setExternalMaintainers([]);
       setSelectedExternalMaintainer(null);
@@ -406,35 +451,12 @@ function TechAssignedReports() {
       completeReportData.category?.id || completeReportData.category_id;
     if (!categoryId) return;
 
-    let active = true;
-    const fetchMaintainers = async () => {
-      try {
-        setIsLoadingMaintainers(true);
-        setMaintainersError("");
-        const list = await getExternalMaintainers({ categoryId });
-        if (!active) return;
-        setExternalMaintainers(list);
-        setSelectedExternalMaintainer((prev) =>
-          list.some((m) => m.id === prev) ? prev : null
-        );
-      } catch (error) {
-        if (!active) return;
-        setExternalMaintainers([]);
-        setSelectedExternalMaintainer(null);
-        setMaintainersError(
-          error.message || "Failed to load external maintainers"
-        );
-      } finally {
-        if (active) {
-          setIsLoadingMaintainers(false);
-        }
-      }
-    };
+    const activeRef = { current: true };
 
-    fetchMaintainers();
+    fetchExternalMaintainers(categoryId, activeRef);
 
     return () => {
-      active = false;
+      activeRef.current = false;
     };
   }, [showModal, completeReportData, userId, assignedReportOwnerId]);
 
@@ -457,440 +479,832 @@ function TechAssignedReports() {
     <Container className='py-4 body-font'>
       <h2 className='mb-4 fw-bold'>Assigned Reports Review</h2>
 
-      {alert.show && (
-        <Alert
-          variant={alert.variant}
-          dismissible
-          onClose={() => setAlert({ ...alert, show: false })}
-        >
-          {alert.message}
-        </Alert>
-      )}
+      <AlertBlock alert={alert} onClose={() => setAlert({ ...alert, show: false })} />
 
-      {!loadingDone ? (
-        <div
-          className='d-flex justify-content-center align-items-center'
-          style={{ minHeight: "80vh" }}
-        >
-          <div className='spinner-border text-primary' role='status'>
-            <span className='visually-hidden'>Loading...</span>
+      <AssignedReportsBoard
+        loadingDone={loadingDone}
+        reports={reports}
+        statusColumns={statusColumns}
+        reportsByStatus={reportsByStatus}
+        visibleCount={visibleCount}
+        maxReportsAvailable={maxReportsAvailable}
+        formatAddress={formatAddress}
+        categoryMap={categoryMap}
+        getCategoryBadge={getCategoryBadge}
+        onReportClick={handleReportClick}
+        onLoadMore={() => setVisibleCount((prev) => prev + 3)}
+      />
+
+      <TechReportModal
+        show={showModal}
+        onClose={handleCloseModal}
+        isLoadingReportDetails={isLoadingReportDetails}
+        completeReportData={completeReportData}
+        mapRef={mapRef}
+        statusColumns={statusColumns}
+        formatAddress={formatAddress}
+        comments={comments}
+        userId={userId}
+        modalPage={modalPage}
+        setModalPage={setModalPage}
+        newComment={newComment}
+        setNewComment={setNewComment}
+        writeComment={writeComment}
+        isSubmittingComment={isSubmittingComment}
+        // assegnazione esterni
+        canAssignExternal={canAssignExternal}
+        reportCategoryName={reportCategoryName}
+        externalMaintainers={externalMaintainers}
+        maintainerOptions={maintainerOptions}
+        selectedExternalMaintainer={selectedExternalMaintainer}
+        setSelectedExternalMaintainer={setSelectedExternalMaintainer}
+        isLoadingMaintainers={isLoadingMaintainers}
+        maintainersError={maintainersError}
+        currentExternalMaintainerId={currentExternalMaintainerId}
+        currentExternalMaintainerLabel={currentExternalMaintainerLabel}
+        currentExternalMaintainerCompany={currentExternalMaintainerCompany}
+        isAssignButtonDisabled={isAssignButtonDisabled}
+        assigningExternal={assigningExternal}
+        handleAssignExternalMaintainer={handleAssignExternalMaintainer}
+        handleImageClick={handleImageClick}
+      />
+
+      <ImagePreviewModal
+        show={showImageModal}
+        onClose={handleCloseImageModal}
+        image={selectedImage}
+      />
+    </Container>
+  );
+}
+
+function AssignedReportsBoard({
+  loadingDone,
+  reports,
+  statusColumns,
+  reportsByStatus,
+  visibleCount,
+  maxReportsAvailable,
+  formatAddress,
+  categoryMap,
+  getCategoryBadge,
+  onReportClick,
+  onLoadMore,
+}) {
+  if (!loadingDone) {
+    return (
+      <div
+        className='d-flex justify-content-center align-items-center'
+        style={{ minHeight: '80vh' }}
+      >
+        <div className='spinner-border text-primary' aria-hidden='true'>
+          <output aria-live='polite' style={{ marginLeft: '0.5rem' }}>
+            Loading...
+          </output>
+        </div>
+      </div>
+    );
+  }
+
+  if (reports.length === 0) {
+    return (
+      <Card className='shadow-sm'>
+        <Card.Body className='text-center py-5'>
+          <i
+            className='bi bi-clipboard-check'
+            style={{ fontSize: '3rem', color: '#ccc' }}
+          />
+          <p className='mt-3 mb-0 text-muted'>No assigned reports to review</p>
+        </Card.Body>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      <div className='row g-4'>
+        {Object.keys(statusColumns).map((status) => (
+          <div key={status} className='col-12 col-md-6 col-lg-3 px-3'>
+            <h5 className='fw-bold mb-3 text-center'>
+              {statusColumns[status]}
+            </h5>
+
+            {reportsByStatus[status]
+              .slice(0, visibleCount)
+              .map((report) => (
+                <div key={report.id} className='mb-3'>
+                  <Card
+                    className='shadow-sm report-card h-100'
+                    onClick={() => onReportClick(report)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <Card.Body>
+                      <div className='d-flex justify-content-between align-items-start mb-2'>
+                        <strong>{report.title}</strong>
+                      </div>
+                      <div className='small mb-2'>
+                        <i className='bi bi-geo-alt-fill text-danger' />{' '}
+                        {formatAddress(report)}
+                      </div>
+                      <div className='small text-muted'>
+                        <i className='bi bi-calendar3' />{' '}
+                        {new Date(report.created_at).toLocaleDateString()}
+                      </div>
+                      <div className='mt-2'>
+                        <Badge
+                          bg={getCategoryBadge(
+                            categoryMap[report.category_id]
+                          )}
+                        >
+                          {categoryMap[report.category_id] ||
+                            `Category ${report.category_id}`}
+                        </Badge>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </div>
+              ))}
           </div>
-        </div>
-      ) : reports.length === 0 ? (
-        <Card className='shadow-sm'>
-          <Card.Body className='text-center py-5'>
-            <i
-              className='bi bi-clipboard-check'
-              style={{ fontSize: "3rem", color: "#ccc" }}
-            ></i>
-            <p className='mt-3 mb-0 text-muted'>
-              No assigned reports to review
-            </p>
-          </Card.Body>
-        </Card>
-      ) : (
-        <div className='row g-4'>
-          {Object.keys(statusColumns).map((status) => (
-            <div key={status} className='col-12 col-md-6 col-lg-3 px-3'>
-              <h5 className='fw-bold mb-3 text-center'>
-                {statusColumns[status]}
-              </h5>
-
-              {reportsByStatus[status]
-                .slice(0, visibleCount)
-                .map((report) => (
-                  <div key={report.id} className='mb-3'>
-                    <Card
-                      className='shadow-sm report-card h-100'
-                      onClick={() => handleReportClick(report)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <Card.Body>
-                        <div className='d-flex justify-content-between align-items-start mb-2'>
-                          <strong>{report.title}</strong>
-                        </div>
-
-                        <div className='small mb-2'>
-                          <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
-                          {formatAddress(report)}
-                        </div>
-                        <div className='small text-muted'>
-                          <i className='bi bi-calendar3'></i>{" "}
-                          {new Date(report.created_at).toLocaleDateString()}
-                        </div>
-                        <div className='mt-2'>
-                          <Badge
-                            bg={getCategoryBadge(
-                              categoryMap[report.category_id]
-                            )}
-                          >
-                            {categoryMap[report.category_id] ||
-                              `Category ${report.category_id}`}
-                          </Badge>
-                        </div>
-                      </Card.Body>
-                    </Card>
-                  </div>
-                ))}
-            </div>
-          ))}
-        </div>
-      )}
+        ))}
+      </div>
 
       {/* Button for more reports */}
-
       {visibleCount < maxReportsAvailable && maxReportsAvailable > 0 && (
         <div className='text-center mt-4'>
-          <Button
-            className='confirm-button'
-            onClick={() => setVisibleCount((prev) => prev + 3)}
-          >
+          <Button className='confirm-button' onClick={onLoadMore}>
             Load more
           </Button>
         </div>
       )}
-
-      {/* Review and comments Modal */}
-      <Modal show={showModal} onHide={handleCloseModal} size='lg' centered>
-        <Modal.Header className='modal-header-clean'>
-          <button
-            type='button'
-            className='btn-close modal-close-top-right'
-            onClick={handleCloseModal}
-          />
-          <div className='modal-tabs-container'>
-            <button
-              className={`modal-tab ${modalPage === "info" ? "active" : ""}`}
-              onClick={() => setModalPage("info")}
-            >
-              Report Info
-            </button>
-
-            <button
-              className={`modal-tab ${modalPage === "comments" ? "active" : ""
-                }`}
-              onClick={() => setModalPage("comments")}
-            >
-              Comments
-            </button>
-          </div>
-        </Modal.Header>
-        <Modal.Body>
-          {/* spinner if report is loading*/}
-          {isLoadingReportDetails && (
-            <div className='text-center py-5'>
-              <Spinner animation='border' role='status'>
-                <span className='visually-hidden'>Loading...</span>
-              </Spinner>
-              <p className='mt-3'>Loading report details...</p>
-            </div>
-          )}
-
-          {/* report loading is done but report GET failed */}
-          {!isLoadingReportDetails && !completeReportData && (
-            <div className='text-center py-5'>
-              <p className='text-muted'>Failed to load report details</p>
-            </div>
-          )}
-
-          {/* report is available */}
-          {!isLoadingReportDetails && completeReportData && (
-            <>
-              {/* modal page with report info */}
-              {modalPage === "info" && (
-                <>
-                  <h5 className='fw-bold mb-3'>{completeReportData.title}</h5>
-
-                  <div className='mb-3'>
-                    <strong>Description:</strong>
-                    <p className='mt-2'>{completeReportData.description}</p>
-                  </div>
-
-                  <div className='mb-3'>
-                    <strong>Location:</strong>
-                    <p className='mt-1'>
-                      <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
-                      {formatAddress(completeReportData)}
-                    </p>
-                  </div>
-                </>
-              )}
-
-              {/* Minimal read-only map: must be always rendered */}
-              <div
-                ref={mapRef}
-                style={{
-                  width: "100%",
-                  height: "250px",
-                  borderRadius: "8px",
-                  border: "1px solid #dee2e6",
-                  marginTop: "10px",
-                  display: modalPage === "info" ? "block" : "none",
-                }}
-              />
-
-              {modalPage === "info" && (
-                <>
-                  <div className='mb-3 mt-2'>
-                    <strong>Reported by:</strong>{" "}
-                    {completeReportData.is_anonymous
-                      ? "Anonymous"
-                      : completeReportData.user?.username ||
-                      completeReportData.user?.complete_name ||
-                      "Unknown"}
-                  </div>
-
-                  <div className='mb-3'>
-                    <strong>Submitted on:</strong>{" "}
-                    {new Date(completeReportData.created_at).toLocaleString()}
-                  </div>
-
-                  {completeReportData.photos &&
-                    completeReportData.photos.length > 0 && (
-                      <div className='mb-3'>
-                        <strong>Photos:</strong>
-                        <div className='d-flex gap-2 mt-2 flex-wrap'>
-                          {completeReportData.photos.map((photo, index) => (
-                            <img
-                              key={index}
-                              src={photo.url}
-                              alt={`Report photo ${index + 1}`}
-                              className='img-preview'
-                              onClick={() => handleImageClick(photo.url)}
-                              style={{ cursor: "pointer" }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                  <div className='mb-3'>
-                    <strong>Category:</strong>{" "}
-                    {completeReportData.category.name}
-                  </div>
-                  <div className='mb-3'>
-                    <strong>Status:</strong>{" "}
-                    {statusColumns[completeReportData.status]}
-                  </div>
-                  {currentExternalMaintainerId && (
-                    <div className='mb-2 text-muted small'>
-                      Currently assigned to: {currentExternalMaintainerLabel}
-                      {currentExternalMaintainerCompany && (
-                        <span className='ms-1'>
-                          ({currentExternalMaintainerCompany})
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {canAssignExternal && (
-                    <div className='mb-3'>
-                      <div className='d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-2'>
-                        <strong>Assign to External Maintainer</strong>
-                        {reportCategoryName && (
-                          <span className='badge bg-light text-dark mt-2 mt-md-0'>
-                            Category: {reportCategoryName}
-                          </span>
-                        )}
-                      </div>
-                      <Form.Select
-                        className='mt-2'
-                        value={selectedExternalMaintainer || ""}
-                        onChange={(e) =>
-                          setSelectedExternalMaintainer(
-                            e.target.value ? Number(e.target.value) : null
-                          )
-                        }
-                        disabled={
-                          isLoadingMaintainers || externalMaintainers.length === 0
-                        }
-                      >
-                        <option value=''>
-                          {isLoadingMaintainers
-                            ? "Loading external maintainers..."
-                            : externalMaintainers.length === 0
-                              ? "No external maintainers available"
-                              : "Select an external maintainer"}
-                        </option>
-                        {maintainerOptions.map((maintainer) => {
-                          const maintainerName =
-                            maintainer.fullName ||
-                            maintainer.username ||
-                            `Maintainer #${maintainer.id}`;
-                          const optionLabel = `${maintainerName} — ${maintainer.companyName || "Unknown company"
-                            }${reportCategoryName ? ` • ${reportCategoryName}` : ""
-                            }`;
-                          return (
-                            <option key={maintainer.id} value={maintainer.id}>
-                              {optionLabel}
-                            </option>
-                          );
-                        })}
-                      </Form.Select>
-                      {maintainersError && (
-                        <Form.Text className='text-danger d-block mt-1'>
-                          {maintainersError}
-                        </Form.Text>
-                      )}
-                      {!maintainersError &&
-                        selectedExternalMaintainer ===
-                        currentExternalMaintainerId &&
-                        currentExternalMaintainerId !== null && (
-                          <Form.Text className='text-muted d-block mt-1'>
-                            Select a different external maintainer to enable
-                            assignment.
-                          </Form.Text>
-                        )}
-                      {!maintainersError &&
-                        !isLoadingMaintainers &&
-                        externalMaintainers.length === 0 && (
-                          <Form.Text className='text-muted d-block mt-1'>
-                            No external maintainers handle this category yet.
-                          </Form.Text>
-                        )}
-                      <div className='d-flex justify-content-end mt-3'>
-                        <Button
-                          variant='primary'
-                          onClick={handleAssignExternalMaintainer}
-                          disabled={isAssignButtonDisabled}
-                          className='confirm-button'
-                        >
-                          {assigningExternal ? (
-                            <>
-                              <span className='spinner-border spinner-border-sm me-2' />
-                              Assigning...
-                            </>
-                          ) : (
-                            "Assign to External"
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  <hr />
-
-                  <div className='d-flex justify-content-end gap-2 mt-4'>
-                    <Button variant='secondary' onClick={handleCloseModal}>
-                      Cancel
-                    </Button>
-                  </div>
-                </>
-              )}
-
-              {modalPage === "comments" && (
-                /* modal page with comment section */
-                <>
-                  {comments.length !== 0 ? (
-                    <>
-                      {comments.map((c, i) => (
-                        <div key={i} className='mb-3 pb-2 border-bottom'>
-                          <div className='d-flex justify-content-between align-items-start'>
-
-                            <div className="d-flex flex-column">
-                              {c.user_id !== userId && c.role_name && (
-                                <small className="text-muted">
-                                  {c.role_name.replaceAll("_", " ")}
-                                </small>
-                              )}
-                              <div className='d-flex align-items-center'>
-                                <div
-                                  style={{
-                                    width: "14px",
-                                    height: "14px",
-                                    borderRadius: "50%",
-                                    backgroundColor:
-                                      c.user_id === userId
-                                        ? "#F5E078"
-                                        : "#0350b5",
-                                    marginRight: "8px",
-                                  }}
-                                ></div>
-                                <strong>
-                                  {c.user_id === userId ? "Me" : `${c.first_name} ${c.last_name}`}
-                                </strong>
-                              </div>
-                            </div>
-
-                            <small className='text-muted'>
-                              {new Date(c.timestamp).toLocaleString()}
-                            </small>
-                          </div>
-
-                          <div className='mt-1'>
-                            <p className='mb-0 text-dark'>{c.text}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                  ) : (
-                    /* no comments */
-                    <p className='text-muted'>No comments yet</p>
-                  )}
-
-                  <Form className='pt-3' onSubmit={writeComment}>
-                    <Form.Group className='mb-3'>
-                      <Form.Control
-                        as='textarea'
-                        rows={2}
-                        placeholder='Write a comment'
-                        onChange={(e) => setNewComment(e.target.value)}
-                        value={newComment}
-                      />
-                    </Form.Group>
-
-                    <hr />
-
-                    <div className='d-flex justify-content-end'>
-                      <Button
-                        className='confirm-button'
-                        type='submit'
-                        disabled={isSubmittingComment}
-                      >
-                        {isSubmittingComment ? (
-                          <>
-                            <span className='spinner-border spinner-border-sm me-2' />
-                            Posting...
-                          </>
-                        ) : (
-                          "Post comment"
-                        )}
-                      </Button>
-                    </div>
-                  </Form>
-                </>
-              )}
-            </>
-          )}
-        </Modal.Body>
-      </Modal>
-
-      {/* Image Preview Modal */}
-      <Modal
-        show={showImageModal}
-        onHide={handleCloseImageModal}
-        size='xl'
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Photo Preview</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className='text-center'>
-          {selectedImage && (
-            <img
-              src={selectedImage}
-              alt='Full size preview'
-              style={{
-                maxWidth: "100%",
-                maxHeight: "80vh",
-                objectFit: "contain",
-              }}
-            />
-          )}
-        </Modal.Body>
-      </Modal>
-    </Container>
+    </>
   );
 }
+
+function TechReportModal({
+  show,
+  onClose,
+  isLoadingReportDetails,
+  completeReportData,
+  mapRef,
+  statusColumns,
+  formatAddress,
+  comments,
+  userId,
+  modalPage,
+  setModalPage,
+  newComment,
+  setNewComment,
+  writeComment,
+  isSubmittingComment,
+  canAssignExternal,
+  reportCategoryName,
+  externalMaintainers,
+  maintainerOptions,
+  selectedExternalMaintainer,
+  setSelectedExternalMaintainer,
+  isLoadingMaintainers,
+  maintainersError,
+  currentExternalMaintainerId,
+  currentExternalMaintainerLabel,
+  currentExternalMaintainerCompany,
+  isAssignButtonDisabled,
+  assigningExternal,
+  handleAssignExternalMaintainer,
+  handleImageClick,
+}) {
+  return (
+    <Modal show={show} onHide={onClose} size='lg' centered>
+      <Modal.Header className='modal-header-clean'>
+        <button
+          type='button'
+          className='btn-close modal-close-top-right'
+          onClick={onClose}
+        />
+        <div className='modal-tabs-container'>
+          <button
+            className={`modal-tab ${modalPage === 'info' ? 'active' : ''}`}
+            onClick={() => setModalPage('info')}
+          >
+            Report Info
+          </button>
+          <button
+            className={`modal-tab ${modalPage === 'comments' ? 'active' : ''
+              }`}
+            onClick={() => setModalPage('comments')}
+          >
+            Comments
+          </button>
+        </div>
+      </Modal.Header>
+      <Modal.Body>
+        {/* spinner if report is loading*/}
+        {isLoadingReportDetails && (
+          <div className='text-center py-5'>
+            <Spinner animation='border' role='status'>
+              <span className='visually-hidden'>Loading...</span>
+            </Spinner>
+            <p className='mt-3'>Loading report details...</p>
+          </div>
+        )}
+
+        {/* report loading is done but report GET failed */}
+        {!isLoadingReportDetails && !completeReportData && (
+          <div className='text-center py-5'>
+            <p className='text-muted'>Failed to load report details</p>
+          </div>
+        )}
+
+        {/* report is available */}
+        {!isLoadingReportDetails && completeReportData && (
+          <>
+            {modalPage === 'info' && (
+              <TechReportInfoTab
+                completeReportData={completeReportData}
+                mapRef={mapRef}
+                modalPage={modalPage}
+                statusColumns={statusColumns}
+                formatAddress={formatAddress}
+                canAssignExternal={canAssignExternal}
+                reportCategoryName={reportCategoryName}
+                externalMaintainers={externalMaintainers}
+                maintainerOptions={maintainerOptions}
+                selectedExternalMaintainer={selectedExternalMaintainer}
+                setSelectedExternalMaintainer={setSelectedExternalMaintainer}
+                isLoadingMaintainers={isLoadingMaintainers}
+                maintainersError={maintainersError}
+                currentExternalMaintainerId={currentExternalMaintainerId}
+                currentExternalMaintainerLabel={currentExternalMaintainerLabel}
+                currentExternalMaintainerCompany={
+                  currentExternalMaintainerCompany
+                }
+                isAssignButtonDisabled={isAssignButtonDisabled}
+                assigningExternal={assigningExternal}
+                handleAssignExternalMaintainer={
+                  handleAssignExternalMaintainer
+                }
+                handleImageClick={handleImageClick}
+                onClose={onClose}
+              />
+            )}
+
+            {modalPage === 'comments' && (
+              <TechReportCommentsTab
+                comments={comments}
+                userId={userId}
+                newComment={newComment}
+                setNewComment={setNewComment}
+                writeComment={writeComment}
+                isSubmittingComment={isSubmittingComment}
+              />
+            )}
+          </>
+        )}
+      </Modal.Body>
+    </Modal>
+  );
+}
+
+function TechReportInfoTab({
+  completeReportData,
+  mapRef,
+  modalPage,
+  statusColumns,
+  formatAddress,
+  canAssignExternal,
+  reportCategoryName,
+  externalMaintainers,
+  maintainerOptions,
+  selectedExternalMaintainer,
+  setSelectedExternalMaintainer,
+  isLoadingMaintainers,
+  maintainersError,
+  currentExternalMaintainerId,
+  currentExternalMaintainerLabel,
+  currentExternalMaintainerCompany,
+  isAssignButtonDisabled,
+  assigningExternal,
+  handleAssignExternalMaintainer,
+  handleImageClick,
+  onClose,
+}) {
+
+  const getMaintainerSelectOption = () => {
+    if (isLoadingMaintainers) {
+      return 'Loading external maintainers...';
+    }
+
+    if (externalMaintainers.length === 0) {
+      return 'No external maintainers available';
+    }
+
+    return 'Select an external maintainer';
+  };
+
+
+  return (
+    <>
+      <h5 className='fw-bold mb-3'>{completeReportData.title}</h5>
+
+      <div className='mb-3'>
+        <strong>Description:</strong>
+        <p className='mt-2'>{completeReportData.description}</p>
+      </div>
+
+      <div className='mb-3'>
+        <strong>Location:</strong>
+        <p className='mt-1'>
+          <i className='bi bi-geo-alt-fill text-danger'></i>{' '}
+          {formatAddress(completeReportData)}
+        </p>
+      </div>
+
+      {/* Minimal read-only map */}
+      <div
+        ref={mapRef}
+        style={{
+          width: '100%',
+          height: '250px',
+          borderRadius: '8px',
+          border: '1px solid #dee2e6',
+          marginTop: '10px',
+          display: modalPage === 'info' ? 'block' : 'none',
+        }}
+      />
+
+      <div className='mb-3 mt-2'>
+        <strong>Reported by:</strong>{' '}
+        {completeReportData.is_anonymous
+          ? 'Anonymous'
+          : completeReportData.user?.username ||
+          completeReportData.user?.complete_name ||
+          'Unknown'}
+      </div>
+
+      <div className='mb-3'>
+        <strong>Submitted on:</strong>{' '}
+        {new Date(completeReportData.created_at).toLocaleString()}
+      </div>
+
+      {completeReportData.photos &&
+        completeReportData.photos.length > 0 && (
+          <div className='mb-3'>
+            <strong>Photos:</strong>
+            <div className='d-flex gap-2 mt-2 flex-wrap'>
+              {completeReportData.photos.map((photo, index) => (
+                <Button
+                  key={`${photo.url}-${index}`}
+                  variant='link'
+                  className='p-0 img-preview-button'
+                  onClick={() => handleImageClick(photo.url)}
+                  aria-label={`Open preview of report image ${index + 1}`}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <img
+                    src={photo.url}
+                    alt={photo.description || `Report detail ${index + 1}`}
+                    className='img-preview'
+                    style={{ display: 'block' }}
+                  />
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+      <div className='mb-3'>
+        <strong>Category:</strong> {completeReportData.category.name}
+      </div>
+
+      <div className='mb-3'>
+        <strong>Status:</strong>{' '}
+        {statusColumns[completeReportData.status]}
+      </div>
+
+      {currentExternalMaintainerId && (
+        <div className='mb-2 text-muted small'>
+          Currently assigned to: {currentExternalMaintainerLabel}
+          {currentExternalMaintainerCompany && (
+            <span className='ms-1'>({currentExternalMaintainerCompany})</span>
+          )}
+        </div>
+      )}
+
+      {canAssignExternal && (
+        <div className='mb-3'>
+          <div className='d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-2'>
+            <strong>Assign to External Maintainer</strong>
+            {reportCategoryName && (
+              <span className='badge bg-light text-dark mt-2 mt-md-0'>
+                Category: {reportCategoryName}
+              </span>
+            )}
+          </div>
+
+          <Form.Select
+            className='mt-2'
+            value={selectedExternalMaintainer || ''}
+            onChange={(e) =>
+              setSelectedExternalMaintainer(
+                e.target.value ? Number(e.target.value) : null
+              )
+            }
+            disabled={
+              isLoadingMaintainers || externalMaintainers.length === 0
+            }
+          >
+            <option value=''>
+              {getMaintainerSelectOption()}
+            </option>
+            {maintainerOptions.map((maintainer) => {
+              const maintainerName =
+                maintainer.fullName ||
+                maintainer.username ||
+                `Maintainer #${maintainer.id}`;
+
+              const companyName = maintainer.companyName || 'Unknown company';
+              const categorySuffix = reportCategoryName ? ` • ${reportCategoryName}` : '';
+
+              const optionLabel = `${maintainerName} — ${companyName}${categorySuffix}`;;
+              return (
+                <option key={maintainer.id} value={maintainer.id}>
+                  {optionLabel}
+                </option>
+              );
+            })}
+          </Form.Select>
+
+          {maintainersError && (
+            <Form.Text className='text-danger d-block mt-1'>
+              {maintainersError}
+            </Form.Text>
+          )}
+
+          {!maintainersError &&
+            selectedExternalMaintainer === currentExternalMaintainerId &&
+            currentExternalMaintainerId !== null && (
+              <Form.Text className='text-muted d-block mt-1'>
+                Select a different external maintainer to enable assignment.
+              </Form.Text>
+            )}
+
+          {!maintainersError &&
+            !isLoadingMaintainers &&
+            externalMaintainers.length === 0 && (
+              <Form.Text className='text-muted d-block mt-1'>
+                No external maintainers handle this category yet.
+              </Form.Text>
+            )}
+
+          <div className='d-flex justify-content-end mt-3'>
+            <Button
+              variant='primary'
+              onClick={handleAssignExternalMaintainer}
+              disabled={isAssignButtonDisabled}
+              className='confirm-button'
+            >
+              {assigningExternal ? (
+                <>
+                  <span className='spinner-border spinner-border-sm me-2' />{' '}
+                  Assigning...
+                </>
+              ) : (
+                'Assign to External'
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <hr />
+
+      <div className='d-flex justify-content-end gap-2 mt-4'>
+        <Button variant='secondary' onClick={onClose}>
+          Cancel
+        </Button>
+      </div>
+    </>
+  );
+}
+
+
+function TechReportCommentsTab({
+  comments,
+  userId,
+  newComment,
+  setNewComment,
+  writeComment,
+  isSubmittingComment,
+}) {
+  return (
+    <>
+      {comments.length === 0 ? (
+        <p className='text-muted'>No comments yet</p>
+      ) : (
+        <>
+          {comments.map((c) => (
+            <div key={c.id ?? `${c.user_id}-${c.timestamp}`} className='mb-3 pb-2 border-bottom'>
+              <div className='d-flex justify-content-between align-items-start'>
+                <div className='d-flex flex-column'>
+                  {c.user_id !== userId && c.role_name && (
+                    <small className='text-muted'>
+                      {c.role_name.replaceAll('_', ' ')}
+                    </small>
+                  )}
+                  <div className='d-flex align-items-center'>
+                    <div
+                      style={{
+                        width: '14px',
+                        height: '14px',
+                        borderRadius: '50%',
+                        backgroundColor:
+                          c.user_id === userId ? '#F5E078' : '#0350b5',
+                        marginRight: '8px',
+                      }}
+                    />
+                    <strong>
+                      {c.user_id === userId ? 'Me' : `${c.first_name} ${c.last_name}`}
+                    </strong>
+                  </div>
+                </div>
+
+                <small className='text-muted'>
+                  {new Date(c.timestamp).toLocaleString()}
+                </small>
+              </div>
+
+              <div className='mt-1'>
+                <p className='mb-0 text-dark'>{c.text}</p>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      <Form className='pt-3' onSubmit={writeComment}>
+        <Form.Group className='mb-3'>
+          <Form.Control
+            as='textarea'
+            rows={2}
+            placeholder='Write a comment'
+            onChange={(e) => setNewComment(e.target.value)}
+            value={newComment}
+          />
+        </Form.Group>
+
+        <hr />
+
+        <div className='d-flex justify-content-end'>
+          <Button
+            className='confirm-button'
+            type='submit'
+            disabled={isSubmittingComment}
+          >
+            {isSubmittingComment ? (
+              <>
+                <span className='spinner-border spinner-border-sm me-2' />{' '}
+                Posting...
+              </>
+            ) : (
+              'Post comment'
+            )}
+          </Button>
+        </div>
+      </Form>
+    </>
+  );
+}
+
+function ImagePreviewModal({ show, onClose, image }) {
+  return (
+    <Modal show={show} onHide={onClose} size='xl' centered>
+      <Modal.Header closeButton>
+        <Modal.Title>Photo Preview</Modal.Title>
+      </Modal.Header>
+      <Modal.Body className='text-center'>
+        {image && (
+          <img
+            src={image}
+            alt='Full size preview'
+            style={{
+              maxWidth: '100%',
+              maxHeight: '80vh',
+              objectFit: 'contain',
+            }}
+          />
+        )}
+      </Modal.Body>
+    </Modal>
+  );
+}
+
+TechReportModal.propTypes = {
+  show: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+
+  isLoadingReportDetails: PropTypes.bool.isRequired,
+  completeReportData: PropTypes.shape({
+    title: PropTypes.string,
+    description: PropTypes.string,
+    is_anonymous: PropTypes.bool,
+    created_at: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.instanceOf(Date),
+    ]),
+    user: PropTypes.shape({
+      username: PropTypes.string,
+      complete_name: PropTypes.string,
+    }),
+    photos: PropTypes.arrayOf(
+      PropTypes.shape({
+        url: PropTypes.string.isRequired,
+        description: PropTypes.string,
+      })
+    ),
+    category: PropTypes.shape({
+      name: PropTypes.string.isRequired,
+    }),
+    status: PropTypes.string,
+  }),
+
+  mapRef: PropTypes.shape({ current: PropTypes.any }),
+
+  statusColumns: PropTypes.objectOf(PropTypes.string).isRequired,
+  formatAddress: PropTypes.func.isRequired,
+
+  comments: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+      user_id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+      role_name: PropTypes.string,
+      first_name: PropTypes.string,
+      last_name: PropTypes.string,
+      timestamp: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.instanceOf(Date),
+      ]),
+      text: PropTypes.string,
+    })
+  ).isRequired,
+  userId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+
+  modalPage: PropTypes.oneOf(['info', 'comments']).isRequired,
+  setModalPage: PropTypes.func.isRequired,
+
+  newComment: PropTypes.string.isRequired,
+  setNewComment: PropTypes.func.isRequired,
+  writeComment: PropTypes.func.isRequired,
+  isSubmittingComment: PropTypes.bool.isRequired,
+
+  canAssignExternal: PropTypes.bool.isRequired,
+  reportCategoryName: PropTypes.string,
+
+  externalMaintainers: PropTypes.arrayOf(PropTypes.object).isRequired,
+  maintainerOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
+
+  selectedExternalMaintainer: PropTypes.oneOfType([
+    PropTypes.number,
+    PropTypes.string,
+    PropTypes.oneOf([null]),
+  ]),
+  setSelectedExternalMaintainer: PropTypes.func.isRequired,
+
+  isLoadingMaintainers: PropTypes.bool.isRequired,
+  maintainersError: PropTypes.string,
+
+  currentExternalMaintainerId: PropTypes.oneOfType([
+    PropTypes.number,
+    PropTypes.string,
+    PropTypes.oneOf([null]),
+  ]),
+  currentExternalMaintainerLabel: PropTypes.string,
+  currentExternalMaintainerCompany: PropTypes.string,
+
+  isAssignButtonDisabled: PropTypes.bool.isRequired,
+  assigningExternal: PropTypes.bool.isRequired,
+  handleAssignExternalMaintainer: PropTypes.func.isRequired,
+
+  handleImageClick: PropTypes.func.isRequired,
+};
+
+AssignedReportsBoard.propTypes = {
+  loadingDone: PropTypes.bool.isRequired,
+  reports: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      title: PropTypes.string,
+      address: PropTypes.string,
+      created_at: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.instanceOf(Date),
+      ]),
+      category_id: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.number,
+      ]),
+      status: PropTypes.string,
+    })
+  ).isRequired,
+  statusColumns: PropTypes.objectOf(PropTypes.string).isRequired,
+  reportsByStatus: PropTypes.objectOf(PropTypes.array).isRequired,
+  visibleCount: PropTypes.number.isRequired,
+  maxReportsAvailable: PropTypes.number.isRequired,
+  formatAddress: PropTypes.func.isRequired,
+  categoryMap: PropTypes.objectOf(PropTypes.string).isRequired,
+  getCategoryBadge: PropTypes.func.isRequired,
+  onReportClick: PropTypes.func.isRequired,
+  onLoadMore: PropTypes.func.isRequired,
+};
+
+
+TechReportInfoTab.propTypes = {
+  completeReportData: PropTypes.shape({
+    title: PropTypes.string,
+    description: PropTypes.string,
+    is_anonymous: PropTypes.bool,
+    created_at: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.instanceOf(Date),
+    ]),
+    user: PropTypes.shape({
+      username: PropTypes.string,
+      complete_name: PropTypes.string,
+    }),
+    photos: PropTypes.arrayOf(
+      PropTypes.shape({
+        url: PropTypes.string.isRequired,
+        description: PropTypes.string,
+      })
+    ),
+    category: PropTypes.shape({
+      name: PropTypes.string.isRequired,
+    }).isRequired,
+    status: PropTypes.string.isRequired,
+  }).isRequired,
+
+  mapRef: PropTypes.shape({ current: PropTypes.any }),
+  modalPage: PropTypes.oneOf(['info', 'comments']).isRequired,
+
+  statusColumns: PropTypes.objectOf(PropTypes.string).isRequired,
+  formatAddress: PropTypes.func.isRequired,
+
+  canAssignExternal: PropTypes.bool.isRequired,
+  reportCategoryName: PropTypes.string,
+
+  externalMaintainers: PropTypes.arrayOf(PropTypes.object).isRequired,
+  maintainerOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
+
+  selectedExternalMaintainer: PropTypes.oneOfType([
+    PropTypes.number,
+    PropTypes.string,
+    PropTypes.oneOf([null]),
+  ]),
+  setSelectedExternalMaintainer: PropTypes.func.isRequired,
+
+  isLoadingMaintainers: PropTypes.bool.isRequired,
+  maintainersError: PropTypes.string,
+
+  currentExternalMaintainerId: PropTypes.oneOfType([
+    PropTypes.number,
+    PropTypes.string,
+    PropTypes.oneOf([null]),
+  ]),
+  currentExternalMaintainerLabel: PropTypes.string,
+  currentExternalMaintainerCompany: PropTypes.string,
+
+  isAssignButtonDisabled: PropTypes.bool.isRequired,
+  assigningExternal: PropTypes.bool.isRequired,
+  handleAssignExternalMaintainer: PropTypes.func.isRequired,
+
+  handleImageClick: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
+
+TechReportCommentsTab.propTypes = {
+  comments: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+      user_id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+      role_name: PropTypes.string,
+      first_name: PropTypes.string,
+      last_name: PropTypes.string,
+      timestamp: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.instanceOf(Date),
+      ]).isRequired,
+      text: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  userId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+  newComment: PropTypes.string.isRequired,
+  setNewComment: PropTypes.func.isRequired,
+  writeComment: PropTypes.func.isRequired,
+  isSubmittingComment: PropTypes.bool.isRequired,
+};
+
+ImagePreviewModal.propTypes = {
+  show: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  image: PropTypes.string,
+};
 
 export default TechAssignedReports;
