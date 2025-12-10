@@ -38,61 +38,61 @@ function TechAssignedReports() {
   const [loadingDone, setLoadingDone] = useState(false);
   const [categoryMap, setCategoryMap] = useState({});
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
-const [externalMaintainers, setExternalMaintainers] = useState([]);
-const [selectedExternalMaintainer, setSelectedExternalMaintainer] = useState(null);
-const [isLoadingMaintainers, setIsLoadingMaintainers] = useState(false);
-const [maintainersError, setMaintainersError] = useState("");
-const [assigningExternal, setAssigningExternal] = useState(false);
-const assignableStatuses = ["assigned", "in_progress", "suspended"];
+  const [externalMaintainers, setExternalMaintainers] = useState([]);
+  const [selectedExternalMaintainer, setSelectedExternalMaintainer] = useState(null);
+  const [isLoadingMaintainers, setIsLoadingMaintainers] = useState(false);
+  const [maintainersError, setMaintainersError] = useState("");
+  const [assigningExternal, setAssigningExternal] = useState(false);
+  const assignableStatuses = ["assigned", "in_progress", "suspended"];
 
-const assignedReportOwnerId =
-  completeReportData?.assigned_to?.id ??
-  completeReportData?.assignedTo?.id ??
-  (typeof completeReportData?.assigned_to === "number"
-    ? completeReportData.assigned_to
-    : typeof completeReportData?.assignedTo === "number"
-    ? completeReportData.assignedTo
-    : null);
-const canAssignExternal =
-  Boolean(
-    completeReportData &&
+  const assignedReportOwnerId =
+    completeReportData?.assigned_to?.id ??
+    completeReportData?.assignedTo?.id ??
+    (typeof completeReportData?.assigned_to === "number"
+      ? completeReportData.assigned_to
+      : typeof completeReportData?.assignedTo === "number"
+        ? completeReportData.assignedTo
+        : null);
+  const canAssignExternal =
+    Boolean(
+      completeReportData &&
       assignableStatuses.includes(completeReportData.status) &&
       assignedReportOwnerId === userId
-  );
-const reportCategoryName =
-  completeReportData?.category?.name ||
-  (completeReportData?.category_id &&
-    categoryMap[completeReportData.category_id]) ||
-  (completeReportData?.category_id
-    ? `Category ${completeReportData.category_id}`
-    : "");
-const currentExternalMaintainerId =
-  typeof completeReportData?.external_user === "object"
-    ? completeReportData.external_user?.id
-    : typeof completeReportData?.external_user === "number"
-    ? completeReportData.external_user
-    : null;
-const currentExternalMaintainerLabel =
-  typeof completeReportData?.external_user === "object"
-    ? completeReportData.external_user.complete_name ||
+    );
+  const reportCategoryName =
+    completeReportData?.category?.name ||
+    (completeReportData?.category_id &&
+      categoryMap[completeReportData.category_id]) ||
+    (completeReportData?.category_id
+      ? `Category ${completeReportData.category_id}`
+      : "");
+  const currentExternalMaintainerId =
+    typeof completeReportData?.external_user === "object"
+      ? completeReportData.external_user?.id
+      : typeof completeReportData?.external_user === "number"
+        ? completeReportData.external_user
+        : null;
+  const currentExternalMaintainerLabel =
+    typeof completeReportData?.external_user === "object"
+      ? completeReportData.external_user.complete_name ||
       completeReportData.external_user.username ||
       (currentExternalMaintainerId
         ? `Maintainer #${currentExternalMaintainerId}`
         : null)
-    : currentExternalMaintainerId
-    ? `Maintainer #${currentExternalMaintainerId}`
-    : null;
-const currentExternalMaintainerCompany =
-  typeof completeReportData?.external_user === "object"
-    ? completeReportData.external_user.company_name || null
-    : null;
-const currentExternalMaintainerOption =
-  currentExternalMaintainerId &&
-  externalMaintainers.find((m) => m.id === currentExternalMaintainerId);
-const maintainerOptions =
-  currentExternalMaintainerId &&
-  !externalMaintainers.some((m) => m.id === currentExternalMaintainerId)
-    ? [
+      : currentExternalMaintainerId
+        ? `Maintainer #${currentExternalMaintainerId}`
+        : null;
+  const currentExternalMaintainerCompany =
+    typeof completeReportData?.external_user === "object"
+      ? completeReportData.external_user.company_name || null
+      : null;
+  const currentExternalMaintainerOption =
+    currentExternalMaintainerId &&
+    externalMaintainers.find((m) => m.id === currentExternalMaintainerId);
+  const maintainerOptions =
+    currentExternalMaintainerId &&
+      !externalMaintainers.some((m) => m.id === currentExternalMaintainerId)
+      ? [
         {
           id: currentExternalMaintainerId,
           fullName:
@@ -108,12 +108,12 @@ const maintainerOptions =
         },
         ...externalMaintainers,
       ]
-    : externalMaintainers;
-const isAssignButtonDisabled =
-  assigningExternal ||
-  isLoadingMaintainers ||
-  !selectedExternalMaintainer ||
-  selectedExternalMaintainer === currentExternalMaintainerId;
+      : externalMaintainers;
+  const isAssignButtonDisabled =
+    assigningExternal ||
+    isLoadingMaintainers ||
+    !selectedExternalMaintainer ||
+    selectedExternalMaintainer === currentExternalMaintainerId;
 
   // comment section variables
   const [modalPage, setModalPage] = useState("info");
@@ -362,7 +362,7 @@ const isAssignButtonDisabled =
 
     try {
       await createComment(completeReportData.id, "private", newComment);
-      
+
       // clear textarea
       setNewComment("");
 
@@ -567,9 +567,8 @@ const isAssignButtonDisabled =
             </button>
 
             <button
-              className={`modal-tab ${
-                modalPage === "comments" ? "active" : ""
-              }`}
+              className={`modal-tab ${modalPage === "comments" ? "active" : ""
+                }`}
               onClick={() => setModalPage("comments")}
             >
               Comments
@@ -637,8 +636,8 @@ const isAssignButtonDisabled =
                     {completeReportData.is_anonymous
                       ? "Anonymous"
                       : completeReportData.user?.username ||
-                        completeReportData.user?.complete_name ||
-                        "Unknown"}
+                      completeReportData.user?.complete_name ||
+                      "Unknown"}
                   </div>
 
                   <div className='mb-3'>
@@ -710,19 +709,17 @@ const isAssignButtonDisabled =
                           {isLoadingMaintainers
                             ? "Loading external maintainers..."
                             : externalMaintainers.length === 0
-                            ? "No external maintainers available"
-                            : "Select an external maintainer"}
+                              ? "No external maintainers available"
+                              : "Select an external maintainer"}
                         </option>
                         {maintainerOptions.map((maintainer) => {
                           const maintainerName =
                             maintainer.fullName ||
                             maintainer.username ||
                             `Maintainer #${maintainer.id}`;
-                          const optionLabel = `${maintainerName} — ${
-                            maintainer.companyName || "Unknown company"
-                          }${
-                            reportCategoryName ? ` • ${reportCategoryName}` : ""
-                          }`;
+                          const optionLabel = `${maintainerName} — ${maintainer.companyName || "Unknown company"
+                            }${reportCategoryName ? ` • ${reportCategoryName}` : ""
+                            }`;
                           return (
                             <option key={maintainer.id} value={maintainer.id}>
                               {optionLabel}
@@ -737,7 +734,7 @@ const isAssignButtonDisabled =
                       )}
                       {!maintainersError &&
                         selectedExternalMaintainer ===
-                          currentExternalMaintainerId &&
+                        currentExternalMaintainerId &&
                         currentExternalMaintainerId !== null && (
                           <Form.Text className='text-muted d-block mt-1'>
                             Select a different external maintainer to enable
@@ -789,23 +786,30 @@ const isAssignButtonDisabled =
                       {comments.map((c, i) => (
                         <div key={i} className='mb-3 pb-2 border-bottom'>
                           <div className='d-flex justify-content-between align-items-start'>
-                            <div className='d-flex align-items-center'>
-                              <div
-                                style={{
-                                  width: "14px",
-                                  height: "14px",
-                                  borderRadius: "50%",
-                                  backgroundColor:
-                                    c.user_id === userId
-                                      ? "#F5E078"
-                                      : "#0350b5",
-                                  marginRight: "8px",
-                                }}
-                              ></div>
 
-                              <strong className='me-2'>
-                                {c.user_id === userId ? "Me" : author_type}
-                              </strong>
+                            <div className="d-flex flex-column">
+                              {c.user_id !== userId && c.role_name && (
+                                <small className="text-muted">
+                                  {c.role_name.replaceAll("_", " ")}
+                                </small>
+                              )}
+                              <div className='d-flex align-items-center'>
+                                <div
+                                  style={{
+                                    width: "14px",
+                                    height: "14px",
+                                    borderRadius: "50%",
+                                    backgroundColor:
+                                      c.user_id === userId
+                                        ? "#F5E078"
+                                        : "#0350b5",
+                                    marginRight: "8px",
+                                  }}
+                                ></div>
+                                <strong>
+                                  {c.user_id === userId ? "Me" : `${c.first_name} ${c.last_name}`}
+                                </strong>
+                              </div>
                             </div>
 
                             <small className='text-muted'>
@@ -835,27 +839,27 @@ const isAssignButtonDisabled =
                       />
                     </Form.Group>
 
-                  <hr />
+                    <hr />
 
-                  <div className='d-flex justify-content-end'>
-                    <Button
-                      className='confirm-button'
-                      type='submit'
-                      disabled={isSubmittingComment}
-                    >
-                      {isSubmittingComment ? (
-                        <>
-                          <span className='spinner-border spinner-border-sm me-2' />
-                          Posting...
-                        </>
-                      ) : (
-                        "Post comment"
-                      )}
-                    </Button>
-                  </div>
-                </Form>
-              </>
-            )}
+                    <div className='d-flex justify-content-end'>
+                      <Button
+                        className='confirm-button'
+                        type='submit'
+                        disabled={isSubmittingComment}
+                      >
+                        {isSubmittingComment ? (
+                          <>
+                            <span className='spinner-border spinner-border-sm me-2' />
+                            Posting...
+                          </>
+                        ) : (
+                          "Post comment"
+                        )}
+                      </Button>
+                    </div>
+                  </Form>
+                </>
+              )}
             </>
           )}
         </Modal.Body>

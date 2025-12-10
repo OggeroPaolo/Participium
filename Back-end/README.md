@@ -337,7 +337,11 @@ Authorization: Bearer <firebase-token>
         "username": "mariorossi",
         "type": "private",
         "text": "Nice work",
-        "timestamp": "2025-11-24 18:10:20"
+        "timestamp": "2025-11-24 18:10:20",
+        "username": "CarlosSainz",
+        "first_name": "Carlos",
+        "last_name": "Sainz",
+        "role_name"
     }
 ]
 ```

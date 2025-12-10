@@ -257,7 +257,7 @@ function ExtAssignedReports() {
     }
   };
 
-  
+
   // handle posting of new comments
   const writeComment = async (e) => {
     e.preventDefault();
@@ -268,7 +268,7 @@ function ExtAssignedReports() {
 
     try {
       await createComment(completeReportData.id, "private", newComment);
-      
+
       // clear textarea
       setNewComment("");
 
@@ -401,9 +401,8 @@ function ExtAssignedReports() {
             </button>
 
             <button
-              className={`modal-tab ${
-                modalPage === "comments" ? "active" : ""
-              }`}
+              className={`modal-tab ${modalPage === "comments" ? "active" : ""
+                }`}
               onClick={() => setModalPage("comments")}
             >
               Comments
@@ -471,8 +470,8 @@ function ExtAssignedReports() {
                     {completeReportData.is_anonymous
                       ? "Anonymous"
                       : completeReportData.user?.username ||
-                        completeReportData.user?.complete_name ||
-                        "Unknown"}
+                      completeReportData.user?.complete_name ||
+                      "Unknown"}
                   </div>
 
                   <div className='mb-3'>
@@ -547,21 +546,21 @@ function ExtAssignedReports() {
                       </Button>
                       {statusColumns[completeReportData.status] !==
                         "Resolved" && (
-                        <Button
-                          type='submit'
-                          disabled={isSubmitting}
-                          className='confirm-button'
-                        >
-                          {isSubmitting ? (
-                            <>
-                              <span className='spinner-border spinner-border-sm me-2' />
-                              Submitting...
-                            </>
-                          ) : (
-                            "Update status"
-                          )}
-                        </Button>
-                      )}
+                          <Button
+                            type='submit'
+                            disabled={isSubmitting}
+                            className='confirm-button'
+                          >
+                            {isSubmitting ? (
+                              <>
+                                <span className='spinner-border spinner-border-sm me-2' />
+                                Submitting...
+                              </>
+                            ) : (
+                              "Update status"
+                            )}
+                          </Button>
+                        )}
                     </div>
                   </Form>
                 </>
@@ -575,23 +574,30 @@ function ExtAssignedReports() {
                       {comments.map((c, i) => (
                         <div key={i} className='mb-3 pb-2 border-bottom'>
                           <div className='d-flex justify-content-between align-items-start'>
-                            <div className='d-flex align-items-center'>
-                              <div
-                                style={{
-                                  width: "14px",
-                                  height: "14px",
-                                  borderRadius: "50%",
-                                  backgroundColor:
-                                    c.user_id === userId
-                                      ? "#F5E078"
-                                      : "#0350b5",
-                                  marginRight: "8px",
-                                }}
-                              ></div>
 
-                              <strong className='me-2'>
-                                {c.user_id === userId ? "Me" : author_type}
-                              </strong>
+                            <div className="d-flex flex-column">
+                              {c.user_id !== userId && c.role_name && (
+                                <small className="text-muted">
+                                  {c.role_name.replaceAll("_", " ")}
+                                </small>
+                              )}
+                              <div className='d-flex align-items-center'>
+                                <div
+                                  style={{
+                                    width: "14px",
+                                    height: "14px",
+                                    borderRadius: "50%",
+                                    backgroundColor:
+                                      c.user_id === userId
+                                        ? "#F5E078"
+                                        : "#0350b5",
+                                    marginRight: "8px",
+                                  }}
+                                ></div>
+                                <strong>
+                                  {c.user_id === userId ? "Me" : `${c.first_name} ${c.last_name}`}
+                                </strong>
+                              </div>
                             </div>
 
                             <small className='text-muted'>
