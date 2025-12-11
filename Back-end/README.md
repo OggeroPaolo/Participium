@@ -331,6 +331,56 @@ status: pending_approval, assigned, in_progress, suspended, rejected, resolved
 }
 ```
 
+**POST `/reports/:reportId/comments`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** reportId
+
+* **Request Body:**
+```json
+{
+  "type": "private",
+  "text": "Broken streetlight"
+}
+```  
+* **Success Response (201 Created):**
+
+```json
+{
+  "comment": {
+        "id": 10,
+        "user_id": 1,
+        "report_id": 2,
+        "type": "private",
+        "text": "Nice Work",
+        "timestamp": "2025-11-24 18:10:20"
+    }
+}
+```
+
+* **Error Response (400 Bad Request - Validation errors):**
+
+```json
+{
+  "errors": [
+    { "msg": "type is required", "param": "type", "location": "body" }
+  ]
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal Server Error"
+}
+```
+
 **GET `/reports/:reportId/internal-comments`**
 
 * **Request Headers:** 
@@ -348,15 +398,14 @@ Authorization: Bearer <firebase-token>
         {
         "id": 10,
         "report_id": 1,
-        "category_id": 2,
-        "username": "mariorossi",
+        "user_id": 2,
         "type": "private",
         "text": "Nice work",
         "timestamp": "2025-11-24 18:10:20",
         "username": "CarlosSainz",
         "first_name": "Carlos",
         "last_name": "Sainz",
-        "role_name"
+        "role_name": "officer"
     }
 ]
 ```
