@@ -83,15 +83,49 @@ sections:
 
 ## ASSESSMENT
 
-- What caused your errors in estimation (if any)?
+#### What caused your errors in estimation (if any)?
+- Overall, our estimates were more realistic than in the previous sprint, but we still had slight overestimations on some frontend tasks (e.g., responsiveness tweaks), mostly due to uncertainty about UI edge cases
+- For a few tasks, we underestimated the time needed to polish and fix small bugs after the main implementation was “done.”
+- We still didn’t fully factor in the overhead of context switching and code reviews, so tasks that looked small on paper sometimes slipped toward the end of the sprint.
 
-- What lessons did you learn (both positive and negative) in this sprint?
+#### What lessons did you learn (both positive and negative) in this sprint?
 
-- Which improvement goals set in the previous retrospective were you able to achieve?
-- Which ones you were not able to achieve? Why?
+**Positive:**
+- Our calibration of estimates improved compared to the previous sprint – there were fewer big surprises.
+- We see that our planning/spec quality is stable: we are not missing major requirements like we used to (but missing smaller tasks still happens).
+- We can consistently deliver working features, even when some work drifts into the last days.
 
-- Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
+**Negative:**
+- Improving estimates alone is not enough; our pacing still pushes too many implementations into the final 2–3 days.
+- Final integration, testing, and polishing take more time than we intuitively expect, and we still tend to treat them as “small” tasks.
+- We didn’t fully enforce mid-sprint checkpoints, so we lost the opportunity to re-balance workload earlier
 
-> Propose one or two
+#### Which improvement goals set in the previous retrospective were you able to achieve?
 
-- One thing you are proud of as a Team!!
+- **Goal 2 – Calibrate estimations (reduce fear-based overestimation):**
+Partially achieved. Our estimates, especially on frontend tasks like responsiveness, were closer to reality and less “fear padded” than before, even if some were still on the safe side.
+
+- **Goal 3 – Youtrack logging right after working on a task:**
+Partially achieved. We reminded frequently during the sprint to log the work, there is an improvement if we look at the previous sprint but we missed some logs so we can still improve
+
+#### Which ones you were not able to achieve? Why?
+
+- **Goal 1  – Smooth execution across the sprint (avoid last-minute crunch):**
+Not achieved. We again had a concentration of implementations and finishing touches in the last 2–3 days. We indeed achieved the bi-dailiy check and break large tasks into smaller chunks
+
+#### Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
+
+- **Goal 1  – Smooth execution across the sprint (avoid last-minute crunch):**
+- Ensure that by mid-sprint, at least 60–70% of critical stories are “To verify” or “Done.”
+- Continuing with daily/bi-daily check
+- Re-assign the task if necessary
+
+- **Goal 2  – Better management of Technical Debt:**
+- The issues in sprint 1/mid sprint 2 where 98, before starting TD management we peaked at 215 and by the end of sprint 3 we reached 156 (with no code smells with severity higher than "medium"). There is margin for improvement
+- Using sonar plugin along developing new feature we want to try to not increase the number of issues (not with this rapidity) in order to getting better code without increasing the hours dedicated to TD alone
+
+- **Goal 3 – Youtrack logging right after working on a task:**
+- We still need to achieve better logging, in order to update the team of the work done costantly
+
+#### One thing you are proud of as a Team!!
+Even though we still struggled with last-minute implementations, we clearly improved our estimation quality compared to the previous sprint and kept our planning, coordination, and delivery discipline strong. We’re showing that we can learn from each sprint, adjust our approach, and keep delivering working features while gradually tightening our process.
