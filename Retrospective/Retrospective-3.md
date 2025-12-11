@@ -13,15 +13,18 @@ sections:
 ### Macro statistics
 
 - Number of stories committed vs done :
+   
+  Stories committed: 5 vs. Stories done: 5
+
 - Total points committed vs done :
 - Nr of hours planned vs spent (as a team) :
 
 **Remember**  a story is done ONLY if it fits the Definition of Done:
  
-- Unit Tests passing
+- Unit Tests passing: 220
 - Code review completed
 - Code present on VCS
-- End-to-End tests performed
+- End-to-End tests performed: 77
 
 > Please refine your DoD 
 
@@ -42,16 +45,16 @@ sections:
 ## QUALITY MEASURES 
 
 - Unit Testing:
-  - Total hours estimated
-  - Total hours spent
-  - Nr of automated unit test cases 
-  - Coverage (if available)
+  - Total hours estimated: 3h
+  - Total hours spent: 3h 30m
+  - Nr of automated unit test cases:220
+  - Coverage: 99.68%
 - Integration testing:
-  - Total hours estimated
-  - Total hours spent
+  - Total hours estimated: 2h
+  - Total hours spent: 2h 40m
 - E2E testing:
-  - Total hours estimated
-  - Total hours spent
+  - Total hours estimated: 7h
+  - Total hours spent: 7h
 - Code review: 
   - Total hours estimated 
   - Total hours spent
