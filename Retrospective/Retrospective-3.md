@@ -56,9 +56,9 @@ sections:
   - Total hours estimated 
   - Total hours spent
 - Technical Debt management:
-  - Strategy adopted
-  - Total hours estimated estimated at sprint planning
-  - Total hours spent
+  - Strategy adopted: Take the last day of work to focus or resolving code smells (as stated in SONAR_TD.md)
+  - Total hours estimated estimated at sprint planning -> 2h
+  - Total hours spent -> 3h
   
 
 
