@@ -2,11 +2,10 @@ import request from "supertest";
 import { Express } from "express";
 import { describe, it, expect, beforeAll, afterEach, vi, beforeEach } from "vitest";
 import reportsRouter from "../../src/routes/reports.routes.js";
-import { makeTestApp } from "../setup/tests_util.js";
-import { initTestDB, resetTestDB } from "../setup/tests_util.js";
+import { initTestDB, resetTestDB , makeTestApp} from "../setup/tests_util.js";
 import ReportDAO from "../../src/dao/ReportDAO.js";
 import { Report } from "../../src/models/report.js";
-import path from "path";
+import path from "node:path";
 import cloudinary from "../../src/config/cloudinary.js";
 import { ReportStatus } from "../../src/models/reportStatus.js";
 import { Update } from "../../src/config/database.js";
@@ -21,10 +20,20 @@ const hasRealCloudinaryKey =
   !!process.env.CLOUDINARY_API_KEY &&
   !process.env.CLOUDINARY_API_KEY.includes("your-cloudinary-api-key");
 
-// Mock Firebase middleware to simulate an authenticated user
+const mockTechOfficer = { id: 10, role_name: "tech_officer", role_type: "tech_officer" };
+const mockExternalMaintainer = { id: 14, role_name: "external_maintainer", role_type: "external_maintainer" };
+const mockCitizen = { id: 1, role_name: "Citizen", role_type: "citizen" };
+
 vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
-  verifyFirebaseToken: () => (req: any, _res: any, next: any) => {
-    req.user = { id: mock_user_id, role_name: "pub_relations" };
+  verifyFirebaseToken: (roles: string[]) => (req: any, _res: any, next: any) => {
+    // Determine user based on route or default to tech officer
+    if (req.path?.includes("ext_maintainer")) {
+      req.user = mockExternalMaintainer;
+    } else if (req.path?.includes("tech_officer")) {
+      req.user = mockTechOfficer;
+    } else {
+      req.user = mockTechOfficer; // default
+    }
     next();
   },
 }));
