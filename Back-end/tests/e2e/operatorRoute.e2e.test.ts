@@ -224,13 +224,4 @@ describe("Operator Routes E2E", () => {
       expect(res.body).toEqual({ error: "Firebase email already exists" });
     });
   });
-
-
-  // ----------------------------
-  // GET /external-maintainer
-  // ----------------------------
-  /*describe("GET /external-maintainers", () => {
-    //TODO: Implement tests for the route
-
-  });*/
 });

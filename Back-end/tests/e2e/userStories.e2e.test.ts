@@ -1,17 +1,17 @@
 import request from "supertest";
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
-import { makeTestApp, initTestDB, resetTestDB } from "../../setup/tests_util.js";
-import reportsRouter from "../../../src/routes/reports.routes.js";
-import registrationsRouter from "../../../src/routes/registrations.routes.js";
-import ReportDAO from "../../../src/dao/ReportDAO.js";
-import CommentDAO from "../../../src/dao/CommentDAO.js";
-import OperatorDAO from "../../../src/dao/OperatorDAO.js";
-import { ReportStatus } from "../../../src/models/reportStatus.js";
-import * as emailService from "../../../src/services/emailService.js";
-import * as pendingUsers from "../../../src/services/pendingUsersService.js";
-import * as passwordEnc from "../../../src/services/passwordEncryptionSercive.js";
-import * as userService from "../../../src/services/userService.js";
-import UserDAO from "../../../src/dao/UserDAO.js";
+import { makeTestApp, initTestDB, resetTestDB } from "../setup/tests_util.js";
+import reportsRouter from "../../src/routes/reports.routes.js";
+import registrationsRouter from "../../src/routes/registrations.routes.js";
+import ReportDAO from "../../src/dao/ReportDAO.js";
+import CommentDAO from "../../src/dao/CommentDAO.js";
+import OperatorDAO from "../../src/dao/OperatorDAO.js";
+import { ReportStatus } from "../../src/models/reportStatus.js";
+import * as emailService from "../../src/services/emailService.js";
+import * as pendingUsers from "../../src/services/pendingUsersService.js";
+import * as passwordEnc from "../../src/services/passwordEncryptionSercive.js";
+import * as userService from "../../src/services/userService.js";
+import UserDAO from "../../src/dao/UserDAO.js";
 import bcrypt from "bcrypt";
 
 // Mock Firebase middleware for different user roles
@@ -22,7 +22,7 @@ const mockTechOfficer = { id: 10, role_name: "tech_officer", role_type: "tech_of
 const mockExternalMaintainer = { id: 14, role_name: "external_maintainer", role_type: "external_maintainer" };
 const mockCitizen = { id: 1, role_name: "Citizen", role_type: "citizen" };
 
-vi.mock("../../../src/middlewares/verifyFirebaseToken.js", () => ({
+vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
     verifyFirebaseToken: (roles: string[]) => (req: any, _res: any, next: any) => {
         // Determine user based on route or default to tech officer
         if (req.path?.includes("ext_maintainer")) {
