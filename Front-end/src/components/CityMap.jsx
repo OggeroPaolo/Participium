@@ -38,6 +38,8 @@ function CityMap({
   const markersRef = useRef({});
   const selectedLayerRef = useRef(L.layerGroup());
   const navigate = useNavigate();
+  const centerLat = Array.isArray(center) ? center[0] : 45.0703;
+  const centerLng = Array.isArray(center) ? center[1] : 7.6869;
 
   const reportIcon = L.icon({
     iconUrl: "/icons/light-blue-location-icon.png",
@@ -237,7 +239,7 @@ function CityMap({
     const mapInstance = L.map(mapRef.current, {
       preferCanvas: false,
       zoomControl: true,
-    }).setView(center, zoom);
+    }).setView([centerLat, centerLng], zoom);
 
     // Add OpenStreetMap tile layer
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -286,7 +288,7 @@ function CityMap({
       selectedLayerRef?.current?.clearLayers?.();
       currentMarkerRef.current = null;
     };
-  }, [center, zoom]);
+  }, [centerLat, centerLng, zoom]);
 
   //add city border to map
   useEffect(() => {

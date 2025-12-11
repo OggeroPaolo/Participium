@@ -65,6 +65,21 @@ The database is automatically seeded with:
 - 5 role types: citizen, pub_relations, tech_officer, external_maintainer, admin
 - 9 categories: Water Supply, Architectural Barriers, Sewer System, etc.
 
+### Technical Offices & Categories
+Every technical office is tied to exactly one issue category. During seeding (`seedDefaultOffices`) we create one `technical` office per category plus a single `Organization Office` for public-relations/admin staff. The mapping below is what FAQ PT08 refers to:
+
+- Water Supply – Drinking Water → Water Supply – Drinking Water Office
+- Architectural Barriers → Architectural Barriers Office
+- Sewer System → Sewer System Office
+- Public Lighting → Public Lighting Office
+- Waste → Waste Office
+- Road Signs and Traffic Lights → Road Signs and Traffic Lights Office
+- Roads and Urban Furnishings → Roads and Urban Furnishings Office
+- Public Green Areas and Playgrounds → Public Green Areas and Playgrounds Office
+- Other → Other Office
+
+Each `tech_officer` role points to one of the offices above (see `seedDefaultRoles`), which allows us to filter officers by the category they are allowed to handle.
+
 
 ## API Endpoints
 
@@ -316,6 +331,56 @@ status: pending_approval, assigned, in_progress, suspended, rejected, resolved
 }
 ```
 
+**POST `/reports/:reportId/comments`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** reportId
+
+* **Request Body:**
+```json
+{
+  "type": "private",
+  "text": "Broken streetlight"
+}
+```  
+* **Success Response (201 Created):**
+
+```json
+{
+  "comment": {
+        "id": 10,
+        "user_id": 1,
+        "report_id": 2,
+        "type": "private",
+        "text": "Nice Work",
+        "timestamp": "2025-11-24 18:10:20"
+    }
+}
+```
+
+* **Error Response (400 Bad Request - Validation errors):**
+
+```json
+{
+  "errors": [
+    { "msg": "type is required", "param": "type", "location": "body" }
+  ]
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal Server Error"
+}
+```
+
 **GET `/reports/:reportId/internal-comments`**
 
 * **Request Headers:** 
@@ -333,15 +398,14 @@ Authorization: Bearer <firebase-token>
         {
         "id": 10,
         "report_id": 1,
-        "category_id": 2,
-        "username": "mariorossi",
+        "user_id": 2,
         "type": "private",
         "text": "Nice work",
         "timestamp": "2025-11-24 18:10:20",
         "username": "CarlosSainz",
         "first_name": "Carlos",
         "last_name": "Sainz",
-        "role_name"
+        "role_name": "officer"
     }
 ]
 ```

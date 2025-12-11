@@ -1,18 +1,17 @@
-import { getAll, getOne } from '../config/database.js';
-import type { CreateCommentDTO } from '../dto/CommentDTO.js';
+import type { CreateCommentDTO, GetPrivateCommentDTO } from '../dto/CommentDTO.js';
 import type { Comment } from "../models/comment.js";
-import { Update } from '../config/database.js';
+import { Update, getAll, getOne } from '../config/database.js';
 
 export default class CommentDAO {
 
-    async getPrivateCommentsByReportId(reportId: number): Promise<Comment[]> {
+    async getPrivateCommentsByReportId(reportId: number): Promise<GetPrivateCommentDTO[]> {
         const sql = `
             SELECT c.id, c.report_id, c.user_id, c.type, c.text, c.timestamp, u.username, u.last_name, u.first_name, r.name AS role_name
             FROM comments c, users u, roles r
             WHERE c.user_id = u.id AND u.role_id = r.id AND c.report_id = ? AND c.type = 'private'
         `;
 
-        return getAll<Comment>(sql, [reportId])
+        return getAll<GetPrivateCommentDTO>(sql, [reportId])
     }
 
     async getCommentById(id: number): Promise<Comment | undefined> {
@@ -48,7 +47,7 @@ export default class CommentDAO {
 
         const newComment = await this.getCommentById(result.lastID);
 
-        if(!newComment) {
+        if (!newComment) {
             throw new Error("Comment created but issue with retrieving it")
         }
 

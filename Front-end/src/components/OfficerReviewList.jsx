@@ -6,7 +6,6 @@ import {
   Modal,
   Form,
   Button,
-  Alert,
   Spinner,
 } from "react-bootstrap";
 import {
@@ -19,6 +18,7 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import PropTypes from 'prop-types';
+import AlertBlock from "./AlertBlock";
 
 function OfficerReviewList() {
   const [reports, setReports] = useState([]);
@@ -401,15 +401,6 @@ function OfficerReviewList() {
         </Modal.Body>
       </Modal>
     </Container>
-  );
-}
-
-function AlertBlock({ alert, onClose }) {
-  if (!alert.show) return null;
-  return (
-    <Alert variant={alert.variant} dismissible onClose={onClose}>
-      {alert.message}
-    </Alert>
   );
 }
 
@@ -823,15 +814,6 @@ function ReviewContent({
     </>
   );
 }
-
-AlertBlock.propTypes = {
-  alert: PropTypes.shape({
-    show: PropTypes.bool.isRequired,
-    message: PropTypes.string.isRequired,
-    variant: PropTypes.string.isRequired,
-  }).isRequired,
-  onClose: PropTypes.func.isRequired,
-};
 
 ReportsSection.propTypes = {
   isLoadingInitial: PropTypes.bool.isRequired,
