@@ -17,6 +17,9 @@ const mock_user_id = 3;
 //Use for clean up of Create Report test
 let testUploadedUrls: string[] = [];
 const testImg = path.join(__dirname, "../test_img/test.jpg");
+const hasRealCloudinaryKey =
+  !!process.env.CLOUDINARY_API_KEY &&
+  !process.env.CLOUDINARY_API_KEY.includes("your-cloudinary-api-key");
 
 // Mock Firebase middleware to simulate an authenticated user
 vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
@@ -33,6 +36,16 @@ describe("Reports E2E", () => {
   beforeAll(async () => {
     await initTestDB();
     app = makeTestApp(reportsRouter);
+  });
+
+  beforeEach(() => {
+    // If no real Cloudinary credentials are configured, mock upload/destroy to avoid external calls.
+    if (!hasRealCloudinaryKey) {
+      vi.spyOn(cloudinary.uploader, "upload").mockImplementation(async (_path: string) => {
+        return { secure_url: "https://example.com/mock-photo.jpg" } as any;
+      });
+      vi.spyOn(cloudinary.uploader, "destroy").mockResolvedValue({ result: "ok" } as any);
+    }
   });
 
   afterEach(async () => {

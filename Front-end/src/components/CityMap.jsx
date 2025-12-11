@@ -366,6 +366,7 @@ function CityMap({
 
       {selectedPoint && (
         <div
+          className="location-info-box"
           style={{
             position: "absolute",
             top: "10px",

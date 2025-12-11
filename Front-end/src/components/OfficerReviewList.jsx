@@ -343,13 +343,15 @@ function OfficerReviewList() {
       <h2 className='mb-4 fw-bold'>Pending Reports Review</h2>
       <AlertBlock alert={alert} onClose={() => setAlert({ ...alert, show: false })} />
 
-      <ReportsSection
-        isLoadingInitial={isLoadingInitial}
-        reports={reports}
-        categoryMap={categoryMap}
-        getCategoryBadge={getCategoryBadge}
-        onReportClick={handleReportClick}
-      />
+      <div className="officer-review-cards">
+        <ReportsSection
+          isLoadingInitial={isLoadingInitial}
+          reports={reports}
+          categoryMap={categoryMap}
+          getCategoryBadge={getCategoryBadge}
+          onReportClick={handleReportClick}
+        />
+      </div>
 
       <ReviewModal
         show={showModal}
@@ -619,6 +621,7 @@ function ReviewContent({
         </p>
         <div
           ref={mapRef}
+          className="map-container"
           style={{
             width: '100%',
             height: '250px',

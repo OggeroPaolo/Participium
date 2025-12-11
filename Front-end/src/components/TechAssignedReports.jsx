@@ -476,7 +476,7 @@ function TechAssignedReports() {
   };
 
   return (
-    <Container className='py-4 body-font'>
+    <Container className='py-4 body-font assigned-reports-container'>
       <h2 className='mb-4 fw-bold'>Assigned Reports Review</h2>
 
       <AlertBlock alert={alert} onClose={() => setAlert({ ...alert, show: false })} />
@@ -821,6 +821,7 @@ function TechReportInfoTab({
       {/* Minimal read-only map */}
       <div
         ref={mapRef}
+                className="map-container"
         style={{
           width: '100%',
           height: '250px',

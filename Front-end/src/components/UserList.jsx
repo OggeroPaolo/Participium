@@ -94,7 +94,7 @@ function UserList() {
           <div className='d-flex flex-column gap-3'>
             {users.map((u) => {
               return (
-                <Card key={u.email} className='shadow-sm'>
+                <Card key={u.email} className='shadow-sm user-list-card'>
                   <Card.Body>
                     <Row>
                       <Col xs={12} md={8}>
@@ -117,7 +117,7 @@ function UserList() {
                         </div>
                       </Col>
                       
-                      <Col xs={12} md={4} className='text-md-end'>
+                      <Col xs={12} md={4} className='text-md-end mt-2 mt-md-0'>
                         <span 
                           className='badge bg-primary'
                           style={{ fontSize: '0.85rem' }}

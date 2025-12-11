@@ -288,7 +288,7 @@ function ExtAssignedReports() {
   };
 
   return (
-    <Container className='py-4 body-font'>
+    <Container className='py-4 body-font assigned-reports-container'>
       <h2 className='mb-4 fw-bold'>Assigned Reports Review</h2>
 
       {alert.show && (
@@ -453,6 +453,7 @@ function ExtAssignedReports() {
               {/* Minimal read-only map: must be always rendered */}
               <div
                 ref={mapRef}
+                className="map-container"
                 style={{
                   width: "100%",
                   height: "250px",

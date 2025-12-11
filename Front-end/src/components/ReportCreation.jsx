@@ -348,9 +348,10 @@ function MapReport(props) {
 
   return (
     <div style={{ position: "relative", width: "100%" }}>
-      <div ref={mapRef} style={{ height: "400px", width: "100%" }} />
+      <div ref={mapRef} className="report-creation-map" style={{ height: "400px", width: "100%" }} />
 
       <div
+        className="location-info-box"
         style={{
           position: "absolute",
           top: "10px",
