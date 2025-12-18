@@ -392,8 +392,8 @@ router.patch("/pub_relations/reports/:reportId",
                 assigneeId = await operatorDAO.getAssigneeId(categoryIdFinal);
             }
             if (status === "assigned" && officerId) {
-                const officerCategoryId = await operatorDAO.getCategoryOfOfficer(officerId);
-                if (officerCategoryId === categoryIdFinal) {
+                const officerCategoryId = await operatorDAO.getCategoriesOfOfficer(officerId);
+                if (officerCategoryId.includes(categoryIdFinal)) {
                     assigneeId = officerId
                 } else {
                     return res.status(403).json({

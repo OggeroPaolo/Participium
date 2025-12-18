@@ -5,6 +5,7 @@ import router from "../../../src/routes/operator.routes.js";
 import * as userService from "../../../src/services/userService.js";
 import OperatorDAO from "../../../src/dao/OperatorDAO.js";
 import { ExternalUserDTO } from "../../../src/dto/externalUserDTO.js";
+import { User } from "../../../src/models/user.js";
 
 // Mock firebase middleware
 vi.mock("../../../src/middlewares/verifyFirebaseToken.js", () => ({
@@ -20,7 +21,7 @@ beforeEach(() => {
 describe("Operator Routes Unit Test", () => {
   describe("GET /operators", () => {
     it("should return 200 with a list of operators", async () => {
-      const mockOperators = [
+      const mockOperators: User[] = [
         {
           id: 1,
           firebase_uid: "uid1",
@@ -28,8 +29,10 @@ describe("Operator Routes Unit Test", () => {
           username: "op1",
           first_name: "Alice",
           last_name: "Doe",
-          role_name: "Operator",
-          role_type: "tech_officer",
+          roles: [{
+            role_name: "Operator",
+            role_type: "tech_officer",
+          }]
         },
         {
           id: 2,
@@ -38,8 +41,10 @@ describe("Operator Routes Unit Test", () => {
           username: "op2",
           first_name: "Bob",
           last_name: "Smith",
-          role_name: "Municipal_public_relations_officer",
-          role_type: "pub_relations",
+          roles: [
+            { role_name: "Water Utility Officer", role_type: "tech_officer" },
+            { role_name: "Light Officer", role_type: "tech_officer" },
+          ],
         },
       ];
 

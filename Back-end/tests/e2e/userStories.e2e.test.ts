@@ -429,39 +429,7 @@ describe("User Story Integration Tests", () => {
      * So that coordination happens without exposing internal notes to citizens
      */
     describe("US4: Internal Comments Exchange", () => {
-        let reportId: number;
-
-        beforeEach(async () => {
-            // Setup: Create a report
-            // Use category 7 (Roads and Urban Furnishings) which matches both users
-            const reportDAO = new ReportDAO();
-            
-            // Create report (will be pending_approval)
-            const report = await reportDAO.createReport({
-                user_id: 1,
-                category_id: 7, // Roads and Urban Furnishings
-                title: "Coordination needed",
-                description: "Requires coordination",
-                address: "Via Coordination 3",
-                position_lat: 45.0703,
-                position_lng: 7.6869,
-                is_anonymous: false,
-            });
-            reportId = report.id!;
-
-            // Assign report to tech officer
-            await reportDAO.updateReportStatusAndAssign(
-                reportId,
-                ReportStatus.Assigned,
-                3, // reviewer (public relations officer from seed data)
-                null, // no note
-                7, // category_id
-                mockTechOfficer.id // assignee
-            );
-
-            // Assign external maintainer
-            await reportDAO.updateReportExternalMaintainer(reportId, mockExternalMaintainer.id);
-        });
+        let reportId = 3;
 
         it("should allow tech officer to create internal comment", async () => {
             // Execute: Create comment as tech officer

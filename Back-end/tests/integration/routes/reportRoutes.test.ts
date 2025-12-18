@@ -11,6 +11,7 @@ import cloudinary from "../../../src/config/cloudinary.js";
 import { ReportStatus } from "../../../src/models/reportStatus.js";
 import { CompleteReportDTO } from "../../../src/dto/ReportWithPhotosDTO.js";
 import CommentDAO from "../../../src/dao/CommentDAO.js";
+import { GetPrivateCommentDTO } from "../../../src/dto/CommentDTO.js";
 
 const mock_user_id = 3;
 // Mock Firebase middleware
@@ -999,22 +1000,30 @@ describe("Report Routes Integration Tests", () => {
         const reportId = 1;
 
         it("should return 200 with comments if comments exist", async () => {
-            const mockComments = [
+            const mockComments: GetPrivateCommentDTO[] = [
                 {
                     id: 1,
                     report_id: reportId,
                     user_id: 11,
-                    type: "note",
+                    type: "private",
                     text: "Check the issue",
                     timestamp: new Date().toISOString(),
+                    username: "Officer",
+                    last_name: "Test",
+                    first_name: "Officer",
+                    role_name: "Officer"
                 },
                 {
                     id: 2,
                     report_id: reportId,
                     user_id: 12,
-                    type: "update",
+                    type: "private",
                     text: "Started fixing",
                     timestamp: new Date().toISOString(),
+                    username: "Extarnal",
+                    last_name: "Test",
+                    first_name: "External",
+                    role_name: "External"
                 },
             ];
 
@@ -1022,7 +1031,6 @@ describe("Report Routes Integration Tests", () => {
 
             const res = await request(app)
                 .get(`/report/${reportId}/internal-comments`)
-                .set("Authorization", "Bearer fake-token"); // if your verifyFirebaseToken requires headers
 
             expect(res.status).toBe(200);
             expect(res.body).toEqual({ comments: mockComments });
@@ -1033,7 +1041,6 @@ describe("Report Routes Integration Tests", () => {
 
             const res = await request(app)
                 .get(`/report/${reportId}/internal-comments`)
-                .set("Authorization", "Bearer fake-token");
 
             expect(res.status).toBe(204);
             expect(res.body).toEqual({});
@@ -1044,7 +1051,6 @@ describe("Report Routes Integration Tests", () => {
 
             const res = await request(app)
                 .get(`/report/${reportId}/internal-comments`)
-                .set("Authorization", "Bearer fake-token");
 
             expect(res.status).toBe(500);
             expect(res.body).toEqual({ error: "Internal server error" });

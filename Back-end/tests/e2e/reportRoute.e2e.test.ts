@@ -2,13 +2,14 @@ import request from "supertest";
 import { Express } from "express";
 import { describe, it, expect, beforeAll, afterEach, vi, beforeEach } from "vitest";
 import reportsRouter from "../../src/routes/reports.routes.js";
-import { initTestDB, resetTestDB , makeTestApp} from "../setup/tests_util.js";
+import { initTestDB, resetTestDB, makeTestApp } from "../setup/tests_util.js";
 import ReportDAO from "../../src/dao/ReportDAO.js";
 import { Report } from "../../src/models/report.js";
 import path from "node:path";
 import cloudinary from "../../src/config/cloudinary.js";
 import { ReportStatus } from "../../src/models/reportStatus.js";
 import { Update } from "../../src/config/database.js";
+import CommentDAO from "../../src/dao/CommentDAO.js";
 
 
 const mock_user_id = 3;
@@ -222,7 +223,6 @@ describe("Reports E2E", () => {
     });
 
   });
-
 
   describe("POST /reports", () => {
     afterEach(async () => {
@@ -487,42 +487,47 @@ describe("Reports E2E", () => {
   });
 
 
-
-  /*
-  
-    describe("PATCH /tech_officer/reports/:reportId/assign_external", () => {
-    });
-  
-  
-    describe.skip("PATCH /ext_maintainer/reports/:reportId", () => {
-     
-    });
-
-
   describe("GET /report/:reportId/internal-comments", () => {
-    const mockReportId = 1;
-    it("should assign report to external maintainer successfully", async () => {
-      const res = await request(app)
-        .get(`/report/${mockReportId}/internal-comments`)
-      expect(res.status).toBe(200);
-    });
-  });
 
-  describe("POST /reports/:reportId/comments", () => {
     const reportId = 3;
-
-    it("creates a comment successfully", async () => {
+    it("should return 200 with internal comments", async () => {
       const res = await request(app)
-        .post(`/reports/${reportId}/comments`)
-        .send({
-          type: "private",
-          text: "internal note",
-        });
+        .get(`/report/${reportId}/internal-comments`);
 
-      expect(res.status).toBe(201);
-      console.log(res.body);
-
+      expect(res.status).toBe(200);
+      expect(res.body.comments.length).toBeGreaterThan(0);
     });
+
+    it("should return 204 when no internal comments exist", async () => {
+      const res = await request(app)
+        .get(`/report/999/internal-comments`);
+
+      expect(res.status).toBe(204);
+      expect(res.body).toEqual({});
+    });
+
+    it("should return 500 if DAO throws an error", async () => {
+      const spy = vi
+        .spyOn(CommentDAO.prototype, "getPrivateCommentsByReportId")
+        .mockRejectedValue(new Error("DB failure"));
+
+      const res = await request(app)
+        .get(`/report/${reportId}/internal-comments`);
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: "Internal server error" });
+
+      spy.mockRestore();
+    });
+
+    it("should return 400 for invalid reportId", async () => {
+      const res = await request(app)
+        .get("/report/abc/internal-comments");
+
+      expect(res.status).toBe(400);
+    });
+
   });
-*/
+
+
 });
