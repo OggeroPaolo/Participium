@@ -1,8 +1,8 @@
 import { getDatabase, execSQL, runQuery, getOne, getAll } from "../config/database.js";
 import { logger } from "../config/logger.js";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -105,13 +105,13 @@ export const seedDefaultOffices = async (): Promise<void> => {
 
     // One office per category
     for (const category of categories) {
-      const result = await runQuery(
+      await runQuery(
         `INSERT INTO offices (name, category_id, type) VALUES (?, ?, ?)`,
         [`${category.name} Office`, category.id, "technical"]
       );
     }
 
-    const orgResult = await runQuery(
+    await runQuery(
       `INSERT INTO offices (name, type) VALUES (?, ?)`,
       ["Organization Office", "organization"]
     );
@@ -152,13 +152,13 @@ export const seedDefaultRoles = async (): Promise<void> => {
     const roles: { name: string; type: string; office_id: number | null; company_id: number | null }[] = [
       { name: "Citizen", type: "citizen", office_id: null, company_id: null },
       { name: "Municipal_public_relations_officer", type: "pub_relations", office_id: officeMap["Organization Office"]!, company_id: null },
-      { name: "Water_utility_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Water Supply")!, company_id: null },
-      { name: "Sewer_system_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Sewer")!, company_id: null },
-      { name: "Public_lightning_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Public Lighting")!, company_id: null },
-      { name: "Architectural_barriers_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Architectural Barriers")!, company_id: null },
-      { name: "Waste_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Waste")!, company_id: null },
-      { name: "Road_signs_urban_furnishings_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Roads and Urban Furnishings")!, company_id: null },
-      { name: "Public_green_areas_playgrounds_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Public Green Areas and Playgrounds")!, company_id: null },
+      { name: "Water_utility_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Water Supply"), company_id: null },
+      { name: "Sewer_system_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Sewer"), company_id: null },
+      { name: "Public_lightning_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Public Lighting"), company_id: null },
+      { name: "Architectural_barriers_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Architectural Barriers"), company_id: null },
+      { name: "Waste_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Waste"), company_id: null },
+      { name: "Road_signs_urban_furnishings_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Roads and Urban Furnishings"), company_id: null },
+      { name: "Public_green_areas_playgrounds_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Public Green Areas and Playgrounds"), company_id: null },
       { name: "Admin", type: "admin", office_id: officeMap["Organization Office"]!, company_id: null },
       { name: "Perry Worker", type: "external_maintainer", office_id: null, company_id: 1 },
       { name: "BarrierFix Worker", type: "external_maintainer", office_id: null, company_id: 2 },
@@ -193,197 +193,260 @@ export const seedDefaultRoles = async (): Promise<void> => {
  */
 export const seedDefaultUsers = async (): Promise<void> => {
   try {
-    const roles = await getAll<{ id: number; name: string }>("SELECT id, name FROM roles");
+    // --------------------------------------------------
+    // Load roles
+    // --------------------------------------------------
+    const roles = await getAll<{ id: number; name: string }>(
+      "SELECT id, name FROM roles"
+    );
+
     const roleMap: Record<string, number> = {};
-    roles.forEach(r => { roleMap[r.name] = r.id; });
+    for (const role of roles) {
+      roleMap[role.name] = role.id;
+    }
 
-    const users = [
-      {
-        firebase_uid: "QBUqptp5sYa46a2ALU3t8QXRIHz2",
-        email: "citizen@example.com",
-        username: "JohnDoe",
-        first_name: "John",
-        last_name: "Doe",
-        role_id: roleMap["Citizen"]
-      },
-      {
-        firebase_uid: "QF6qat0SyJcdX91zZINZLaTakM12",
-        email: "operator@example.com",
-        username: "JaneSmith",
-        first_name: "Jane",
-        last_name: "Smith",
-        role_id: roleMap["Municipal_public_relations_officer"]
-      },
-      {
-        firebase_uid: "Qyo5a7u15JcU2E6z7yaOgwMvYKy2",
-        email: "pub-relations@example.com",
-        username: "pub-relations",
-        first_name: "Daniel",
-        last_name: "Hartman",
-        role_id: roleMap["Municipal_public_relations_officer"]
-      },
-      {
-        firebase_uid: "8tgYd6X1zfVYOIJUNOIDonFwUTx2",
-        email: "operator-sewer@example.com",
-        username: "operator-sewer",
-        first_name: "Lena",
-        last_name: "Alvarez",
-        role_id: roleMap["Sewer_system_officer"]
-      },
-      {
-        firebase_uid: "jm7oNq1RdYMjOA1S23VJopQYVrR2",
-        email: "operator-water@example.com",
-        username: "operator-water",
-        first_name: "Ethan",
-        last_name: "Caldwell",
-        role_id: roleMap["Water_utility_officer"]
-      },
-      {
-        firebase_uid: "nclvO1Kk2fYQXcNUH4iIr9CLIip1",
-        email: "operator-water2@example.com",
-        username: "operator-water2",
-        first_name: "Marcus",
-        last_name: "Bennett",
-        role_id: roleMap["Water_utility_officer"]
-      },
-      {
-        firebase_uid: "iT18eWAsjgQ0SBD8isKIFRBG1UD3",
-        email: "operator-architectural@example.com",
-        username: "operator-architectural",
-        first_name: "Gigi",
-        last_name: "Proietti",
-        role_id: roleMap["Architectural_barriers_officer"]
-      },
-      {
-        firebase_uid: "kv63cdFLJXZfSXsaVVcVM3BDzog1",
-        email: "operator-lightning@example.com",
-        username: "operator-lightning",
-        first_name: "Max",
-        last_name: "Casper",
-        role_id: roleMap["Public_lightning_officer"]
-      },
-      {
-        firebase_uid: "CVvUKpF0zthFliHMgBmuOe9HtGA2",
-        email: "operator-waste@example.com",
-        username: "operator-waste",
-        first_name: "Joe",
-        last_name: "Simpson",
-        role_id: roleMap["Waste_officer"]
-      },
-      {
-        firebase_uid: "hrLE2NDZsSaGdVWpzuAsroYrGwF3",
-        email: "operator-urban@example.com",
-        username: "operator-urban",
-        first_name: "Lewis",
-        last_name: "Hamilton",
-        role_id: roleMap["Road_signs_urban_furnishings_officer"]
-      },
-      {
-        firebase_uid: "vPCfQ4wQoANVEwn7b6U5OFFeAGA2",
-        email: "operator-green@example.com",
-        username: "operator-green",
-        first_name: "Pablo",
-        last_name: "Jullones",
-        role_id: roleMap["Public_green_areas_playgrounds_officer"]
-      },
-      {
-        firebase_uid: "CV0ZG2bmDva06EHVdSwcF4rz18F3",
-        email: "admin@example.com",
-        username: "EmilyCarter",
-        first_name: "Emily",
-        last_name: "Carter",
-        role_id: roleMap["Admin"]
-      },
-      {
-        firebase_uid: "PdzfTCrdM0SBkEPM4rtqgi1exEJ2",
-        email: "water-worker@example.com",
-        username: "PerryPlumber",
-        first_name: "Perry",
-        last_name: "Platapus",
-        role_id: roleMap["Perry Worker"]
-      }, 
-      {
-        firebase_uid: "GlPacXZgUBSp83zGzBxkFgmoVmq1",
-        email: "apex-worker@example.com",
-        username: "CarlosSainz",
-        first_name: "Carlos",
-        last_name: "Sainz",
-        role_id: roleMap["Apex Worker"]
-      },
-      {
-        firebase_uid: "nZNdQ4nTose57ldQ5QfQ82GmlSg2",
-        email: "barrier-worker@example.com",
-        username: "StephenKing",
-        first_name: "Stephen",
-        last_name: "King",
-        role_id: roleMap["BarrierFix Worker"]
-      },
-      {
-        firebase_uid: "VNkBGMLx05QWhgJVSG4Iazct54t1",
-        email: "sewer-worker@example.com",
-        username: "JosephCricket",
-        first_name: "Joseph",
-        last_name: "Cricket",
-        role_id: roleMap["SewerFlow Worker"]
-      },
-      {
-        firebase_uid: "jnRaXpgX0TNJHv0Ejd7vTjnM7NI2",
-        email: "enel-worker@example.com",
-        username: "GabeNewell",
-        first_name: "Gabe",
-        last_name: "Newell",
-        role_id: roleMap["Enel Worker"]
-      },
-      {
-        firebase_uid: "6u05OsQj1cgSEtXk37Woql3oo1h2",
-        email: "eco-worker@example.com",
-        username: "GertaTubogor",
-        first_name: "Gerta",
-        last_name: "Tubogor",
-        role_id: roleMap["EcoWaste Worker"]
-      },
-      {
-        firebase_uid: "xaYgBHJ9xXbipabyXKumonKugaR2",
-        email: "traffic-worker@example.com",
-        username: "MatthewSalvidor",
-        first_name: "Matthew",
-        last_name: "Salvidor",
-        role_id: roleMap["TrafficTech Worker"]
-      },
-      {
-        firebase_uid: "q45Hc2wZYYXW9v66j7f8Dpxe28A2",
-        email: "clean-worker@example.com",
-        username: "BenedictCumberbatch",
-        first_name: "Benedict",
-        last_name: "Cumberbatch",
-        role_id: roleMap["Clean Roads Worker"]
-      },
-      {
-        firebase_uid: "2tWT4MFii2SS93eJOanNV4FRMkW2",
-        email: "green-worker@example.com",
-        username: "MichaelAlexander",
-        first_name: "Michael",
-        last_name: "Alexander",
-        role_id: roleMap["GreenCare Worker"]
-      },
-      {
-        firebase_uid: "JOU5ucK2zDULRX5tSGXyzuHSxEu1",
-        email: "general-worker@example.com",
-        username: "PamelaAnderson",
-        first_name: "Pamela",
-        last_name: "Anderson",
-        role_id: roleMap["GeneralWorks Worker"]
-      },
+    // --------------------------------------------------
+    // Users to seed
+    // --------------------------------------------------
+    const users: Array<{
+      firebase_uid: string;
+      email: string;
+      username: string;
+      first_name: string;
+      last_name: string;
+      roles: string[];
+    }> = [
+        {
+          firebase_uid: "QBUqptp5sYa46a2ALU3t8QXRIHz2",
+          email: "citizen@example.com",
+          username: "JohnDoe",
+          first_name: "John",
+          last_name: "Doe",
+          roles: ["Citizen"]
+        },
+        {
+          firebase_uid: "QF6qat0SyJcdX91zZINZLaTakM12",
+          email: "operator@example.com",
+          username: "JaneSmith",
+          first_name: "Jane",
+          last_name: "Smith",
+          roles: ["Municipal_public_relations_officer"]
+        },
+        {
+          firebase_uid: "Qyo5a7u15JcU2E6z7yaOgwMvYKy2",
+          email: "pub-relations@example.com",
+          username: "pub-relations",
+          first_name: "Daniel",
+          last_name: "Hartman",
+          roles: ["Municipal_public_relations_officer"]
+        },
+        {
+          firebase_uid: "8tgYd6X1zfVYOIJUNOIDonFwUTx2",
+          email: "operator-sewer@example.com",
+          username: "operator-sewer",
+          first_name: "Lena",
+          last_name: "Alvarez",
+          roles: ["Sewer_system_officer"]
+        },
+        {
+          firebase_uid: "jm7oNq1RdYMjOA1S23VJopQYVrR2",
+          email: "operator-water@example.com",
+          username: "operator-water",
+          first_name: "Ethan",
+          last_name: "Caldwell",
+          roles: ["Water_utility_officer"]
+        },
+        {
+          firebase_uid: "nclvO1Kk2fYQXcNUH4iIr9CLIip1",
+          email: "operator-water2@example.com",
+          username: "operator-water2",
+          first_name: "Marcus",
+          last_name: "Bennett",
+          roles: ["Water_utility_officer"]
+        },
+        {
+          firebase_uid: "iT18eWAsjgQ0SBD8isKIFRBG1UD3",
+          email: "operator-architectural@example.com",
+          username: "operator-architectural",
+          first_name: "Gigi",
+          last_name: "Proietti",
+          roles: ["Architectural_barriers_officer"]
+        },
+        {
+          firebase_uid: "kv63cdFLJXZfSXsaVVcVM3BDzog1",
+          email: "operator-lightning@example.com",
+          username: "operator-lightning",
+          first_name: "Max",
+          last_name: "Casper",
+          roles: ["Public_lightning_officer"]
+        },
+        {
+          firebase_uid: "CVvUKpF0zthFliHMgBmuOe9HtGA2",
+          email: "operator-waste@example.com",
+          username: "operator-waste",
+          first_name: "Joe",
+          last_name: "Simpson",
+          roles: ["Waste_officer"]
+        },
+        {
+          firebase_uid: "hrLE2NDZsSaGdVWpzuAsroYrGwF3",
+          email: "operator-urban@example.com",
+          username: "operator-urban",
+          first_name: "Lewis",
+          last_name: "Hamilton",
+          roles: ["Road_signs_urban_furnishings_officer","Architectural_barriers_officer"]
+        },
+        {
+          firebase_uid: "vPCfQ4wQoANVEwn7b6U5OFFeAGA2",
+          email: "operator-green@example.com",
+          username: "operator-green",
+          first_name: "Pablo",
+          last_name: "Jullones",
+          roles: ["Public_green_areas_playgrounds_officer"]
+        },
+        {
+          firebase_uid: "Q9vW1htncqdzoLB0wRlZXpOlhUg1",
+          email: "multiroles@example.com",
+          username: "AlbertMug",
+          first_name: "Albert",
+          last_name: "Mug",
+          roles: ["Waste_officer","Sewer_system_officer"]
+        },
+        {
+          firebase_uid: "PdzfTCrdM0SBkEPM4rtqgi1exEJ2",
+          email: "water-worker@example.com",
+          username: "PerryPlumber",
+          first_name: "Perry",
+          last_name: "Platapus",
+          roles: ["Perry Worker"]
+        },
+        {
+          firebase_uid: "GlPacXZgUBSp83zGzBxkFgmoVmq1",
+          email: "apex-worker@example.com",
+          username: "CarlosSainz",
+          first_name: "Carlos",
+          last_name: "Sainz",
+          roles: ["Apex Worker"]
+        },
+        {
+          firebase_uid: "nZNdQ4nTose57ldQ5QfQ82GmlSg2",
+          email: "barrier-worker@example.com",
+          username: "StephenKing",
+          first_name: "Stephen",
+          last_name: "King",
+          roles: ["BarrierFix Worker"]
+        },
+        {
+          firebase_uid: "VNkBGMLx05QWhgJVSG4Iazct54t1",
+          email: "sewer-worker@example.com",
+          username: "JosephCricket",
+          first_name: "Joseph",
+          last_name: "Cricket",
+          roles: ["SewerFlow Worker"]
+        },
+        {
+          firebase_uid: "jnRaXpgX0TNJHv0Ejd7vTjnM7NI2",
+          email: "enel-worker@example.com",
+          username: "GabeNewell",
+          first_name: "Gabe",
+          last_name: "Newell",
+          roles: ["Enel Worker"]
+        },
+        {
+          firebase_uid: "6u05OsQj1cgSEtXk37Woql3oo1h2",
+          email: "eco-worker@example.com",
+          username: "GertaTubogor",
+          first_name: "Gerta",
+          last_name: "Tubogor",
+          roles: ["EcoWaste Worker"]
+        },
+        {
+          firebase_uid: "xaYgBHJ9xXbipabyXKumonKugaR2",
+          email: "traffic-worker@example.com",
+          username: "MatthewSalvidor",
+          first_name: "Matthew",
+          last_name: "Salvidor",
+          roles: ["TrafficTech Worker"]
+        },
+        {
+          firebase_uid: "q45Hc2wZYYXW9v66j7f8Dpxe28A2",
+          email: "clean-worker@example.com",
+          username: "BenedictCumberbatch",
+          first_name: "Benedict",
+          last_name: "Cumberbatch",
+          roles: ["Clean Roads Worker"]
+        },
+        {
+          firebase_uid: "2tWT4MFii2SS93eJOanNV4FRMkW2",
+          email: "green-worker@example.com",
+          username: "MichaelAlexander",
+          first_name: "Michael",
+          last_name: "Alexander",
+          roles: ["GreenCare Worker"]
+        },
+        {
+          firebase_uid: "JOU5ucK2zDULRX5tSGXyzuHSxEu1",
+          email: "general-worker@example.com",
+          username: "PalemaAnderson",
+          first_name: "Palema",
+          last_name: "Anderson",
+          roles: ["GeneralWorks Worker"]
+        }
+      ];
 
-    ];
-
+    // --------------------------------------------------
+    // Insert users and assign roles
+    // --------------------------------------------------
     for (const user of users) {
-      const existing = await getOne<{ id: number }>("SELECT id FROM users WHERE email = ?", [user.email]);
-      if (!existing) {
+      // Ensure user exists
+      let dbUser = await getOne<{ id: number }>(
+        "SELECT id FROM users WHERE email = ?",
+        [user.email]
+      );
+
+      if (!dbUser) {
         await runQuery(
-          `INSERT INTO users (firebase_uid, email, username, first_name, last_name, role_id)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [user.firebase_uid, user.email, user.username, user.first_name, user.last_name, user.role_id]
+          `INSERT INTO users (firebase_uid, email, username, first_name, last_name)
+           VALUES (?, ?, ?, ?, ?)`,
+          [
+            user.firebase_uid,
+            user.email,
+            user.username,
+            user.first_name,
+            user.last_name
+          ]
+        );
+
+        // Re-fetch user id (TS-safe, DB-safe)
+        dbUser = await getOne<{ id: number }>(
+          "SELECT id FROM users WHERE email = ?",
+          [user.email]
+        );
+      }
+
+      if (!dbUser) {
+        logger.error(`Failed to create user: ${user.email}`);
+        continue;
+      }
+
+      const userId = dbUser.id;
+
+      // Assign roles
+
+      for (let i = 0; i < user.roles.length; i++) {
+        const roleName = user.roles[i] as string;
+
+        if (!(roleName in roleMap)) {
+          logger.warn(`Role not found: ${roleName}`);
+          continue;
+        }
+
+        const roleId = roleMap[roleName] as number;
+
+        await runQuery(
+          `INSERT OR IGNORE INTO user_roles (user_id, role_id, is_primary)
+           VALUES (?, ?, ?)`,
+          [userId, roleId, i === 0 ? 1 : 0]
         );
       }
     }
@@ -391,6 +454,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
     logger.error({ error }, "Failed to seed default users");
   }
 };
+
 
 /**
  * Seed default reports
@@ -424,7 +488,7 @@ export const seedDefaultReports = async (): Promise<void> => {
         user_id: firstUser.id,
         category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
         address: "Via Paolo Sacchi 11, 10125 Torino",
-        position_lat: 45.06080,
+        position_lat: 45.0608,
         position_lng: 7.67613,
         status: "pending_approval"
       },
@@ -519,7 +583,7 @@ export const seedDefaultReports = async (): Promise<void> => {
         category_id: categories.find(c => c.name.includes("Water Supply"))?.id ?? firstCategory.id,
         address: "Via Accademia Albertina 23c, 10129 Torino",
         position_lat: 45.0619,
-        position_lng: 7.6860,
+        position_lng: 7.686,
         status: "in_progress",
         reviewed_by: 3,
         assigned_to: 6
