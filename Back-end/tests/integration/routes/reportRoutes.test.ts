@@ -268,7 +268,6 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
-
     describe("GET /ext_maintainer/reports", () => {
         it("should return 200 with reports assigned to the external maintainer", async () => {
             const mockReports = [
@@ -356,7 +355,6 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
-
     describe("POST /reports/:reportId/comments", () => {
         const reportId = 5;
 
@@ -429,8 +427,6 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
-
-
     describe("POST /reports", () => {
         const mockCreatedReport = {
             id: 1,
@@ -521,7 +517,6 @@ describe("Report Routes Integration Tests", () => {
         );
 
     });
-
     describe("PATCH /pub_relations/reports/:reportId", () => {
         const mockReport: Report = {
             id: 1,
@@ -667,7 +662,7 @@ describe("Report Routes Integration Tests", () => {
         });
         it("should assign a specific operator and return 200 ", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReport);
-            vi.spyOn(OperatorDAO.prototype, "getCategoryOfOfficer").mockResolvedValue(3);
+            vi.spyOn(OperatorDAO.prototype, "getCategoriesOfOfficer").mockResolvedValue([3]);
 
             const updateSpy = vi
                 .spyOn(ReportDAO.prototype, "updateReportStatusAndAssign")
@@ -676,7 +671,6 @@ describe("Report Routes Integration Tests", () => {
             const res = await request(app)
                 .patch("/pub_relations/reports/1")
                 .send({ status: "assigned", officerId: 5 });
-
             expect(res.status).toBe(200);
             expect(updateSpy).toHaveBeenCalledWith(
                 1,            // reportId
@@ -691,11 +685,9 @@ describe("Report Routes Integration Tests", () => {
 
         it("should return 403 if specific operator don't handle report category", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReport);
-            vi.spyOn(OperatorDAO.prototype, "getCategoryOfOfficer").mockResolvedValue(4);
+            vi.spyOn(OperatorDAO.prototype, "getCategoriesOfOfficer").mockResolvedValue([99, 34]);
 
-            const updateSpy = vi
-                .spyOn(ReportDAO.prototype, "updateReportStatusAndAssign")
-                .mockResolvedValue({ changes: 1 });
+            vi.spyOn(ReportDAO.prototype, "updateReportStatusAndAssign").mockResolvedValue({ changes: 1 });
 
             const res = await request(app)
                 .patch("/pub_relations/reports/1")
@@ -790,7 +782,6 @@ describe("Report Routes Integration Tests", () => {
         });
 
     });
-
     describe("PATCH /tech_officer/reports/:reportId/assign_external", () => {
         const validReport = {
             id: 1,
@@ -798,6 +789,7 @@ describe("Report Routes Integration Tests", () => {
             category_id: 3,
             title: "Example",
             description: "Description...",
+            address: "address",
             status: ReportStatus.Assigned,
             assigned_to: mock_user_id,
             external_user: null,
@@ -826,7 +818,7 @@ describe("Report Routes Integration Tests", () => {
             vi.spyOn(ReportDAO.prototype, "getReportById")
                 .mockResolvedValue({
                     ...validReport,
-                    status: ReportStatus.PendingApproval
+                    status: ReportStatus.PendingApproval,
                 });
 
             const res = await request(app)
@@ -840,7 +832,8 @@ describe("Report Routes Integration Tests", () => {
             vi.spyOn(ReportDAO.prototype, "getReportById")
                 .mockResolvedValue({
                     ...validReport,
-                    assigned_to: 999
+                    assigned_to: 999,
+                
                 });
 
             const res = await request(app)
@@ -854,8 +847,8 @@ describe("Report Routes Integration Tests", () => {
             vi.spyOn(ReportDAO.prototype, "getReportById")
                 .mockResolvedValue(validReport);
 
-            vi.spyOn(OperatorDAO.prototype, "getCategoryOfExternalMaintainer")
-                .mockResolvedValue(999);
+            vi.spyOn(OperatorDAO.prototype, "getCategoriesOfExternalMaintainer")
+                .mockResolvedValue([999,100]);
 
             const res = await request(app)
                 .patch("/tech_officer/reports/1/assign_external")
@@ -868,8 +861,8 @@ describe("Report Routes Integration Tests", () => {
             vi.spyOn(ReportDAO.prototype, "getReportById")
                 .mockResolvedValue(validReport);
 
-            vi.spyOn(OperatorDAO.prototype, "getCategoryOfExternalMaintainer")
-                .mockResolvedValue(3);
+            vi.spyOn(OperatorDAO.prototype, "getCategoriesOfExternalMaintainer")
+                .mockResolvedValue([3,12]);
 
             const spyUpdate = vi
                 .spyOn(ReportDAO.prototype, "updateReportExternalMaintainer")
@@ -898,7 +891,6 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
-
     describe("PATCH /ext_maintainer/reports/:reportId", () => {
 
         vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
@@ -995,7 +987,6 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
-
     describe("GET /report/:reportId/internal-comments", () => {
         const reportId = 1;
 

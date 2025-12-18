@@ -275,8 +275,8 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
             }
 
 
-            const externalMaintainerCategoryId = await operatorDAO.getCategoryOfExternalMaintainer(externalMaintainerId);
-            if (externalMaintainerCategoryId === report.category_id) {
+            const externalMaintainerCategoryId = await operatorDAO.getCategoriesOfExternalMaintainer(externalMaintainerId);
+            if (externalMaintainerCategoryId.includes(report.category_id)) {
                 await reportDAO.updateReportExternalMaintainer(reportId, externalMaintainerId);
             } else {
                 return res.status(403).json({
@@ -413,7 +413,6 @@ router.patch("/pub_relations/reports/:reportId",
         }
     }
 );
-
 
 //GET /report/:reportId/internal-comments
 router.get("/report/:reportId/internal-comments",

@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import OperatorDAO from "../../../src/dao/OperatorDAO.js";
 import * as db from "../../../src/config/database.js";
 import { ExternalUserDTO } from "../../../src/dto/externalUserDTO.js";
-import { initTestDB } from "../../setup/tests_util.js";
 import { User } from "../../../src/models/user.js";
 
 describe("OperatorDAO Integration Test Suite", () => {
@@ -11,7 +10,6 @@ describe("OperatorDAO Integration Test Suite", () => {
   beforeEach(async () => {
     dao = new OperatorDAO();
     vi.clearAllMocks();
-    await initTestDB();
   });
 
   afterEach(() => {

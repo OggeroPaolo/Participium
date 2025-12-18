@@ -2,8 +2,7 @@ import request from "supertest";
 import { Express } from "express";
 import { describe, it, expect, beforeAll, afterEach, vi } from "vitest";
 import userRouter from "../../src/routes/user.routes.js";
-import { makeTestApp } from "../setup/tests_util.js";
-import { initTestDB, resetTestDB } from "../setup/tests_util.js";
+import { makeTestApp, initTestDB, resetTestDB } from "../setup/tests_util.js";
 import UserDAO from "../../src/dao/UserDAO.js";
 
 // Mock firebase token verification middleware

@@ -79,8 +79,10 @@ describe("POST /user-registrations", () => {
         first_name: "Jane",
         last_name: "Doe",
         email: "alice@example.com",
-        role_name: "Citizen",
-        role_type: "citizen",
+        roles: [{
+          role_name: "Citizen",
+          role_type: "citizen",
+        }]
       });
 
 
@@ -208,8 +210,10 @@ describe("POST /verify-code", () => {
       first_name: "Jane",
       last_name: "Doe",
       email: "alice@example.com",
-      role_name: "Citizen",
-      role_type: "citizen",
+      roles: [{
+        role_name: "Citizen",
+        role_type: "citizen",
+      }]
     });
 
     vi.spyOn(pendingUsers, "removePendingUser").mockImplementation(() => { });
@@ -360,10 +364,6 @@ describe("POST /verify-code", () => {
   });
 
 });
-
-/* ============================================================
-   RESEND CODE TESTS
-============================================================ */
 
 describe("POST /resend-code", () => {
 

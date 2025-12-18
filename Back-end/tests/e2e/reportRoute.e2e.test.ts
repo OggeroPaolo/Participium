@@ -262,7 +262,7 @@ describe("Reports E2E", () => {
         is_anonymous: 0,
         address: "Broadway 260, 10000 New York",
         position_lat: 40.7128,
-        position_lng: -74.0060,
+        position_lng: -74.006,
       };
 
       const res = await request(app)
@@ -320,7 +320,7 @@ describe("Reports E2E", () => {
     });
 
     it("should delete uploaded image if report creation fails", async () => {
-      const createSpy = vi.spyOn(ReportDAO.prototype, "createReport").mockRejectedValue(new Error("Forced DB error"));
+      vi.spyOn(ReportDAO.prototype, "createReport").mockRejectedValue(new Error("Forced DB error"));
       const payload = {
         category_id: 1,
         title: "Report causing error",
