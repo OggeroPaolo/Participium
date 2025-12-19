@@ -1,4 +1,4 @@
-import { runQuery, getOne } from "../config/database.js";
+import { runQuery, getOne, Update } from "../config/database.js";
 import type { User } from "../models/user.js"
 
 class UserDAO {
@@ -43,8 +43,22 @@ class UserDAO {
         return createdUser;
     }
 
-    
+    async updateUserInfo(userId: number, telegram_username?: string, email_notifications_enabled?: boolean, uploadedUrl?: string) {
+        console.log(email_notifications_enabled)
+        const query = `
+            UPDATE users
+            SET telegram_username = COALESCE(?, telegram_username), 
+            email_notifications_enabled = COALESCE(?, email_notifications_enabled),
+            profile_photo_url = COALESCE(?, profile_photo_url)
+            WHERE id = ?;
+        `;
 
+        const result = await Update(query, [telegram_username, email_notifications_enabled, uploadedUrl, userId]);
+
+        if (result.changes === 0) {
+            throw new Error("Report not found or no changes made");
+        }
+    }
 }
 
 export default UserDAO
