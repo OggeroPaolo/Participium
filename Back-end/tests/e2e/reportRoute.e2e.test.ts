@@ -346,6 +346,31 @@ describe("Reports E2E", () => {
 
       testUploadedUrls = [];
     });
+
+    it("should return 400 if some params are missing", async () => {
+      const payload = {
+        category_id: 1,
+        title: "Report causing error",
+        description: "This should trigger rollback",
+        is_anonymous: false,
+        address: "Broadway 260, 10000 New York",
+        position_lat: 40.7128,
+        position_lng: -74.006,
+      }
+
+      const res = await request(app)
+        .post("/reports")
+        .field("category_id", payload.category_id.toString())
+        .field("title", payload.title)
+        .field("position_lat", payload.position_lat.toString())
+        .field("position_lng", payload.position_lng.toString())
+        .attach("photos", testImg);
+
+      expect(res.status).toBe(400);
+      expect(res.body.errors).toBeDefined();
+
+      testUploadedUrls = [];
+    });
   });
 
 

@@ -332,80 +332,8 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
-    describe("POST /reports/:reportId/comments", () => {
-        const reportId = 5;
 
-        const mockComment = {
-            id: 99,
-            report_id: reportId,
-            user_id: mockCitizen.id,
-            type: "private",
-            text: "Internal note",
-            timestamp: new Date().toISOString(),
-        };
-
-        it("creates a comment and returns 201", async () => {
-            vi.spyOn(CommentDAO.prototype, "createComment")
-                .mockResolvedValueOnce(mockComment);
-
-            const res = await request(app)
-                .post(`/reports/${reportId}/comments`)
-                .send({
-                    type: "private",
-                    text: "Internal note",
-                });
-
-            expect(res.status).toBe(201);
-            expect(res.body).toEqual({ comment: mockComment });
-
-            expect(CommentDAO.prototype.createComment).toHaveBeenCalledWith({
-                user_id: mockCitizen.id,
-                report_id: reportId,
-                type: "private",
-                text: "Internal note",
-            });
-        });
-
-        it("returns 400 when validation fails (missing text)", async () => {
-            const res = await request(app)
-                .post(`/reports/${reportId}/comments`)
-                .send({
-                    type: "private",
-                });
-
-            expect(res.status).toBe(400);
-            expect(res.body.errors).toContain("text is required");
-        });
-
-        it("returns 400 when reportId is invalid", async () => {
-            const res = await request(app)
-                .post(`/reports/abc/comments`)
-                .send({
-                    type: "private",
-                    text: "ok",
-                });
-
-            expect(res.status).toBe(400);
-            expect(res.body.errors).toContain("reportId must be a valid integer");
-        });
-
-        it("returns 500 when DAO throws", async () => {
-            vi.spyOn(CommentDAO.prototype, "createComment")
-                .mockRejectedValueOnce(new Error("DB error"));
-
-            const res = await request(app)
-                .post(`/reports/${reportId}/comments`)
-                .send({
-                    type: "private",
-                    text: "Test",
-                });
-
-            expect(res.status).toBe(500);
-            expect(res.body).toEqual({ error: "Internal server error" });
-        });
-    });
     describe("POST /reports", () => {
-
 
         beforeEach(() => {
             vi.restoreAllMocks();
@@ -427,56 +355,70 @@ describe("Report Routes Integration Tests", () => {
         it("should create a report and return 201", async () => {
             const res = await request(app)
                 .post("/reports")
+                .send({
+                    user_id: 10,
+                    category_id: 3,
+                    title: "Sample",
+                    description: "Description",
+                    address: "address",
+                    position_lat: 40,
+                    position_lng: -70,
+                    is_anonymous: false,
+                });
+            expect(res.status).toBe(201);
+            expect(res.body.report).toEqual(mockCompleteReport);
+        });
+
+        it("should rollback uploaded images if Cloudinary upload fails", async () => {
+            const destroyedImages: string[] = [];
+
+            vi.spyOn(cloudinary.uploader, "upload").mockImplementation(async (path: string) => {
+                if (path.includes("file1")) throw new Error("Cloudinary upload failed");
+                return { secure_url: "https://example.com/photo2.jpg" } as any;
+            });
+
+            vi.spyOn(cloudinary.uploader, "destroy").mockImplementation(async (publicId: string) => {
+                destroyedImages.push(publicId);
+                return { result: "ok" } as any;
+            });
+
+            const res = await request(app)
+                .post("/reports")
                 .set("Content-Type", "application/json")
                 .send({
                     user_id: 10,
                     category_id: 3,
                     title: "Sample",
                     description: "Description",
+                    address: "address",
                     position_lat: 40,
                     position_lng: -70,
                     is_anonymous: false,
                 });
 
-            expect(res.status).toBe(201);
-            expect(res.body.report).toEqual(mockCompleteReport);
+            expect(res.status).toBe(500);
+            expect(res.body).toHaveProperty("error");
+            expect(destroyedImages.length).toBeGreaterThanOrEqual(0);
         });
 
-        it(
-            "should rollback uploaded images if Cloudinary upload fails",
-            async () => {
-                const destroyedImages: string[] = [];
-
-                vi.spyOn(cloudinary.uploader, "upload").mockImplementation(async (path: string) => {
-                    if (path.includes("file1")) throw new Error("Cloudinary upload failed");
-                    return { secure_url: "https://example.com/photo2.jpg" } as any;
+        it("should return 400 if required fields are missing", async () => {
+            const res = await request(app)
+                .post("/reports")
+                .send({
+                    user_id: 10,
+                    category_id: 3,
+                    title: "Sample",
+                    position_lat: 40,
+                    position_lng: -70,
+                    is_anonymous: false,
                 });
 
-                vi.spyOn(cloudinary.uploader, "destroy").mockImplementation(async (publicId: string) => {
-                    destroyedImages.push(publicId);
-                    return { result: "ok" } as any;
-                });
-
-                const res = await request(app)
-                    .post("/reports")
-                    .set("Content-Type", "application/json")
-                    .send({
-                        user_id: 10,
-                        category_id: 3,
-                        title: "Sample",
-                        description: "Description",
-                        position_lat: 40,
-                        position_lng: -70,
-                        is_anonymous: false,
-                    });
-
-                expect(res.status).toBe(500);
-                expect(res.body).toHaveProperty("error");
-                expect(destroyedImages.length).toBeGreaterThanOrEqual(0);
-            }
-        );
+            expect(res.status).toBe(400);
+            expect(res.body).toHaveProperty("errors");
+        });
 
     });
+
     describe("PATCH /pub_relations/reports/:reportId", () => {
 
         describe("Validation errors", () => {
@@ -807,7 +749,7 @@ describe("Report Routes Integration Tests", () => {
                 .patch("/tech_officer/reports/1/assign_external")
                 .send({ externalMaintainerId: 5 });
 
-                console.log(res.error)
+            console.log(res.error)
             expect(res.status).toBe(200);
             expect(spyUpdate).toHaveBeenCalledWith(1, 5);
             expect(res.body).toEqual({
@@ -829,7 +771,7 @@ describe("Report Routes Integration Tests", () => {
     });
     describe("PATCH /ext_maintainer/reports/:reportId", () => {
 
-        const baseReport: Report= {
+        const baseReport: Report = {
             id: 1,
             user_id: 10,
             category_id: 3,
@@ -976,5 +918,76 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
+    describe("POST /reports/:reportId/comments", () => {
+        const reportId = 5;
 
+        const mockComment = {
+            id: 99,
+            report_id: reportId,
+            user_id: mockCitizen.id,
+            type: "private",
+            text: "Internal note",
+            timestamp: new Date().toISOString(),
+        };
+
+        it("creates a comment and returns 201", async () => {
+            vi.spyOn(CommentDAO.prototype, "createComment")
+                .mockResolvedValueOnce(mockComment);
+
+            const res = await request(app)
+                .post(`/reports/${reportId}/comments`)
+                .send({
+                    type: "private",
+                    text: "Internal note",
+                });
+
+            expect(res.status).toBe(201);
+            expect(res.body).toEqual({ comment: mockComment });
+
+            expect(CommentDAO.prototype.createComment).toHaveBeenCalledWith({
+                user_id: mockCitizen.id,
+                report_id: reportId,
+                type: "private",
+                text: "Internal note",
+            });
+        });
+
+        it("returns 400 when validation fails (missing text)", async () => {
+            const res = await request(app)
+                .post(`/reports/${reportId}/comments`)
+                .send({
+                    type: "private",
+                });
+
+            expect(res.status).toBe(400);
+            expect(res.body.errors).toContain("text is required");
+        });
+
+        it("returns 400 when reportId is invalid", async () => {
+            const res = await request(app)
+                .post(`/reports/abc/comments`)
+                .send({
+                    type: "private",
+                    text: "ok",
+                });
+
+            expect(res.status).toBe(400);
+            expect(res.body.errors).toContain("reportId must be a valid integer");
+        });
+
+        it("returns 500 when DAO throws", async () => {
+            vi.spyOn(CommentDAO.prototype, "createComment")
+                .mockRejectedValueOnce(new Error("DB error"));
+
+            const res = await request(app)
+                .post(`/reports/${reportId}/comments`)
+                .send({
+                    type: "private",
+                    text: "Test",
+                });
+
+            expect(res.status).toBe(500);
+            expect(res.body).toEqual({ error: "Internal server error" });
+        });
+    });
 });

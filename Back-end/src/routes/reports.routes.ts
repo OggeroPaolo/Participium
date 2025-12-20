@@ -139,29 +139,7 @@ router.get("/reports",
     }
 )
 
-//POST /reports/:reportId/comments
-router.post("/reports/:reportId/comments",
-    validateCreateComment,
-    verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]),
-    async (req: Request, res: Response) => {
-        try {
-            const user = (req as Request & { user: User }).user;
 
-            const data: CreateCommentDTO = {
-                user_id: Number(user.id),
-                report_id: Number(req.params.reportId),
-                type: req.body.type,
-                text: req.body.text
-            };
-            const createdComment = await commentDAO.createComment(data);
-
-            return res.status(201).json({ comment: createdComment });
-        } catch (error) {
-            console.log(error);
-            return res.status(500).json({ error: "Internal server error" });
-        }
-    }
-);
 
 //POST /reports
 router.post("/reports",
@@ -437,4 +415,27 @@ router.get("/report/:reportId/internal-comments",
     }
 );
 
+//POST /reports/:reportId/comments
+router.post("/reports/:reportId/comments",
+    validateCreateComment,
+    verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]),
+    async (req: Request, res: Response) => {
+        try {
+            const user = (req as Request & { user: User }).user;
+
+            const data: CreateCommentDTO = {
+                user_id: Number(user.id),
+                report_id: Number(req.params.reportId),
+                type: req.body.type,
+                text: req.body.text
+            };
+            const createdComment = await commentDAO.createComment(data);
+
+            return res.status(201).json({ comment: createdComment });
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
 export default router;
