@@ -140,7 +140,6 @@ router.get("/reports",
 )
 
 
-
 //POST /reports
 router.post("/reports",
     verifyFirebaseToken([ROLES.CITIZEN]),

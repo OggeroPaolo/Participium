@@ -170,6 +170,7 @@ describe("Reports E2E", () => {
         description: "This area near Porta Nuova has been neglected and many people use it as a urinal, can something be done about it.",
         status: ReportStatus.PendingApproval,
         assigned_to: null,
+        external_user: null,
         reviewed_by: null,
         reviewed_at: null,
         note: null,
@@ -274,7 +275,6 @@ describe("Reports E2E", () => {
         .field("position_lat", payload.position_lat.toString())
         .field("position_lng", payload.position_lng.toString())
         .attach("photos", testImg);
-
       expect(res.status).toBe(201);
       expect(res.body.report).toBeDefined();
       expect(res.body.report.photos).toHaveLength(1);
