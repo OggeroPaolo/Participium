@@ -1,10 +1,9 @@
 import request from "supertest";
 import { Express } from "express";
-import { describe, it, expect, vi, beforeAll } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterEach  } from "vitest";
 import rolesRouter from "../../src/routes/roles.routes.js";
 import RolesDao from "../../src/dao/RolesDAO.js";
 import { initTestDB, makeTestApp, resetTestDB } from "../setup/tests_util.js";
-import { afterEach } from "vitest";
 import { runQuery } from "../../src/config/database.js";
 
 // Mock firebase token verification middleware

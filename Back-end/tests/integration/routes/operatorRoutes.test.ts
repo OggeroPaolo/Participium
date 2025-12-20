@@ -14,39 +14,42 @@ vi.mock("../../../src/middlewares/verifyFirebaseToken.js", () => ({
 
 let app: any;
 
-beforeEach(() => {
-  vi.clearAllMocks();
-  app = makeTestApp(router);
-});
 describe("Operator Routes Unit Test", () => {
+  const mockOperators: User[] = [
+    {
+      id: 1,
+      firebase_uid: "uid1",
+      email: "operator1@example.com",
+      username: "op1",
+      first_name: "Alice",
+      last_name: "Doe",
+      roles: [{
+        role_name: "Operator",
+        role_type: "tech_officer",
+      }]
+    },
+    {
+      id: 2,
+      firebase_uid: "uid2",
+      email: "operator2@example.com",
+      username: "op2",
+      first_name: "Bob",
+      last_name: "Smith",
+      roles: [
+        { role_name: "Water Utility Officer", role_type: "tech_officer" },
+        { role_name: "Light Officer", role_type: "tech_officer" },
+      ],
+    },
+  ];
+
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    app = makeTestApp(router);
+  });
+
   describe("GET /operators", () => {
     it("should return 200 with a list of operators", async () => {
-      const mockOperators: User[] = [
-        {
-          id: 1,
-          firebase_uid: "uid1",
-          email: "operator1@example.com",
-          username: "op1",
-          first_name: "Alice",
-          last_name: "Doe",
-          roles: [{
-            role_name: "Operator",
-            role_type: "tech_officer",
-          }]
-        },
-        {
-          id: 2,
-          firebase_uid: "uid2",
-          email: "operator2@example.com",
-          username: "op2",
-          first_name: "Bob",
-          last_name: "Smith",
-          roles: [
-            { role_name: "Water Utility Officer", role_type: "tech_officer" },
-            { role_name: "Light Officer", role_type: "tech_officer" },
-          ],
-        },
-      ];
 
       const getOperatorsSpy = vi
         .spyOn(OperatorDAO.prototype, "getOperators")
@@ -79,29 +82,6 @@ describe("Operator Routes Unit Test", () => {
   });
   describe("GET /categories/:categoryId/operators", () => {
     it("should return 200 with a list of operators for the category", async () => {
-      const mockOperators = [
-        {
-          id: 1,
-          firebase_uid: "uid1",
-          email: "operator1@example.com",
-          username: "op1",
-          first_name: "Alice",
-          last_name: "Doe",
-          role_name: "Operator",
-          role_type: "tech_officer",
-        },
-        {
-          id: 2,
-          firebase_uid: "uid2",
-          email: "operator2@example.com",
-          username: "op2",
-          first_name: "Bob",
-          last_name: "Smith",
-          role_name: "Municipal_public_relations_officer",
-          role_type: "pub_relations",
-        },
-      ];
-
       const spy = vi
         .spyOn(OperatorDAO.prototype, "getOperatorsByCategory")
         .mockResolvedValueOnce(mockOperators);
@@ -151,8 +131,10 @@ describe("Operator Routes Unit Test", () => {
         username: "aliceop",
         first_name: "Alice",
         last_name: "Operator",
-        role_name: "Citizen",
-        role_type: "citizen",
+        roles: [{
+          role_name: "Citizen",
+          role_type: "citizen",
+        }]
       });
 
       const res = await request(app)
@@ -292,8 +274,10 @@ describe("Operator Routes Unit Test", () => {
           fullName: "Alice Doe",
           username: "alice1",
           email: "alice@example.com",
-          roleName: "External Maintainer",
-          roleType: "external_maintainer",
+          roles: [{
+            role_name: "External Maintainer",
+            role_type: "external_maintainer",
+          }],
           companyId: 1,
           companyName: "Company A",
         },
@@ -302,8 +286,10 @@ describe("Operator Routes Unit Test", () => {
           fullName: "Bob Smith",
           username: "bob2",
           email: "bob@example.com",
-          roleName: "External Maintainer",
-          roleType: "external_maintainer",
+          roles: [{
+            role_name: "External Maintainer",
+            role_type: "external_maintainer",
+          }],
           companyId: 2,
           companyName: "Company B",
         }
@@ -316,7 +302,7 @@ describe("Operator Routes Unit Test", () => {
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockMaintainers);
       expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy).toHaveBeenCalledWith({ "categoryId": NaN, "companyId": NaN, });
+      expect(spy).toHaveBeenCalledWith({ "categoryId": Number.NaN, "companyId": Number.NaN, });
     });
 
     it("should apply filters from query params", async () => {
@@ -326,8 +312,10 @@ describe("Operator Routes Unit Test", () => {
           fullName: "Charlie Doe",
           username: "charlie",
           email: "charlie@example.com",
-          roleName: "External Maintainer",
-          roleType: "external_maintainer",
+          roles: [{
+            role_name: "External Maintainer",
+            role_type: "external_maintainer",
+          }],
           companyId: 2,
           companyName: "Company B",
         }

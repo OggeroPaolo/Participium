@@ -29,11 +29,11 @@ const mockRes = () => {
 };
 
 const mockReq = (authHeader?: string): TestRequest =>
-  ({
-    headers: { authorization: authHeader },
-    uid: undefined,
-    user: undefined,
-  } as TestRequest);
+({
+  headers: { authorization: authHeader },
+  uid: undefined,
+  user: undefined,
+} as TestRequest);
 
 const next: NextFunction = vi.fn();
 
@@ -47,8 +47,10 @@ const mockUser: User = {
   username: "john",
   first_name: "John",
   last_name: "Doe",
-  role_name: "admin",
-  role_type: "admin",
+  roles: [{
+    role_name: "admin",
+    role_type: "admin",
+  }]
 };
 
 // ---------------------------
@@ -134,7 +136,7 @@ describe("verifyFirebaseToken middleware", () => {
 
   it("should return 403 if role is not allowed", async () => {
     mockVerifyIdToken.mockResolvedValue({ uid: "uid-123" });
-    const userWithWrongRole = { ...mockUser, role_type: "user" };
+    const userWithWrongRole = { ...mockUser, roles: [{role_name: "test" ,role_type: "user"}] };
     vi.spyOn(UserDAO.prototype, "findUserByUid").mockResolvedValue(userWithWrongRole);
 
     const req = mockReq("Bearer valid-token");

@@ -252,6 +252,7 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
     verifyFirebaseToken([ROLES.TECH_OFFICER]),
     async (req: Request, res: Response) => {
         try {
+
             const reportId = Number(req.params.reportId);
             const user = (req as Request & { user: User }).user;
             let { externalMaintainerId } = req.body

@@ -34,7 +34,6 @@ CREATE TABLE IF NOT EXISTS user_roles (
   user_id INTEGER NOT NULL,
   role_id INTEGER NOT NULL,
   assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  is_primary INTEGER DEFAULT 0,
   PRIMARY KEY (user_id, role_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT
@@ -133,7 +132,6 @@ CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
 -- User_Roles indexes
 CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_roles_role_id ON user_roles(role_id);
-CREATE INDEX IF NOT EXISTS idx_user_roles_primary ON user_roles(is_primary);
 
 -- Offices indexes
 CREATE INDEX IF NOT EXISTS idx_offices_type ON offices(type);

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import UserDAO from "../../../src/dao/UserDAO.js";
 import * as db from "../../../src/config/database.js";
+import { mapUserWithRoles } from "../../../src/services/userService.js";
 
 const mockUser = {
   firebase_uid: "firebase_uid",
@@ -8,7 +9,10 @@ const mockUser = {
   username: "JohnDoe",
   first_name: "John",
   last_name: "Doe",
-  role_id: 2
+  roles: [{
+    role_name: "role",
+    role_type: "test"
+  }]
 };
 
 describe("UserDAO Integration Test Suite", () => {
@@ -37,10 +41,10 @@ describe("UserDAO Integration Test Suite", () => {
 
       const result = await dao.findUserByUid("firebase_uid");
 
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual(mapUserWithRoles(mockUser));
       expect(db.getOne).toHaveBeenCalledTimes(1);
       expect(db.getOne).toHaveBeenCalledWith(
-        expect.stringContaining("FROM users u, roles r"),
+        expect.stringContaining("FROM users u"),
         ["firebase_uid"]
       );
     });
@@ -65,15 +69,14 @@ describe("UserDAO Integration Test Suite", () => {
   // ------------------------------
   describe("findUserByEmailOrUsername", () => {
 
-
     it("returns user if email or username matches", async () => {
       vi.spyOn(db, "getOne").mockResolvedValueOnce(mockUser);
 
       const result = await dao.findUserByEmailOrUsername(mockUser.email, mockUser.username);
 
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual(mapUserWithRoles(mockUser));
       expect(db.getOne).toHaveBeenCalledWith(
-        expect.stringContaining("(u.email = ? OR u.username = ?)"),
+        expect.stringContaining("u.email = ? OR u.username = ?"),
         [mockUser.email, mockUser.username]
       );
     });
@@ -107,7 +110,7 @@ describe("UserDAO Integration Test Suite", () => {
       email: "mario.rossi@gmail.com",
     };
 
-    it("creates user successfully", async () => {
+    it("creates user successfully with default role", async () => {
       vi.spyOn(db, "runQuery").mockResolvedValue(undefined);
       vi.spyOn(dao, "findUserByUid").mockResolvedValueOnce({
         id: 1,
@@ -116,8 +119,12 @@ describe("UserDAO Integration Test Suite", () => {
         username: userData.username,
         first_name: userData.firstName,
         last_name: userData.lastName,
-        role_name: "Citizen",
-        role_type: "citizen"
+        roles: [
+          {
+            role_name: "Citizen",
+            role_type: "citizen",
+          },
+        ],
       });
 
       const result = await dao.createUser(userData);
@@ -129,12 +136,17 @@ describe("UserDAO Integration Test Suite", () => {
           username: userData.username,
           first_name: userData.firstName,
           last_name: userData.lastName,
-          role_name: "Citizen",
-          role_type: "citizen"
+          roles: [
+            {
+              role_name: "Citizen",
+              role_type: "citizen",
+            },
+          ],
         })
       );
 
-      expect(db.runQuery).toHaveBeenCalledTimes(1);
+      // runQuery called twice: insert user + insert role
+      expect(db.runQuery).toHaveBeenCalledTimes(2);
       expect(dao.findUserByUid).toHaveBeenCalledWith(userData.firebaseUid);
     });
 
@@ -156,8 +168,12 @@ describe("UserDAO Integration Test Suite", () => {
         username: userWithRole.username,
         first_name: userWithRole.firstName,
         last_name: userWithRole.lastName,
-        role_name: "Admin",
-        role_type: "admin"
+        roles: [
+          {
+            role_name: "Admin",
+            role_type: "admin",
+          },
+        ],
       });
 
       const result = await dao.createUser(userWithRole);
@@ -170,13 +186,19 @@ describe("UserDAO Integration Test Suite", () => {
           username: userWithRole.username,
           first_name: userWithRole.firstName,
           last_name: userWithRole.lastName,
-          role_name: "Admin",
-          role_type: "admin"
+          roles: [
+            {
+              role_name: "Admin",
+              role_type: "admin",
+            },
+          ],
         })
       );
 
-      expect(db.runQuery).toHaveBeenCalledTimes(1);
+      // runQuery called twice: insert user + insert role
+      expect(db.runQuery).toHaveBeenCalledTimes(2);
 
+      // check user insert query
       expect(db.runQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO users"),
         [
@@ -185,8 +207,13 @@ describe("UserDAO Integration Test Suite", () => {
           userWithRole.lastName,
           userWithRole.username,
           userWithRole.email,
-          2,
         ]
+      );
+
+      // check role insert query
+      expect(db.runQuery).toHaveBeenCalledWith(
+        expect.stringContaining("INSERT INTO user_roles"),
+        [2, 2] // user_id = 2, role_id = 2
       );
 
       expect(dao.findUserByUid).toHaveBeenCalledWith(userWithRole.firebaseUid);
@@ -207,6 +234,7 @@ describe("UserDAO Integration Test Suite", () => {
       );
     });
   });
+
 
 
 });

@@ -433,8 +433,8 @@ export const seedDefaultUsers = async (): Promise<void> => {
 
       // Assign roles
 
-      for (let i = 0; i < user.roles.length; i++) {
-        const roleName = user.roles[i] as string;
+      for (const element of user.roles) {
+        const roleName = element;
 
         if (!(roleName in roleMap)) {
           logger.warn(`Role not found: ${roleName}`);
@@ -444,9 +444,9 @@ export const seedDefaultUsers = async (): Promise<void> => {
         const roleId = roleMap[roleName] as number;
 
         await runQuery(
-          `INSERT OR IGNORE INTO user_roles (user_id, role_id, is_primary)
-           VALUES (?, ?, ?)`,
-          [userId, roleId, i === 0 ? 1 : 0]
+          `INSERT OR IGNORE INTO user_roles (user_id, role_id)
+           VALUES (?, ?)`,
+          [userId, roleId]
         );
       }
     }

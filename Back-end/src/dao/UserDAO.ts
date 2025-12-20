@@ -1,20 +1,41 @@
 import { runQuery, getOne } from "../config/database.js";
-import type { User } from "../models/user.js"
+import { type User } from "../models/user.js"
+import { mapUserWithRoles } from "../services/userService.js";
 
 class UserDAO {
     async findUserByUid(firebaseUid: string): Promise<User | null> {
-        const sql = "SELECT u.id, u.firebase_uid, u.email, u.username, u.first_name, u.last_name, r.name AS role_name, r.type AS role_type, u.profile_photo_url, u.telegram_username, u.email_notifications_enabled, u.is_active, u.created_at, u.updated_at, u.last_login_at FROM users u, roles r WHERE r.id = u.role_id AND u.firebase_uid = ?";
-        const user = await getOne<User>(sql, [firebaseUid]);
-        return user === undefined ? null : user;
+        const query = `
+            SELECT
+              u.*,
+              r.name AS role_name,
+              r.type AS role_type
+            FROM users u
+            LEFT JOIN user_roles ur ON ur.user_id = u.id
+            LEFT JOIN roles r ON r.id = ur.role_id
+            WHERE u.firebase_uid = ?
+          `;
+
+        const row = await getOne<any>(query, [firebaseUid]);
+        return mapUserWithRoles(row);
     }
 
+
     async findUserByEmailOrUsername(email: string, username: string): Promise<User | null> {
-        const sql = `
-        SELECT u.id, u.firebase_uid, u.email, u.username, u.first_name, u.last_name, r.name AS role_name, r.type AS role_type, u.profile_photo_url, u.telegram_username, u.email_notifications_enabled, u.is_active, u.created_at, u.updated_at, u.last_login_at FROM users u, roles r WHERE r.id = u.role_id AND (u.email = ? OR u.username = ?)
-    `;
-        const user = await getOne<User>(sql, [email, username]);
-        return user === undefined ? null : user;
+        const query = `
+            SELECT
+              u.*,
+              r.name AS role_name,
+              r.type AS role_type
+            FROM users u
+            LEFT JOIN user_roles ur ON ur.user_id = u.id
+            LEFT JOIN roles r ON r.id = ur.role_id
+            WHERE u.email = ? OR u.username = ?
+          `;
+
+        const row = await getOne<any>(query, [email, username]);
+        return mapUserWithRoles(row);
     }
+
 
     async createUser(userData: {
         firebaseUid: string;
@@ -24,27 +45,35 @@ class UserDAO {
         email: string;
         role_id?: number | null | undefined;
     }): Promise<User> {
-        const sql = `
-      INSERT INTO users (firebase_uid, first_name, last_name, username, email, role_id)
-      VALUES (?, ?, ?, ?, ?, ?);
-    `;
-        await runQuery(sql, [
+        // Insert user
+        const insertUserSql = `
+            INSERT INTO users (firebase_uid, first_name, last_name, username, email)
+            VALUES (?, ?, ?, ?, ?);
+        `;
+        await runQuery(insertUserSql, [
             userData.firebaseUid,
             userData.firstName,
             userData.lastName,
             userData.username,
-            userData.email,
-            userData.role_id? userData.role_id : 1,
+            userData.email
         ]);
+
+        // Retrieve the newly created user
         const createdUser = await this.findUserByUid(userData.firebaseUid);
         if (!createdUser) {
             throw new Error("Failed to retrieve the created user");
         }
+
+        // Assign role (default to 1 if not provided)
+        const roleId = userData.role_id ?? 1;
+        const insertRoleSql = `
+            INSERT INTO user_roles (user_id, role_id)
+            VALUES (?, ?);
+        `;
+        await runQuery(insertRoleSql, [createdUser.id, roleId]);
+
         return createdUser;
     }
-
-    
-
 }
 
 export default UserDAO

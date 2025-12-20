@@ -199,7 +199,7 @@ describe("POST /verify-code", () => {
       expiresAt: Date.now() + 5 * 60 * 1000,
     });
 
-    vi.spyOn(bcrypt, "compare").mockResolvedValue(true);
+    vi.spyOn(bcrypt, "compare").mockImplementation(async () => true);
 
     vi.spyOn(passwordEnc, "decrypt").mockReturnValue("password123");
 
@@ -417,7 +417,7 @@ describe("POST /resend-code", () => {
   });
 
   it("should return 500 on internal errors", async () => {
-    vi.spyOn(emailService, "resendVerificationEmail").mockRejectedValue(new Error());
+    vi.spyOn(emailService, "resendVerificationEmail").mockRejectedValue(new Error("DB Error"));
 
     const res = await request(app)
       .post("/resend-code")

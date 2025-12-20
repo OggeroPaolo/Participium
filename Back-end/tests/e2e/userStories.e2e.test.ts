@@ -1,5 +1,5 @@
 import request from "supertest";
-import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 import { makeTestApp, initTestDB, resetTestDB } from "../setup/tests_util.js";
 import reportsRouter from "../../src/routes/reports.routes.js";
 import registrationsRouter from "../../src/routes/registrations.routes.js";
@@ -71,7 +71,7 @@ beforeEach(async () => {
 });
 
 describe("User Story Integration Tests", () => {
-    
+
     /**
      * USER STORY 1: As a technical office staff member
      * I want to see the list of reports assigned to me
@@ -82,7 +82,7 @@ describe("User Story Integration Tests", () => {
             // Setup: Create reports assigned to the tech officer
             // Use category 7 (Roads and Urban Furnishings) which matches tech officer ID 10
             const reportDAO = new ReportDAO();
-            
+
             // Create first report
             const report1 = await reportDAO.createReport({
                 user_id: 1,
@@ -94,13 +94,13 @@ describe("User Story Integration Tests", () => {
                 position_lng: 7.6869,
                 is_anonymous: false,
             });
-            
+
             // Assign to tech officer
             await reportDAO.updateReportStatusAndAssign(
                 report1.id!,
                 ReportStatus.Assigned,
                 3, // reviewer
-                null,
+                undefined,
                 7,
                 mockTechOfficer.id
             );
@@ -113,16 +113,16 @@ describe("User Story Integration Tests", () => {
                 description: "Large pothole needs repair",
                 address: "Via Torino 5",
                 position_lat: 45.0704,
-                position_lng: 7.6870,
+                position_lng: 7.687,
                 is_anonymous: false,
             });
-            
+
             // Assign to tech officer and update status to InProgress
             await reportDAO.updateReportStatusAndAssign(
                 report2.id!,
                 ReportStatus.InProgress,
                 3, // reviewer
-                null,
+                undefined,
                 7,
                 mockTechOfficer.id
             );
@@ -137,7 +137,7 @@ describe("User Story Integration Tests", () => {
             expect(res.body.reports).toBeDefined();
             expect(Array.isArray(res.body.reports)).toBe(true);
             expect(res.body.reports.length).toBeGreaterThanOrEqual(2);
-            
+
             // Verify reports are assigned to the tech officer
             const assignedReports = res.body.reports.filter(
                 (r: any) => r.assigned_to === mockTechOfficer.id
@@ -150,7 +150,7 @@ describe("User Story Integration Tests", () => {
             // Create a new tech officer user or use one that doesn't have reports
             // For this test, we'll check if the route returns 204 or 200 with empty array
             // The seeded data might have reports, so we test the behavior
-            
+
             // Execute: Get assigned reports
             const res = await request(reportsApp)
                 .get("/tech_officer/reports")
@@ -179,7 +179,7 @@ describe("User Story Integration Tests", () => {
             // Use category 7 (Roads and Urban Furnishings) which matches the external maintainer (ID 14)
             // User ID 14 (CarlosSainz) is Apex Worker with company_id 7 (Apex Corp) which has category_id 7
             const reportDAO = new ReportDAO();
-            
+
             // Create report (will be pending_approval)
             const report = await reportDAO.createReport({
                 user_id: 1,
@@ -198,7 +198,7 @@ describe("User Story Integration Tests", () => {
                 reportId,
                 ReportStatus.Assigned,
                 3, // reviewer (public relations officer from seed data)
-                null, // no note
+                undefined, // no note
                 7, // category_id
                 mockTechOfficer.id // assignee
             );
@@ -235,8 +235,8 @@ describe("User Story Integration Tests", () => {
 
         it("should return 403 if external maintainer category doesn't match", async () => {
             // Setup: Mock different category
-            vi.spyOn(OperatorDAO.prototype, "getCategoryOfExternalMaintainer")
-                .mockResolvedValue(999); // Different category
+            vi.spyOn(OperatorDAO.prototype, "getCategoriesOfExternalMaintainer")
+                .mockResolvedValue([999]); // Different category
 
             // Execute: Try to assign
             const res = await request(reportsApp)
@@ -257,8 +257,6 @@ describe("User Story Integration Tests", () => {
                 title: "Other report",
                 description: "Assigned to someone else",
                 address: "Via Other 1",
-                status: ReportStatus.Assigned,
-                assigned_to: 999, // Different officer
                 position_lat: 45.0703,
                 position_lng: 7.6869,
                 is_anonymous: false,
@@ -287,7 +285,7 @@ describe("User Story Integration Tests", () => {
             // Setup: Create a report assigned to external maintainer
             // Use category 7 (Roads and Urban Furnishings) which matches the external maintainer (ID 14)
             const reportDAO = new ReportDAO();
-            
+
             // Create report (will be pending_approval)
             const report = await reportDAO.createReport({
                 user_id: 1,
@@ -306,7 +304,7 @@ describe("User Story Integration Tests", () => {
                 reportId,
                 ReportStatus.Assigned,
                 3, // reviewer (public relations officer from seed data)
-                null, // no note
+                undefined, // no note
                 7, // category_id
                 mockTechOfficer.id // assignee
             );
@@ -384,9 +382,6 @@ describe("User Story Integration Tests", () => {
                 title: "Other report",
                 description: "Assigned to someone else",
                 address: "Via Other 2",
-                status: ReportStatus.Assigned,
-                assigned_to: mockTechOfficer.id,
-                external_user: 999, // Different maintainer
                 position_lat: 45.0703,
                 position_lng: 7.6869,
                 is_anonymous: false,
@@ -413,7 +408,7 @@ describe("User Story Integration Tests", () => {
             if (res.status === 200) {
                 expect(res.body.reports).toBeDefined();
                 expect(Array.isArray(res.body.reports)).toBe(true);
-                
+
                 // Verify reports are assigned to external maintainer
                 const assignedReports = res.body.reports.filter(
                     (r: any) => r.external_user === mockExternalMaintainer.id
@@ -493,7 +488,6 @@ describe("User Story Integration Tests", () => {
             expect(res.body.comments).toBeDefined();
             expect(Array.isArray(res.body.comments)).toBe(true);
             expect(res.body.comments.length).toBeGreaterThanOrEqual(2);
-            
             // Verify comments are private/internal
             res.body.comments.forEach((comment: any) => {
                 expect(comment.type).toBe("private");
@@ -510,8 +504,6 @@ describe("User Story Integration Tests", () => {
                 title: "New report",
                 description: "No comments yet",
                 address: "Via New 1",
-                status: ReportStatus.Assigned,
-                assigned_to: mockTechOfficer.id,
                 position_lat: 45.0703,
                 position_lng: 7.6869,
                 is_anonymous: false,
@@ -587,7 +579,7 @@ describe("User Story Integration Tests", () => {
                 expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes from now
             });
 
-            vi.spyOn(bcrypt, "compare").mockResolvedValue(true);
+            vi.spyOn(bcrypt, "compare").mockImplementation(async () => true);
             vi.spyOn(passwordEnc, "decrypt").mockReturnValue(testPassword);
             vi.spyOn(userService, "createUserWithFirebase").mockResolvedValue({
                 id: 100,
@@ -596,10 +588,12 @@ describe("User Story Integration Tests", () => {
                 first_name: "John",
                 last_name: "Citizen",
                 email: testEmail,
-                role_name: "Citizen",
-                role_type: "citizen",
+                roles: [{
+                    role_name: "Citizen",
+                    role_type: "citizen",
+                }]
             });
-            vi.spyOn(pendingUsers, "removePendingUser").mockImplementation(() => {});
+            vi.spyOn(pendingUsers, "removePendingUser").mockImplementation(() => { });
             vi.spyOn(UserDAO.prototype, "findUserByEmailOrUsername").mockResolvedValue(null);
         });
 
@@ -624,7 +618,7 @@ describe("User Story Integration Tests", () => {
 
         it("should return 401 when verification code is incorrect", async () => {
             // Setup: Mock incorrect code
-            vi.spyOn(bcrypt, "compare").mockResolvedValue(false);
+            vi.spyOn(bcrypt, "compare").mockResolvedValue();
 
             // Execute: Try to verify with wrong code
             const res = await request(registrationsApp)
@@ -689,7 +683,7 @@ describe("User Story Integration Tests", () => {
 
         it("should allow resending verification code", async () => {
             // Setup: Mock resend functions
-            vi.spyOn(pendingUsers, "updateCode").mockImplementation(() => {});
+            vi.spyOn(pendingUsers, "updateCode").mockImplementation(() => { });
             vi.spyOn(emailService, "resendVerificationEmail").mockResolvedValue();
 
             // Execute: Resend code
@@ -709,7 +703,7 @@ describe("User Story Integration Tests", () => {
             vi.spyOn(pendingUsers, "getPendingUser").mockReturnValue(undefined);
             vi.spyOn(UserDAO.prototype, "findUserByEmailOrUsername").mockResolvedValue(null);
             vi.spyOn(emailService, "sendVerificationEmail").mockResolvedValue();
-            vi.spyOn(pendingUsers, "savePendingUser").mockImplementation(() => {});
+            vi.spyOn(pendingUsers, "savePendingUser").mockImplementation(() => { });
             vi.spyOn(passwordEnc, "encrypt").mockReturnValue({
                 encrypted: "encryptedData",
                 iv: "fakeIv",
@@ -751,7 +745,7 @@ describe("User Story Integration Tests", () => {
                 },
                 expiresAt: Date.now() + 5 * 60 * 1000,
             });
-            vi.spyOn(bcrypt, "compare").mockResolvedValue(true);
+            vi.spyOn(bcrypt, "compare").mockImplementation(async () => true);
             vi.spyOn(passwordEnc, "decrypt").mockReturnValue("password123");
             vi.spyOn(userService, "createUserWithFirebase").mockResolvedValue({
                 id: 100,
@@ -760,10 +754,12 @@ describe("User Story Integration Tests", () => {
                 first_name: "Jane",
                 last_name: "Doe",
                 email: "janenewunique@example.com",
-                role_name: "Citizen",
-                role_type: "citizen",
+                roles: [{
+                    role_name: "Citizen",
+                    role_type: "citizen",
+                }]
             });
-            vi.spyOn(pendingUsers, "removePendingUser").mockImplementation(() => {});
+            vi.spyOn(pendingUsers, "removePendingUser").mockImplementation(() => { });
 
             const verifyRes = await request(registrationsApp)
                 .post("/verify-code")

@@ -35,8 +35,10 @@ describe("GET /users/:firebaseUid (E2E)", () => {
       username: "JohnDoe",
       first_name: "John",
       last_name: "Doe",
-      role_name: 'Citizen',
-      role_type: 'citizen',
+      roles: [{
+        role_name: 'Citizen',
+        role_type: 'citizen',
+      }]
     });
   });
 

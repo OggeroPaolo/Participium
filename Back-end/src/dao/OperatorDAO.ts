@@ -1,7 +1,8 @@
-import { runQuery, getAll, getOne } from "../config/database.js"
-import { mapUsersWithRoles, type User } from "../models/user.js"
+import { getAll, getOne } from "../config/database.js"
+import { type User } from "../models/user.js"
 import UserDAO from "../dao/UserDAO.js";
 import { mapExternalUsersWithRoles, type ExternalUserDTO } from "../dto/externalUserDTO.js";
+import { mapUsersList} from "../services/userService.js";
 
 const userDao = new UserDAO();
 
@@ -13,7 +14,6 @@ export interface ExternalMaintainerFilters {
 
 export default class OperatorDao {
 
-  // Return all the operators
   async getOperators(): Promise<User[]> {
     const query = `
     SELECT
@@ -26,8 +26,9 @@ export default class OperatorDao {
     WHERE r.type IN ('pub_relations', 'tech_officer')
   `;
     const rows = await getAll<any>(query);
-    return mapUsersWithRoles(rows);
+    return mapUsersList(rows)
   }
+
 
 
   // Return the Id of the operator with the least assigned reports in a given category
@@ -119,7 +120,7 @@ export default class OperatorDao {
   `;
 
     const rows = await getAll<any>(query, [categoryId]);
-    return mapUsersWithRoles(rows);
+    return mapUsersList(rows)
   }
 
   async getExternalMaintainersByFilter(

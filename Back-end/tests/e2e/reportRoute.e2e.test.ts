@@ -12,7 +12,6 @@ import { Update } from "../../src/config/database.js";
 import CommentDAO from "../../src/dao/CommentDAO.js";
 
 
-const mock_user_id = 3;
 
 //Use for clean up of Create Report test
 let testUploadedUrls: string[] = [];
@@ -197,13 +196,13 @@ describe("Reports E2E", () => {
 
 
     it("should return 204 when no pending_approval reports exist", async () => {
-      // Temporarily mock DAO to return empty array
-      const spy = vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue([]);
+      await Update("PRAGMA foreign_keys = OFF");
+      await Update("DELETE FROM reports");
+
       const res = await request(app).get("/reports?status=pending_approval");
 
       expect(res.status).toBe(204);
       expect(res.body).toEqual({}); // empty response
-      spy.mockRestore();
     });
 
     it("should return 500 if DAO throws an error", async () => {
@@ -280,7 +279,7 @@ describe("Reports E2E", () => {
       expect(res.body.report).toBeDefined();
       expect(res.body.report.photos).toHaveLength(1);
 
-      testUploadedUrls = (res.body.report.photos || []).map(p =>
+      testUploadedUrls = (res.body.report.photos || []).map((p: { url: any; photo_url: any; }) =>
         typeof p === "string" ? p : p.url || p.photo_url
       );
     });
@@ -293,7 +292,7 @@ describe("Reports E2E", () => {
         is_anonymous: false,
         address: "Broadway 260, 10000 New York",
         position_lat: 40.7128,
-        position_lng: -74.0060,
+        position_lng: -74.006,
       };
 
       const res = await request(app)
@@ -328,7 +327,7 @@ describe("Reports E2E", () => {
         is_anonymous: false,
         address: "Broadway 260, 10000 New York",
         position_lat: 40.7128,
-        position_lng: -74.0060,
+        position_lng: -74.006,
       }
 
       const res = await request(app)
@@ -469,8 +468,8 @@ describe("Reports E2E", () => {
         reviewed_at: null,
         note: "Initial note",
         address: "Via vai 9, 10125 Torino",
-        position_lat: 40.0,
-        position_lng: -70.0,
+        position_lat: 40,
+        position_lng: -70,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -495,6 +494,7 @@ describe("Reports E2E", () => {
         .get(`/report/${reportId}/internal-comments`);
 
       expect(res.status).toBe(200);
+      console.log(res.body)
       expect(res.body.comments.length).toBeGreaterThan(0);
     });
 

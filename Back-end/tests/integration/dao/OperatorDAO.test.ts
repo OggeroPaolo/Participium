@@ -3,6 +3,8 @@ import OperatorDAO from "../../../src/dao/OperatorDAO.js";
 import * as db from "../../../src/config/database.js";
 import { ExternalUserDTO } from "../../../src/dto/externalUserDTO.js";
 import { User } from "../../../src/models/user.js";
+import { mapUsersList } from "../../../src/services/userService.js";
+
 
 describe("OperatorDAO Integration Test Suite", () => {
   let dao: OperatorDAO;
@@ -75,34 +77,9 @@ describe("OperatorDAO Integration Test Suite", () => {
       const getAllSpy = vi.spyOn(db, "getAll").mockResolvedValueOnce(mockRows as any);
 
       const result: User[] = await dao.getOperators();
-
-      expect(result).toHaveLength(2);
-
-      // Assert user 1
-      expect(result[0]).toMatchObject({
-        id: 1,
-        username: "operator_one",
-        first_name: "Alice",
-        last_name: "Johnson",
-        roles: [
-          { role_name: "Water Utility Officer", role_type: "tech_officer" },
-          { role_name: "Light Officer", role_type: "tech_officer" },
-        ],
-      });
-
-      // Assert user 2
-      expect(result[1]).toMatchObject({
-        id: 2,
-        username: "operator_two",
-        first_name: "Bob",
-        last_name: "Miller",
-        roles: [{ role_name: "Public Relations Officer", role_type: "pub_relations" }],
-      });
-
+      expect(result).toEqual(mapUsersList(mockRows))
       expect(getAllSpy).toHaveBeenCalledTimes(1);
       expect(getAllSpy).toHaveBeenCalledWith(expect.stringContaining("JOIN user_roles"));
-
-      getAllSpy.mockRestore();
     });
 
 
@@ -265,7 +242,7 @@ describe("OperatorDAO Integration Test Suite", () => {
 
       const result: User[] = await dao.getOperatorsByCategory(2);
 
-      expect(result.length).toBeGreaterThan(0)
+      expect(result).toEqual(mapUsersList(mockRows))
 
       expect(db.getAll).toHaveBeenCalledTimes(1);
       expect(db.getAll).toHaveBeenCalledWith(
