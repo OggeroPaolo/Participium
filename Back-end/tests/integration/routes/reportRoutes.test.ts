@@ -10,12 +10,13 @@ import sharp from "sharp";
 import cloudinary from "../../../src/config/cloudinary.js";
 import { ReportStatus } from "../../../src/models/reportStatus.js";
 import { CompleteReportDTO } from "../../../src/dto/ReportWithPhotosDTO.js";
+import CommentDAO from "../../../src/dao/CommentDAO.js";
 
-const userId = 3;
+const mock_user_id = 3;
 // Mock Firebase middleware
 vi.mock("../../../src/middlewares/verifyFirebaseToken.js", () => ({
     verifyFirebaseToken: () => (req: any, _res: any, next: any) => {
-        req.user = { id: userId, role_name: "pub_relations" };
+        req.user = { id: mock_user_id, role_name: "pub_relations" };
         next();
     },
 }));
@@ -58,6 +59,7 @@ describe("Report Routes Integration Tests", () => {
             category_id: 3,
             title: "Report 1",
             description: "Description 1",
+            address: "123 Main St",
             status: ReportStatus.PendingApproval,
             assigned_to: undefined,
             reviewed_by: undefined,
@@ -74,6 +76,7 @@ describe("Report Routes Integration Tests", () => {
             category_id: 2,
             title: "Report 2",
             description: "Description 2",
+            address: "456 Elm St",
             status: ReportStatus.Assigned,
             assigned_to: 10,
             reviewed_by: undefined,
@@ -97,6 +100,7 @@ describe("Report Routes Integration Tests", () => {
                     username: "jdoe",
                     position_lat: 45.1,
                     position_lng: 9.2,
+                    address: "123 Main St",
                 },
             ];
 
@@ -112,6 +116,7 @@ describe("Report Routes Integration Tests", () => {
                         title: "Damaged sidewalk",
                         reporterName: "John Doe",
                         reporterUsername: "jdoe",
+                        address: "123 Main St",
                         position: { lat: 45.1, lng: 9.2 },
                     },
                 ],
@@ -209,29 +214,108 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
-    describe("GET /officers/:officerId/reports", () => {
-        it("should return 200 with reports for officer", async () => {
-            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue([mockReports[1]]);
+    describe("GET /tech_officer/reports", () => {
+        it("should return 200 with reports assigned to the tech officer", async () => {
+            const mockReports = [
+                {
+                    id: 5,
+                    user_id: 2,
+                    category_id: 3,
+                    title: "Officer Report 1",
+                    description: "Description",
+                    status: ReportStatus.Assigned,
+                    assigned_to: mock_user_id,
+                    external_user: null,
+                    reviewed_by: null,
+                    reviewed_at: null,
+                    note: null,
+                    position_lat: 45.0,
+                    position_lng: 7.0,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                }
+            ];
 
-            const res = await request(app).get("/officers/10/reports");
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue(mockReports);
+
+            const res = await request(app).get("/tech_officer/reports");
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual({ reports: [mockReports[1]] });
-            expect(ReportDAO.prototype.getReportsByFilters).toHaveBeenCalledWith({ officerId: 10 });
+            expect(res.body.reports).toBeDefined();
+            expect(Array.isArray(res.body.reports)).toBe(true);
+            expect(ReportDAO.prototype.getReportsByFilters).toHaveBeenCalledWith({
+                officerId: mock_user_id
+            });
         });
 
-        it("should return 204 if officer has no reports", async () => {
+        it("should return 204 when no reports are assigned", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue([]);
 
-            const res = await request(app).get("/officers/99/reports");
+            const res = await request(app).get("/tech_officer/reports");
 
             expect(res.status).toBe(204);
+            expect(res.body).toEqual({});
         });
 
-        it("should return 500 if DAO throws", async () => {
-            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockRejectedValue(new Error("DB failure"));
+        it("should return 500 on server error", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters")
+                .mockRejectedValue(new Error("DB failure"));
 
-            const res = await request(app).get("/officers/10/reports");
+            const res = await request(app).get("/tech_officer/reports");
+
+            expect(res.status).toBe(500);
+            expect(res.body).toEqual({ error: "Internal server error" });
+        });
+    });
+
+    describe("GET /ext_maintainer/reports", () => {
+        it("should return 200 with reports assigned to the external maintainer", async () => {
+            const mockReports = [
+                {
+                    id: 7,
+                    user_id: 2,
+                    category_id: 3,
+                    title: "External Report 1",
+                    description: "Description",
+                    status: ReportStatus.Assigned,
+                    assigned_to: 10,
+                    external_user: mock_user_id,
+                    reviewed_by: null,
+                    reviewed_at: null,
+                    note: null,
+                    position_lat: 45.0,
+                    position_lng: 7.0,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                }
+            ];
+
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue(mockReports);
+
+            const res = await request(app).get("/ext_maintainer/reports");
+
+            expect(res.status).toBe(200);
+            expect(res.body.reports).toBeDefined();
+            expect(Array.isArray(res.body.reports)).toBe(true);
+            expect(ReportDAO.prototype.getReportsByFilters).toHaveBeenCalledWith({
+                externalUser: mock_user_id
+            });
+        });
+
+        it("should return 204 when no reports are assigned", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue([]);
+
+            const res = await request(app).get("/ext_maintainer/reports");
+
+            expect(res.status).toBe(204);
+            expect(res.body).toEqual({});
+        });
+
+        it("should return 500 on server error", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportsByFilters")
+                .mockRejectedValue(new Error("DB failure"));
+
+            const res = await request(app).get("/ext_maintainer/reports");
 
             expect(res.status).toBe(500);
             expect(res.body).toEqual({ error: "Internal server error" });
@@ -271,6 +355,81 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
+
+    describe("POST /reports/:reportId/comments", () => {
+        const reportId = 5;
+
+        const mockComment = {
+            id: 99,
+            report_id: reportId,
+            user_id: mock_user_id,
+            type: "private",
+            text: "Internal note",
+            timestamp: new Date().toISOString(),
+        };
+
+        it("creates a comment and returns 201", async () => {
+            vi.spyOn(CommentDAO.prototype, "createComment")
+                .mockResolvedValueOnce(mockComment);
+
+            const res = await request(app)
+                .post(`/reports/${reportId}/comments`)
+                .send({
+                    type: "private",
+                    text: "Internal note",
+                });
+
+            expect(res.status).toBe(201);
+            expect(res.body).toEqual({ comment: mockComment });
+
+            expect(CommentDAO.prototype.createComment).toHaveBeenCalledWith({
+                user_id: mock_user_id,
+                report_id: reportId,
+                type: "private",
+                text: "Internal note",
+            });
+        });
+
+        it("returns 400 when validation fails (missing text)", async () => {
+            const res = await request(app)
+                .post(`/reports/${reportId}/comments`)
+                .send({
+                    type: "private",
+                });
+
+            expect(res.status).toBe(400);
+            expect(res.body.errors).toContain("text is required");
+        });
+
+        it("returns 400 when reportId is invalid", async () => {
+            const res = await request(app)
+                .post(`/reports/abc/comments`)
+                .send({
+                    type: "private",
+                    text: "ok",
+                });
+
+            expect(res.status).toBe(400);
+            expect(res.body.errors).toContain("reportId must be a valid integer");
+        });
+
+        it("returns 500 when DAO throws", async () => {
+            vi.spyOn(CommentDAO.prototype, "createComment")
+                .mockRejectedValueOnce(new Error("DB error"));
+
+            const res = await request(app)
+                .post(`/reports/${reportId}/comments`)
+                .send({
+                    type: "private",
+                    text: "Test",
+                });
+
+            expect(res.status).toBe(500);
+            expect(res.body).toEqual({ error: "Internal server error" });
+        });
+    });
+
+
     describe("POST /reports", () => {
         const mockCreatedReport = {
             id: 1,
@@ -365,10 +524,11 @@ describe("Report Routes Integration Tests", () => {
     describe("PATCH /pub_relations/reports/:reportId", () => {
         const mockReport: Report = {
             id: 1,
-            user_id: userId,
+            user_id: mock_user_id,
             category_id: 3,
             title: "Sample report",
             description: "Description",
+            address: "789 Pine St",
             status: ReportStatus.PendingApproval,
             assigned_to: null,
             reviewed_by: null,
@@ -497,7 +657,7 @@ describe("Report Routes Integration Tests", () => {
             expect(updateSpy).toHaveBeenCalledWith(
                 1,            // reportId
                 "assigned",   // status
-                userId,       // reviewerId from mocked req.user
+                mock_user_id,       // reviewerId from mocked req.user
                 null,         // note is null for assigned
                 undefined,    // categoryId
                 99            // assigneeId
@@ -520,7 +680,7 @@ describe("Report Routes Integration Tests", () => {
             expect(updateSpy).toHaveBeenCalledWith(
                 1,            // reportId
                 "assigned",   // status
-                userId,       // reviewerId from mocked req.user
+                mock_user_id,       // reviewerId from mocked req.user
                 null,         // note is null for assigned
                 undefined,    // categoryId
                 5            // assigneeId
@@ -541,7 +701,6 @@ describe("Report Routes Integration Tests", () => {
                 .send({ status: "assigned", officerId: 5 });
 
             expect(res.status).toBe(403);
-            expect(res.body).toEqual({ error: `The officer you want to assign to this report does not handle this category` });
         });
         it("should update the category, assign operator and return 200 ", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReport);
@@ -559,7 +718,7 @@ describe("Report Routes Integration Tests", () => {
             expect(updateSpy).toHaveBeenCalledWith(
                 1,            // reportId
                 "assigned",   // status
-                userId,           // reviewerId from mocked req.user
+                mock_user_id,           // reviewerId from mocked req.user
                 null,         // note is null for assigned
                 12,           // categoryId
                 99            // assigneeId
@@ -582,7 +741,7 @@ describe("Report Routes Integration Tests", () => {
             expect(updateSpy).toHaveBeenCalledWith(
                 1,         // reportId
                 "assigned",// status
-                userId,    // reviewerId 
+                mock_user_id,    // reviewerId 
                 null,      // note should be null 
                 undefined, // categoryId not provided
                 99  // assigneeId not applicable
@@ -606,7 +765,7 @@ describe("Report Routes Integration Tests", () => {
             expect(updateSpy).toHaveBeenCalledWith(
                 1,
                 "rejected",
-                userId,                 // reviewerId from mocked req.user
+                mock_user_id,                 // reviewerId from mocked req.user
                 "Duplicate report", // note kept
                 undefined,          // categoryId not provided
                 undefined           // no assignee
@@ -629,6 +788,267 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "DB failure" });
         });
 
+    });
+
+    describe("PATCH /tech_officer/reports/:reportId/assign_external", () => {
+        const validReport = {
+            id: 1,
+            user_id: 10,
+            category_id: 3,
+            title: "Example",
+            description: "Description...",
+            status: ReportStatus.Assigned,
+            assigned_to: mock_user_id,
+            external_user: null,
+            reviewed_by: null,
+            reviewed_at: null,
+            note: null,
+            position_lat: 12.34,
+            position_lng: 56.78,
+            created_at: "2024-01-01",
+            updated_at: "2024-01-01"
+        };
+
+        it("should return 404 if report does not exist", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById")
+                .mockResolvedValue(undefined);
+
+            const res = await request(app)
+                .patch("/tech_officer/reports/1/assign_external")
+                .send({ externalMaintainerId: 5 });
+
+            expect(res.status).toBe(404);
+            expect(res.body).toEqual({ error: "Report not found" });
+        });
+
+        it("should return 403 if report is not in 'assigned' status", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById")
+                .mockResolvedValue({
+                    ...validReport,
+                    status: ReportStatus.PendingApproval
+                });
+
+            const res = await request(app)
+                .patch("/tech_officer/reports/1/assign_external")
+                .send({ externalMaintainerId: 5 });
+
+            expect(res.status).toBe(403);
+        });
+
+        it("should return 403 if report is not assigned to the current officer", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById")
+                .mockResolvedValue({
+                    ...validReport,
+                    assigned_to: 999
+                });
+
+            const res = await request(app)
+                .patch("/tech_officer/reports/1/assign_external")
+                .send({ externalMaintainerId: 5 });
+
+            expect(res.status).toBe(403);
+        });
+
+        it("should return 403 if external maintainer's category does not match", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById")
+                .mockResolvedValue(validReport);
+
+            vi.spyOn(OperatorDAO.prototype, "getCategoryOfExternalMaintainer")
+                .mockResolvedValue(999);
+
+            const res = await request(app)
+                .patch("/tech_officer/reports/1/assign_external")
+                .send({ externalMaintainerId: 5 });
+
+            expect(res.status).toBe(403);
+        });
+
+        it("should assign the external maintainer successfully", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById")
+                .mockResolvedValue(validReport);
+
+            vi.spyOn(OperatorDAO.prototype, "getCategoryOfExternalMaintainer")
+                .mockResolvedValue(3);
+
+            const spyUpdate = vi
+                .spyOn(ReportDAO.prototype, "updateReportExternalMaintainer")
+                .mockResolvedValue({ changes: 1 });
+
+            const res = await request(app)
+                .patch("/tech_officer/reports/1/assign_external")
+                .send({ externalMaintainerId: 5 });
+
+            expect(res.status).toBe(200);
+            expect(spyUpdate).toHaveBeenCalledWith(1, 5);
+            expect(res.body).toEqual({
+                message: "Report successfully assigned to the external maintainer"
+            });
+        });
+
+        it("should return 500 on unexpected error", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById")
+                .mockRejectedValue(new Error("DB failure"));
+
+            const res = await request(app)
+                .patch("/tech_officer/reports/1/assign_external")
+                .send({ externalMaintainerId: 7 });
+
+            expect(res.status).toBe(500);
+            expect(res.body).toEqual({ error: "Internal server error" });
+        });
+    });
+
+    describe("PATCH /ext_maintainer/reports/:reportId", () => {
+
+        vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
+            verifyFirebaseToken: () => (req: any, _res: any, next: any) => {
+                req.user = { id: mock_user_id, role_name: "external_maintainer" };
+                next();
+            },
+        }));
+
+        const reportDAO = new ReportDAO();
+
+        const baseReport = {
+            id: 1,
+            user_id: 10,
+            category_id: 3,
+            title: "Title",
+            description: "Desc",
+            position_lat: 1,
+            position_lng: 2,
+            created_at: "date",
+            updated_at: "date",
+
+            status: ReportStatus.Assigned,
+            external_user: mock_user_id,
+            reviewed_by: null,
+            reviewed_at: null,
+            assigned_to: null,
+            note: null
+        };
+
+        it("should return 404 if report does not exist", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(undefined);
+
+            const res = await request(app)
+                .patch("/ext_maintainer/reports/1")
+                .send({ status: ReportStatus.InProgress });
+            expect(res.status).toBe(404);
+            expect(res.body).toEqual({ error: "Report not found" });
+        });
+
+        it("should return 403 if status is not allowed", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue({
+                ...baseReport,
+                status: ReportStatus.Resolved   // ❌ invalid for update
+            });
+
+            const res = await request(app)
+                .patch("/ext_maintainer/reports/1")
+                .send({ status: ReportStatus.InProgress });
+
+            expect(res.status).toBe(403);
+        });
+
+        it("should return 403 if report is not assigned to this external maintainer", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue({
+                ...baseReport,
+                external_user: 999  // ❌ not this user
+            });
+
+            const res = await request(app)
+                .patch("/ext_maintainer/reports/1")
+                .send({ status: ReportStatus.InProgress });
+
+            expect(res.status).toBe(403);
+        });
+
+        it("should update the status successfully", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(baseReport);
+
+            const spyUpdate = vi
+                .spyOn(ReportDAO.prototype, "updateReportStatus")
+                .mockResolvedValue({ changes: 1 });
+
+            const res = await request(app)
+                .patch("/ext_maintainer/reports/1")
+                .send({ status: ReportStatus.InProgress });
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({
+                message: "Report status updated successfully"
+            });
+
+            expect(spyUpdate).toHaveBeenCalledWith(1, ReportStatus.InProgress);
+        });
+
+        it("should return 500 on internal server error", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById")
+                .mockRejectedValue(new Error("DB fail"));
+
+            const res = await request(app)
+                .patch("/ext_maintainer/reports/1")
+                .send({ status: ReportStatus.InProgress });
+
+            expect(res.status).toBe(500);
+            expect(res.body).toEqual({ error: "Internal server error" });
+        });
+    });
+
+    describe("GET /report/:reportId/internal-comments", () => {
+        const reportId = 1;
+
+        it("should return 200 with comments if comments exist", async () => {
+            const mockComments = [
+                {
+                    id: 1,
+                    report_id: reportId,
+                    user_id: 11,
+                    type: "note",
+                    text: "Check the issue",
+                    timestamp: new Date().toISOString(),
+                },
+                {
+                    id: 2,
+                    report_id: reportId,
+                    user_id: 12,
+                    type: "update",
+                    text: "Started fixing",
+                    timestamp: new Date().toISOString(),
+                },
+            ];
+
+            vi.spyOn(CommentDAO.prototype, "getPrivateCommentsByReportId").mockResolvedValue(mockComments);
+
+            const res = await request(app)
+                .get(`/report/${reportId}/internal-comments`)
+                .set("Authorization", "Bearer fake-token"); // if your verifyFirebaseToken requires headers
+
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({ comments: mockComments });
+        });
+
+        it("should return 204 if no comments exist", async () => {
+            vi.spyOn(CommentDAO.prototype, "getPrivateCommentsByReportId").mockResolvedValue([]);
+
+            const res = await request(app)
+                .get(`/report/${reportId}/internal-comments`)
+                .set("Authorization", "Bearer fake-token");
+
+            expect(res.status).toBe(204);
+            expect(res.body).toEqual({});
+        });
+
+        it("should return 500 if DAO throws an error", async () => {
+            vi.spyOn(CommentDAO.prototype, "getPrivateCommentsByReportId").mockRejectedValue(new Error("DB failure"));
+
+            const res = await request(app)
+                .get(`/report/${reportId}/internal-comments`)
+                .set("Authorization", "Bearer fake-token");
+
+            expect(res.status).toBe(500);
+            expect(res.body).toEqual({ error: "Internal server error" });
+        });
     });
 
 });

@@ -12,7 +12,6 @@ function ReportCreation() {
   const initialLng = location.state?.lng || 7.6869;
 
   const [categories, setCategories] = useState([]);
-  const [isFormLoading, setIsFormLoading] = useState(false);
   const [previewImages, setPreviewImages] = useState([]);
   const [pics, setPics] = useState([]);
 
@@ -40,7 +39,7 @@ function ReportCreation() {
     };
   }, [previewImages]);
 
-  const [state, formAction] = useActionState(submitReport, {
+  const [state, formAction, isPending] = useActionState(submitReport, {
     title: "",
     description: "",
     category: "",
@@ -48,8 +47,6 @@ function ReportCreation() {
   });
 
   async function submitReport(prevData, formData) {
-    setIsFormLoading(true);
-
     const attributes = {
       title: formData.get("title"),
       description: formData.get("description"),
@@ -73,8 +70,6 @@ function ReportCreation() {
       setPics([]);
       setPreviewImages([]);
       return { error: error.message };
-    } finally {
-      setIsFormLoading(false);
     }
   }
 
@@ -178,7 +173,8 @@ function ReportCreation() {
             {!isValidLocation && (
               <Alert variant='warning'>
                 <i className='bi bi-exclamation-triangle-fill me-2'></i>
-                <strong>Location outside Torino!</strong> Please select a location within Torino city limits.
+                <strong>Location outside Torino!</strong> Please select a
+                location within Torino city limits.
               </Alert>
             )}
 
@@ -188,25 +184,26 @@ function ReportCreation() {
                 {state.success}
               </Alert>
             )}
-            {isFormLoading && (
-              <>
+            {isPending && (
+              <div className='loading-overlay'>
                 <div
-                  className='d-flex justify-content-center align-items-center'
-                  style={{ minHeight: "10vh" }}
-                >
-                  <div className='spinner-border text-primary' role='status'>
-                    <span className='visually-hidden'>Loading...</span>
-                  </div>
+                  className='spinner-border text-light'
+                  style={{ width: "3rem", height: "3rem" }}
+                ></div>
+                <div className='mt-3 text-light fw-semibold'>
+                  Creating report...
                 </div>
-              </>
+              </div>
             )}
 
-            <Button 
-              type='submit' 
+            <Button
+              type='submit'
               className='mt-4 confirm-button w-100'
-              disabled={!isValidLocation || isFormLoading}
+              disabled={!isValidLocation || isPending}
             >
-              {!isValidLocation ? "INVALID LOCATION - SELECT WITHIN TORINO" : "CREATE REPORT"}
+              {!isValidLocation
+                ? "INVALID LOCATION - SELECT WITHIN TORINO"
+                : "CREATE REPORT"}
             </Button>
           </Form>
         </Container>
@@ -233,20 +230,21 @@ function MapReport(props) {
           parseFloat(props.propLng)
         );
         setAddress(addr);
-        
+
         // Validate location is in Torino
-        const isTorino = addr.toLowerCase().includes('torino') || 
-                        addr.toLowerCase().includes('turin') || 
-                        addr.toLowerCase().includes('to,');
+        const isTorino =
+          addr.toLowerCase().includes("torino") ||
+          addr.toLowerCase().includes("turin") ||
+          addr.toLowerCase().includes("to,");
         setIsValidLocation(isTorino);
-        
+
         // Update parent component
         if (props.setIsValidLocation) {
           props.setIsValidLocation(isTorino);
         }
       } catch (error) {
-        console.error('Geocoding failed:', error);
-        setAddress('Failed to load address');
+        console.error("Geocoding failed:", error);
+        setAddress("Failed to load address");
         setIsValidLocation(false);
         if (props.setIsValidLocation) {
           props.setIsValidLocation(false);
@@ -298,24 +296,25 @@ function MapReport(props) {
       // Validate location and update address
       setIsGeocoding(true);
       setAddress("Verifying location...");
-      
+
       try {
         const addr = await reverseGeocode(lat, lng);
         setAddress(addr);
-        
+
         // Check if location is in Torino
-        const isTorino = addr.toLowerCase().includes('torino') || 
-                        addr.toLowerCase().includes('turin') || 
-                        addr.toLowerCase().includes('to,');
+        const isTorino =
+          addr.toLowerCase().includes("torino") ||
+          addr.toLowerCase().includes("turin") ||
+          addr.toLowerCase().includes("to,");
         setIsValidLocation(isTorino);
-        
+
         // Update parent component
         if (props.setIsValidLocation) {
           props.setIsValidLocation(isTorino);
         }
       } catch (error) {
-        console.error('Geocoding failed:', error);
-        setAddress('Failed to verify location');
+        console.error("Geocoding failed:", error);
+        setAddress("Failed to verify location");
         setIsValidLocation(false);
         if (props.setIsValidLocation) {
           props.setIsValidLocation(false);
@@ -326,11 +325,33 @@ function MapReport(props) {
     });
   }, []);
 
+  //add city border to map
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    async function loadGeoJSON() {
+      try {
+        const response = await fetch('/turin_geojson.geojson');
+        const geojson = await response.json();
+
+        const layer = L.geoJSON(geojson, {
+          style: { color: '#2886da', weight: 2, opacity: 0.4, fillColor: '#2886da', fillOpacity: 0.07 }
+        }).addTo(mapInstanceRef.current);
+
+      } catch (err) {
+        console.error("Failed loading GeoJSON", err);
+      }
+    }
+
+    loadGeoJSON();
+  }, []);
+
   return (
     <div style={{ position: "relative", width: "100%" }}>
-      <div ref={mapRef} style={{ height: "400px", width: "100%" }} />
+      <div ref={mapRef} className="report-creation-map" style={{ height: "400px", width: "100%" }} />
 
       <div
+        className="location-info-box"
         style={{
           position: "absolute",
           top: "10px",
@@ -345,8 +366,16 @@ function MapReport(props) {
           border: isValidLocation ? "none" : "2px solid #ffc107",
         }}
       >
-        <strong><i className='bi bi-exclamation-triangle-fill me-2'></i>{isValidLocation ? "Selected location:" : "Invalid Location"}</strong>
-        <div style={{ marginTop: "5px", color: isValidLocation ? "#555" : "#856404" }}>
+        <strong>
+          <i className='bi bi-exclamation-triangle-fill me-2'></i>
+          {isValidLocation ? "Selected location:" : "Invalid Location"}
+        </strong>
+        <div
+          style={{
+            marginTop: "5px",
+            color: isValidLocation ? "#555" : "#856404",
+          }}
+        >
           {isGeocoding ? (
             <span>
               <i className='spinner-border spinner-border-sm me-2'></i>
@@ -357,7 +386,14 @@ function MapReport(props) {
           )}
         </div>
         {!isValidLocation && !isGeocoding && (
-          <div style={{ fontSize: "12px", color: "#dc3545", marginTop: "5px", fontWeight: "500" }}>
+          <div
+            style={{
+              fontSize: "12px",
+              color: "#dc3545",
+              marginTop: "5px",
+              fontWeight: "500",
+            }}
+          >
             Location must be within Torino
           </div>
         )}

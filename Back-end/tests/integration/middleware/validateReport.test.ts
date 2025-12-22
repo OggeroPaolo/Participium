@@ -1,65 +1,80 @@
 import { describe, it, expect, vi } from "vitest";
-import { validateCreateReport, validateGetReport, validateOfficersGetReports } from "../../../src/middlewares/reportValidation.js";
+import {
+  validateCreateComment,
+  validateCreateReport,
+  validateReportId,
+  validateGetReports,
+  validateAssignExternalMaintainer,
+  validateExternalMaintainerUpdateStatus
+} from "../../../src/middlewares/reportValidation.js";
 
-describe("validateReport Test", () => {
-  describe("validateCreateReport middleware", () => {
-    const createMockReqResNext = (body = {}, files: any) => {
-      const req: any = { body, files };
-      const res: any = { status: vi.fn().mockReturnThis(), json: vi.fn() };
-      const next = vi.fn();
-      return { req, res, next };
-    };
+// Helper to mock req/res/next
+const createMockReqResNext = (opts: any = {}) => {
+  const req: any = opts.req || {};
+  const res: any = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+  const next = vi.fn();
+  return { req, res, next };
+};
 
-    it("should call next() for valid input (files as array)", async () => {
+describe("Report Validation Middleware Tests", () => {
+
+  // ----------------- validateCreateComment -----------------
+  describe("validateCreateComment", () => {
+    it("calls next() with valid input", async () => {
       const { req, res, next } = createMockReqResNext({
-        user_id: 1,
-        category_id: 2,
-        title: "Test",
-        description: "Test desc",
-        position_lat: 40.0,
-        position_lng: -70.0,
-        is_anonymous: true,
-      }, [{}]); // at least 1 photo
+        req: { params: { reportId: 1 }, body: { type: "note", text: "Hello" } }
+      });
 
-      for (const middleware of validateCreateReport) {
+      for (const middleware of validateCreateComment) {
         await middleware(req, res, next);
       }
 
       expect(next).toHaveBeenCalled();
     });
 
-    it("should call next() for valid input (files as single object)", async () => {
+    it("returns 400 with missing fields", async () => {
       const { req, res, next } = createMockReqResNext({
-        user_id: 1,
-        category_id: 2,
-        title: "Test",
-        description: "Test desc",
-        position_lat: 40.0,
-        position_lng: -70.0,
-        is_anonymous: true,
-      }, {}); // single object, not array
+        req: { params: { reportId: "abc" }, body: { type: "", text: "" } }
+      });
 
-      for (const middleware of validateCreateReport) {
+      for (const middleware of validateCreateComment) {
         await middleware(req, res, next);
       }
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json.mock.calls[0][0].errors.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ----------------- validateCreateReport -----------------
+  describe("validateCreateReport", () => {
+
+    it("calls next() with valid input and files", async () => {
+      const { req, res, next } = createMockReqResNext({
+        req: {
+          body: {
+            category_id: 1,
+            title: "Test",
+            description: "Desc",
+            position_lat: 1.1,
+            position_lng: 2.2,
+            is_anonymous: true
+          },
+          files: [{}]
+        }
+      });
+
+      for (const middleware of validateCreateReport) await middleware(req, res, next);
 
       expect(next).toHaveBeenCalled();
     });
 
-    it("should return 400 if no photos are uploaded", async () => {
+    it("returns 400 if no photos are uploaded", async () => {
       const { req, res, next } = createMockReqResNext({
-        user_id: 1,
-        category_id: 2,
-        title: "Test",
-        description: "Test desc",
-        position_lat: 40.0,
-        position_lng: -70.0,
-        is_anonymous: true,
-      }, []);
+        req: { body: {}, files: [] }
+      });
 
-      for (const middleware of validateCreateReport) {
-        await middleware(req, res, next);
-      }
+      for (const middleware of validateCreateReport) await middleware(req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
@@ -67,21 +82,12 @@ describe("validateReport Test", () => {
       });
     });
 
-    it("should return 400 if more than 3 photos are uploaded", async () => {
-      const files = [{}, {}, {}, {}];
+    it("returns 400 if more than 3 photos uploaded", async () => {
       const { req, res, next } = createMockReqResNext({
-        user_id: 1,
-        category_id: 2,
-        title: "Test",
-        description: "Test desc",
-        position_lat: 40.0,
-        position_lng: -70.0,
-        is_anonymous: true,
-      }, files);
+        req: { body: {}, files: [{}, {}, {}, {}] }
+      });
 
-      for (const middleware of validateCreateReport) {
-        await middleware(req, res, next);
-      }
+      for (const middleware of validateCreateReport) await middleware(req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
@@ -89,87 +95,111 @@ describe("validateReport Test", () => {
       });
     });
 
-    it("should return 400 if any body field is invalid", async () => {
+    it("returns 400 if req.files is not an array", async () => {
       const { req, res, next } = createMockReqResNext({
-        user_id: "abc", // invalid
-        category_id: 2,
-        title: "",
-        description: "Test desc",
-        position_lat: "abc",
-        position_lng: -70.0,
-        is_anonymous: "yes",
-      }, [{}]);
+        req: { body: {}, files: {} }
+      });
 
-      for (const middleware of validateCreateReport) {
-        await middleware(req, res, next);
-      }
+      for (const middleware of validateCreateReport) await middleware(req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      const jsonArg = res.json.mock.calls[0][0];
-      expect(jsonArg.errors.length).toBeGreaterThan(0);
+      expect(res.json).toHaveBeenCalledWith({
+        errors: [{ msg: "At least one photo is required", param: "photos" }]
+      });
     });
   });
 
+  // ----------------- validateReportId -----------------
+  describe("validateReportId", () => {
+    it("calls next() for valid reportId", async () => {
+      const { req, res, next } = createMockReqResNext({
+        req: { params: { reportId: 10 } }
+      });
 
-  describe("validateOfficersGetReports middleware", () => {
-    const createMockReqResNext = (officerId: any) => {
-      const req: any = { params: { officerId } };
-      const res: any = { status: vi.fn().mockReturnThis(), json: vi.fn() };
-      const next = vi.fn();
-      return { req, res, next };
-    };
-
-    it("should call next() for valid officerId", async () => {
-      const { req, res, next } = createMockReqResNext(123);
-
-      for (const middleware of validateOfficersGetReports) {
-        await middleware(req, res, next);
-      }
+      for (const middleware of validateReportId) await middleware(req, res, next);
 
       expect(next).toHaveBeenCalled();
     });
 
-    it("should return 400 for invalid officerId", async () => {
-      const { req, res, next } = createMockReqResNext("abc");
+    it("returns 400 for invalid reportId", async () => {
+      const { req, res, next } = createMockReqResNext({
+        req: { params: { reportId: "abc" } }
+      });
 
-      for (const middleware of validateOfficersGetReports) {
-        await middleware(req, res, next);
-      }
+      for (const middleware of validateReportId) await middleware(req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      const jsonArg = res.json.mock.calls[0][0];
-      expect(jsonArg.errors[0].msg).toBe("officerId must be a valid integer");
+      expect(res.json.mock.calls[0][0].errors[0].msg).toBe("reportId must be a valid integer");
     });
   });
 
-  describe("validateGetReport middleware", () => {
-    const createMockReqResNext = (reportId: any) => {
-      const req: any = { params: { reportId } };
-      const res: any = { status: vi.fn().mockReturnThis(), json: vi.fn() };
-      const next = vi.fn();
-      return { req, res, next };
-    };
+  // ----------------- validateGetReports -----------------
+  describe("validateGetReports", () => {
+    it("calls next() with valid status", async () => {
+      const { req, res, next } = createMockReqResNext({
+        req: { query: { status: "in_progress" } }
+      });
 
-    it("should call next() for valid reportId", async () => {
-      const { req, res, next } = createMockReqResNext(123);
+      for (const middleware of validateGetReports) await middleware(req, res, next);
+      expect(next).toHaveBeenCalled();
+    });
 
-      for (const middleware of validateGetReport) {
-        await middleware(req, res, next);
-      }
+    it("returns 400 for invalid status", async () => {
+      const { req, res, next } = createMockReqResNext({
+        req: { query: { status: "wrong_status" } }
+      });
+
+      for (const middleware of validateGetReports) await middleware(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json.mock.calls[0][0].error).toBe("Invalid status filter: wrong_status");
+    });
+  });
+
+  // ----------------- validateAssignExternalMaintainer -----------------
+  describe("validateAssignExternalMaintainer", () => {
+    it("calls next() with valid data", async () => {
+      const { req, res, next } = createMockReqResNext({
+        req: { params: { reportId: 1 }, body: { externalMaintainerId: 2 } }
+      });
+
+      for (const middleware of validateAssignExternalMaintainer) await middleware(req, res, next);
+      expect(next).toHaveBeenCalled();
+    });
+
+    it("returns 400 with invalid values", async () => {
+      const { req, res, next } = createMockReqResNext({
+        req: { params: { reportId: "abc" }, body: { externalMaintainerId: "xyz" } }
+      });
+
+      for (const middleware of validateAssignExternalMaintainer) await middleware(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json.mock.calls[0][0].errors.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ----------------- validateExternalMaintainerUpdateStatus -----------------
+  describe("validateExternalMaintainerUpdateStatus", () => {
+    it("calls next() with valid input", async () => {
+      const { req, res, next } = createMockReqResNext({
+        req: { params: { reportId: 1 }, body: { status: "resolved" } }
+      });
+
+      for (const middleware of validateExternalMaintainerUpdateStatus) await middleware(req, res, next);
 
       expect(next).toHaveBeenCalled();
     });
 
-    it("should return 400 for invalid reportId", async () => {
-      const { req, res, next } = createMockReqResNext("abc");
+    it("returns 400 for invalid status", async () => {
+      const { req, res, next } = createMockReqResNext({
+        req: { params: { reportId: 1 }, body: { status: "wrong" } }
+      });
 
-      for (const middleware of validateGetReport) {
-        await middleware(req, res, next);
-      }
+      for (const middleware of validateExternalMaintainerUpdateStatus) await middleware(req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      const jsonArg = res.json.mock.calls[0][0];
-      expect(jsonArg.errors[0].msg).toBe("reportId must be a valid integer");
+      expect(res.json.mock.calls[0][0].errors[0].msg).toContain("Status must be one of");
     });
   });
 });

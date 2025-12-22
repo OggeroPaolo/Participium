@@ -7,10 +7,10 @@ export class EmailOrUsernameConflictError extends Error{}
 export async function createUserWithFirebase(
   userData: {
     email: string;
-    password: string;
     firstName: string;
     lastName: string;
     username: string;
+    password: string;
     role_id?: number;
   },
   userDaoInstance: UserDAO

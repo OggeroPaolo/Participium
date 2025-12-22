@@ -1,19 +1,19 @@
 import { useActionState, useState } from "react";
 import { Form, Button, Container, InputGroup } from "react-bootstrap";
 import { loginWithEmail } from "../firebaseService";
+import { useEmailStore } from "../store/emailStore";
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isFormLoading, setIsFormLoading] = useState(false);
 
-  const [state, formAction] = useActionState(submitCredentials, {
+  const { setSignupEmail } = useEmailStore();
+
+  const [state, formAction, isPending] = useActionState(submitCredentials, {
     email: "",
     password: "",
   });
 
   async function submitCredentials(prevData, formData) {
-    setIsFormLoading(true);
-
     const credentials = {
       email: formData.get("email"),
       password: formData.get("password"),
@@ -29,9 +29,10 @@ function Login() {
         message = "Incorrect email or password.";
       else if (error.code === "auth/too-many-requests")
         message = "Too many failed attempts, please try later.";
+
+      // save in case of redirection to verification
+      setSignupEmail(credentials.email);
       return { error: message };
-    } finally {
-      setIsFormLoading(false);
     }
   }
 
@@ -39,7 +40,7 @@ function Login() {
     <>
       <Container
         fluid
-        className='mt-5 ms-1 me-1 d-flex justify-content-center body-font'
+        className='mt-2 ms-1 me-1 d-flex justify-content-center body-font'
       >
         <Container
           className='p-4 mt-5'
@@ -85,19 +86,24 @@ function Login() {
               </InputGroup>
             </Form.Group>
             {state.error && (
-              <p className='text-danger mt-3 mb-2'>{state.error}</p>
-            )}
-            {isFormLoading && (
               <>
-                <div
-                  className='d-flex justify-content-center align-items-center'
-                  style={{ minHeight: "10vh" }}
+                <p className='text-danger mt-3 mb-2'>{state.error}</p>
+                <a
+                  href='/email-verification'
+                  className='text-primary text-decoration-underline'
                 >
-                  <div className='spinner-border text-primary' role='status'>
-                    <span className='visually-hidden'>Loading...</span>
-                  </div>
-                </div>
+                  Did you verify your email?
+                </a>
               </>
+            )}
+            {isPending && (
+              <div className='loading-overlay'>
+                <div
+                  className='spinner-border text-light'
+                  style={{ width: "3rem", height: "3rem" }}
+                ></div>
+                <div className='mt-3 text-light fw-semibold'>Logging in...</div>
+              </div>
             )}
 
             <Button type='submit' className='mt-4 confirm-button w-100'>

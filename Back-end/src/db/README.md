@@ -106,6 +106,7 @@ The `reports` table stores user-submitted reports about issues.
 | reviewed_at  | DATETIME                    | Timestamp when the report was reviewed                                                             |
 | note         | TEXT                        | Optional note; required if the report is rejected                                                  |
 | is_anonymous | INTEGER (boolean)           | Whether the report was submitted anonymously (1 = true, 0 = false)                                 |
+| address        | TEXT                        | Address of the reported issue |
 | position_lat | REAL                        | Latitude of the reported issue                                                                     |
 | position_lng | REAL                        | Longitude of the reported issue                                                                    |
 | created_at   | DATETIME                    | Timestamp when the report was created                                                              |

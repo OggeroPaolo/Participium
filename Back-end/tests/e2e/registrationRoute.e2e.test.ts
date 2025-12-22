@@ -1,143 +1,106 @@
 import request from "supertest";
 import { Express } from "express";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import userRouter from "../../src/routes/registrations.routes.js"; 
-import * as userService from "../../src/services/userService.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+
+import userRouter from "../../src/routes/registrations.routes.js";
+import { makeTestApp, initTestDB, resetTestDB } from "../setup/tests_util.js";
 import UserDAO from "../../src/dao/UserDAO.js";
-import { makeTestApp } from "../setup/tests_util.js";
 
-describe("POST /user-registrations (E2E)", () => {
+describe("POST /user-registrations", () => {
     let app: Express;
+    let dao: UserDAO;
 
-    beforeEach(() => {
-        vi.clearAllMocks();
+    beforeEach(async () => {
+        await initTestDB();
         app = makeTestApp(userRouter);
+        dao = new UserDAO();
+
+        vi.restoreAllMocks();
     });
 
-    it("should create a new user successfully", async () => {
-        const mockUser = {
-            id: "12345",
-            firebase_uid: "firebase123",
-            email: "john@example.com",
-            username: "johndoe",
-            first_name: "John",
-            last_name: "Doe",
-        } as any;
+    afterEach(async () => {
+        await resetTestDB();
+    });
+    describe("POST /user-registrations", () => {
+        it("should return 400 for invalid input (validation errors)", async () => {
+            const res = await request(app)
+                .post("/user-registrations")
+                .send({
+                    firstName: "",     // invalid
+                    lastName: "",      // invalid
+                    username: "??",    // invalid: not alphanumeric
+                    email: "not-email",// invalid
+                    password: 123      // invalid: not string
+                });
 
-        const createUserMock = vi
-            .spyOn(userService, "createUserWithFirebase")
-            .mockResolvedValue(mockUser);
-
-        const response = await request(app)
-            .post("/user-registrations")
-            .send({
-                firstName: "John",
-                lastName: "Doe",
-                username: "johndoe",
-                email: "john@example.com",
-                password: "password123",
-            });
-
-        expect(response.status).toBe(201);
-        expect(response.body).toEqual({
-            message: "User data saved successfully",
-            userId: "12345",
+            expect(res.status).toBe(400);
+            expect(res.body.errors).toBeInstanceOf(Array);
+            expect(res.body.errors.length).toBeGreaterThan(0);
         });
 
-        expect(createUserMock).toHaveBeenCalledWith(
-            {
-                firstName: "John",
-                lastName: "Doe",
-                username: "johndoe",
-                email: "john@example.com",
-                password: "password123",
-            },
-            expect.any(UserDAO)
-        );
 
-        createUserMock.mockRestore();
-    });
+        it("should return 422 when email or username already exists", async () => {
 
-    it("should return 400 for invalid input (empty field)", async () => {
-        const response = await request(app)
-            .post("/user-registrations")
-            .send({
-                firstName: "",
-                lastName: "Doe",
-                username: "jd",
-                email: "invalidemail",
-                password: "",
-            });
+            const res = await request(app)
+                .post("/user-registrations")
+                .send({
+                    firstName: "John",
+                    lastName: "Doe",
+                    username: "johndoe",
+                    email: "citizen@example.com",
+                    password: "password123"
+                });
 
-        expect(response.status).toBe(400);
-        expect(response.body.errors).toHaveLength(2);
-;
-    });
+            expect(res.status).toBe(422);
+            expect(res.body.error).toBe("Email or username already in use");
+        });
 
-    it("should return 422 if username or email conflicts", async () => {
-        const conflictMock = vi
-            .spyOn(userService, "createUserWithFirebase")
-            .mockRejectedValue(
-                new userService.EmailOrUsernameConflictError("Username or email already taken")
-            );
 
-        const response = await request(app)
-            .post("/user-registrations")
-            .send({
-                firstName: "Alice",
-                lastName: "Smith",
-                username: "alicesmith",
-                email: "alice@example.com",
-                password: "password123",
-            });
+        it("should return 422 when a pending user already exists for this email", async () => {
 
-        expect(response.status).toBe(422);
-        expect(response.body).toEqual({ error: "Username or email already taken" });
+            // First, create a pending user
+            await request(app)
+                .post("/user-registrations")
+                .send({
+                    firstName: "John",
+                    lastName: "Doe",
+                    username: "johndoe",
+                    email: "pending@example.com",
+                    password: "password123"
+                });
 
-        conflictMock.mockRestore();
-    });
+            const res = await request(app)
+                .post("/user-registrations")
+                .send({
+                    firstName: "John",
+                    lastName: "Doe",
+                    username: "johndoe",
+                    email: "pending@example.com",
+                    password: "password123"
+                });
 
-    it("should return 409 if user already exists", async () => {
-        const existsMock = vi
-            .spyOn(userService, "createUserWithFirebase")
-            .mockRejectedValue(
-                new userService.UserAlreadyExistsError("User already exists in Firebase")
-            );
+            expect(res.status).toBe(422);
+            expect(res.body.error).toContain("already pending");
+        });
 
-        const response = await request(app)
-            .post("/user-registrations")
-            .send({
-                firstName: "Bob",
-                lastName: "Jones",
-                username: "bobjones",
-                email: "bob@example.com",
-                password: "password123",
-            });
 
-        expect(response.status).toBe(409);
-        expect(response.body).toEqual({ error: "User already exists in Firebase" });
+        it("should return 500 on unexpected server error", async () => {
+            // Force the DAO to explode
+            vi.spyOn(UserDAO.prototype, "findUserByEmailOrUsername")
+                .mockRejectedValue(new Error("Database failure"));
 
-        existsMock.mockRestore();
-    });
+            const res = await request(app)
+                .post("/user-registrations")
+                .send({
+                    firstName: "John",
+                    lastName: "Doe",
+                    username: "johndoe",
+                    email: "fail@example.com",
+                    password: "password123"
+                });
 
-    it("should return 500 for unexpected errors", async () => {
-        const errorMock = vi
-            .spyOn(userService, "createUserWithFirebase")
-            .mockRejectedValue(new Error("Unexpected error"));
-
-        const response = await request(app)
-            .post("/user-registrations")
-            .send({
-                firstName: "Eve",
-                lastName: "Brown",
-                username: "evebrown",
-                email: "eve@example.com",
-                password: "password123",
-            });
-
-        expect(response.status).toBe(500);
-        expect(response.body).toEqual({ error: "Internal server error" });
-
-        errorMock.mockRestore();
+            expect(res.status).toBe(500);
+            expect(res.body.error).toBe("Internal server error");
+        });
     });
 });

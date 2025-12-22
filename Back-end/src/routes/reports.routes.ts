@@ -8,22 +8,30 @@ import type { ReportMap } from "../models/reportMap.js";
 import OperatorDAO from "../dao/OperatorDAO.js";
 import { ROLES } from "../models/userRoles.js";
 import type { User } from "../models/user.js"
-import { validateAssignExternalMaintainer, validateCreateReport, validateGetReport, validateGetReports, validateOfficersGetReports } from "../middlewares/reportValidation.js";
+import { validateAssignExternalMaintainer, validateCreateReport, validateExternalMaintainerUpdateStatus, validateReportId, validateGetReports, validateCreateComment } from "../middlewares/reportValidation.js";
 import { upload } from "../config/multer.js";
 import cloudinary from "../config/cloudinary.js";
-import { unlink, rename } from "fs/promises";
-import path from 'path';
+import { unlink } from "node:fs/promises";
+import path from 'node:path';
 import sharp from 'sharp';
 import type { ReportFilters } from "../dao/ReportDAO.js";
 import { ReportStatus } from "../models/reportStatus.js";
+
 import UserDAO from "../dao/UserDAO.js";
 import { getRealtimeGateway } from "../realtime/realtimeGateway.js";
 import { logger } from "../config/logger.js";
 
+import CommentDAO from "../dao/CommentDAO.js";
+import type { CreateCommentDTO } from "../dto/CommentDTO.js";
+
+
 const router = Router();
 const reportDAO = new ReportDAO();
 const operatorDAO = new OperatorDAO();
+
 const userDAO = new UserDAO();
+
+const commentDAO = new CommentDAO();
 
 //GET /reports/map
 router.get("/reports/map/accepted",
@@ -47,8 +55,7 @@ router.get("/reports/map/accepted",
 
 //GET /reports/:reportId
 router.get("/reports/:reportId",
-    verifyFirebaseToken([ROLES.CITIZEN, ROLES.PUB_RELATIONS, ROLES.TECH_OFFICER]),
-    validateGetReport,
+    validateReportId,
     async (req: Request, res: Response) => {
         try {
             const reportId = Number(req.params.reportId);
@@ -65,15 +72,37 @@ router.get("/reports/:reportId",
     }
 );
 
-//GET /officers/:officerId/reports
-router.get("/officers/:officerId/reports",
-    verifyFirebaseToken([ROLES.TECH_OFFICER]),
-    validateOfficersGetReports,
+//GET /ext_maintainer/reports
+router.get("/ext_maintainer/reports",
+    verifyFirebaseToken([ROLES.EXT_MAINTAINER]),
     async (req: Request, res: Response) => {
         try {
-            //TODO: Verification on params
-            const officerId = Number(req.params.officerId);
-            const filters: ReportFilters = { officerId: officerId };
+            const user = (req as Request & { user: User }).user;
+            const filters: ReportFilters = { externalUser: user.id };
+
+            const reports = await reportDAO.getReportsByFilters(filters);
+
+            if (Array.isArray(reports) && reports.length === 0) {
+                return res.status(204).send();
+            }
+
+            return res.status(200).json({ reports });
+
+
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
+
+//GET /tech_officer/reports
+router.get("/tech_officer/reports",
+    verifyFirebaseToken([ROLES.TECH_OFFICER]),
+    async (req: Request, res: Response) => {
+        try {
+            const user = (req as Request & { user: User }).user;
+            const filters: ReportFilters = { officerId: user.id };
 
             const reports = await reportDAO.getReportsByFilters(filters);
 
@@ -97,11 +126,7 @@ router.get("/reports",
     validateGetReports,
     async (req: Request, res: Response) => {
         try {
-            const status = req.query.status as string | undefined;
-
-            if (status && !Object.values(ReportStatus).includes(status as ReportStatus)) {
-                return res.status(400).json({ error: "Invalid status filter" });
-            }
+            const status = req.query.status as string;
 
             const filters: ReportFilters = {};
             if (status) {
@@ -122,6 +147,30 @@ router.get("/reports",
     }
 )
 
+//POST /reports/:reportId/comments
+router.post("/reports/:reportId/comments",
+    validateCreateComment,
+    verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]),
+    async (req: Request, res: Response) => {
+        try {
+            const user = (req as Request & { user: User }).user;
+
+            const data: CreateCommentDTO = {
+                user_id: Number(user.id),
+                report_id: Number(req.params.reportId),
+                type: req.body.type,
+                text: req.body.text
+            };
+            const createdComment = await commentDAO.createComment(data);
+
+            return res.status(201).json({ comment: createdComment });
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
+
 //POST /reports
 router.post("/reports",
     verifyFirebaseToken([ROLES.CITIZEN]),
@@ -132,10 +181,6 @@ router.post("/reports",
 
         try {
             const files = req.files as Express.Multer.File[];
-            if (!files || files.length === 0) {
-                console.log(files)
-                return res.status(400).json({ error: "At least one photo is required" });
-            }
 
             for (const file of files) {
                 const newPath = file.path + path.extname(file.originalname); // add extension
@@ -169,6 +214,7 @@ router.post("/reports",
                 title: req.body.title,
                 description: req.body.description,
                 is_anonymous: req.body.is_anonymous === 'true' || req.body.is_anonymous === true,
+                address: req.body.address,
                 position_lat: Number(req.body.position_lat),
                 position_lng: Number(req.body.position_lng),
                 photos: uploadedUrls
@@ -179,32 +225,34 @@ router.post("/reports",
 
         }
         catch (error) {
-            for (const url of uploadedUrls) {
-                try {
-                    // Extract everything after /upload/v123/ and before the extension
-                    const matches = url.match(/\/upload\/(?:v\d+\/)?(.+?)\.([a-zA-Z0-9]+)$/);
-                    let publicId = matches ? matches[1] : null;
-                    const ext = matches ? matches[2] : null; // capture the extension
-
-                    if (publicId && ext) {
-                        // Append the original extension back
-                        publicId = `${publicId}.${ext}`;
-
-                        await cloudinary.uploader.destroy(publicId, {
-                            resource_type: "raw"
-                        });
-                    }
-                } catch (delErr) {
-                    console.error("Error deleting image during rollback:", delErr);
-                }
-            }
-
             console.log(error);
+            for (const url of uploadedUrls) {
+                await rollbackCloundinaryImages(url)
+            }
             return res.status(500).json({ error: "Internal server error" });
         }
-
-
     });
+
+async function rollbackCloundinaryImages(url: string) {
+    try {
+        // Extract everything after /upload/v123/ and before the extension
+        const matches = new RegExp(/\/upload\/(?:v\d+\/)?(.+?)\.([a-zA-Z0-9]+)$/).exec(url);
+        let publicId = matches ? matches[1] : null;
+        const ext = matches ? matches[2] : null; // capture the extension
+
+        if (publicId && ext) {
+            // Append the original extension back
+            publicId = `${publicId}.${ext}`;
+
+            await cloudinary.uploader.destroy(publicId, {
+                resource_type: "raw"
+            });
+        }
+    } catch (error_) {
+        console.error("Error deleting image during rollback:", error_);
+    }
+
+}
 
 // Patches the external_user field of a report in order to assign it to the correct external mantainer
 router.patch("/tech_officer/reports/:reportId/assign_external",
@@ -220,9 +268,11 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
             const report = await reportDAO.getReportById(reportId);
             if (!report) return res.status(404).json({ error: "Report not found" });
 
-            if (report.status !== 'assigned') {
+            if (report.status !== ReportStatus.Assigned &&
+                report.status !== ReportStatus.InProgress &&
+                report.status !== ReportStatus.Suspended) {
                 return res.status(403).json({
-                    error: `You are not allowed to assign to an external maintainer if the report is not in already in assigned status`
+                    error: `You are not allowed to assign to an external maintainer if the report is not in assigned/in_progress/suspended state`
                 });
             }
 
@@ -244,6 +294,46 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
 
             return res.status(200).json({
                 message: "Report successfully assigned to the external maintainer"
+            });
+
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
+
+// Permits to an external maintainer to update the status of a report assigned to him
+router.patch("/ext_maintainer/reports/:reportId",
+    validateExternalMaintainerUpdateStatus,
+    verifyFirebaseToken([ROLES.EXT_MAINTAINER]),
+    async (req: Request, res: Response) => {
+        try {
+            const reportId = Number(req.params.reportId);
+            const user = (req as Request & { user: User }).user;
+            let { status } = req.body
+
+            const report = await reportDAO.getReportById(reportId);
+            if (!report) return res.status(404).json({ error: "Report not found" });
+
+            if (report.status !== ReportStatus.Assigned &&
+                report.status !== ReportStatus.InProgress &&
+                report.status !== ReportStatus.Suspended) {
+                return res.status(403).json({
+                    error: `You are not allowed to change status of a report not in assigned/in_progress/suspended state`
+                });
+            }
+
+            if (report.external_user !== user.id) {
+                return res.status(403).json({
+                    error: `You are not allowed to change status of a report that is not assigned to you`
+                });
+            }
+
+            await reportDAO.updateReportStatus(reportId, status)
+
+            return res.status(200).json({
+                message: "Report status updated successfully"
             });
 
         } catch (error) {
@@ -294,7 +384,7 @@ router.patch("/pub_relations/reports/:reportId",
             if (!report) return res.status(404).json({ error: "Report not found" });
 
             const currentStatus = report.status;
-            const categoryIdFinal = categoryId ? categoryId : report.category_id;
+            const categoryIdFinal = categoryId || report.category_id;
 
             // A public relations officer can only modify if the current status is pending_approval
             if (currentStatus !== "pending_approval") {
@@ -315,7 +405,7 @@ router.patch("/pub_relations/reports/:reportId",
                     assigneeId = officerId
                 } else {
                     return res.status(403).json({
-                        error: `The officer you want to assign to this report does not handle this category`
+                        error: `The officer you want to assign to this report does not handle this category or doesn't exist`
                     });
                 }
             }
@@ -349,6 +439,29 @@ router.patch("/pub_relations/reports/:reportId",
             });
         } catch (error: any) {
             return res.status(500).json({ error: error.message });
+        }
+    }
+);
+
+
+//GET /report/:reportId/internal-comments
+router.get("/report/:reportId/internal-comments",
+    validateReportId,
+    verifyFirebaseToken([ROLES.EXT_MAINTAINER, ROLES.TECH_OFFICER]),
+    async (req: Request, res: Response) => {
+        try {
+            const reportId = Number(req.params.reportId);
+            const comments = await commentDAO.getPrivateCommentsByReportId(reportId);
+
+            if (Array.isArray(comments) && comments.length === 0) {
+                return res.status(204).send();
+            }
+
+            return res.status(200).json({ comments });
+
+        } catch (error: any) {
+            console.log(error);
+            return res.status(500).json({ error: "Internal server error" });
         }
     }
 );

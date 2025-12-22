@@ -5,6 +5,7 @@ export type ReportMapDTO = {
   title: string;
   reporterName: string;
   reporterUsername: string;
+  address: string;
   position: {
     lat: number;
     lng: number;
@@ -18,6 +19,7 @@ function mapToDTO(r: ReportMap): ReportMapDTO {
     title: r.title,
     reporterName: `${r.first_name} ${r.last_name}`,
     reporterUsername: r.username,
+    address: r.address,
     position: {
       lat: r.position_lat,
       lng: r.position_lng

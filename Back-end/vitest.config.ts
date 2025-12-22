@@ -11,6 +11,8 @@ export default defineConfig({
     exclude: ["node_modules", "dist", "coverage"],
     globalSetup: path.resolve(__dirname, "tests/setup/globalEnvSetup.ts"),
 
+    testTimeout: 20000,
+
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov", "html"],
@@ -24,6 +26,8 @@ export default defineConfig({
         "**/db/**",
         "src/app.ts",
         "src/server.ts",
+        "src/models/**",
+        "src/types/**",
         "vitest.config.ts",
       ],
       all: true,

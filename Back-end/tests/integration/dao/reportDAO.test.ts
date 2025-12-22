@@ -27,6 +27,7 @@ describe("ReportDao", () => {
         position_lng: -70.0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        address: "123 Main St",
     };
 
     describe("getReportsByFilters", () => {
@@ -151,6 +152,68 @@ describe("ReportDao", () => {
     });
 
     // ──────────────────────────────────────────────────────────────
+    describe("updateReportExternalMaintainer", () => {
+        it("should update report external maintainer successfully", async () => {
+            const spy = vi.spyOn(db, "Update").mockResolvedValue({ changes: 1 });
+
+            const result = await dao.updateReportExternalMaintainer(1, 42);
+
+            expect(spy).toHaveBeenCalledWith(
+                expect.stringContaining("UPDATE reports"),
+                [42, 1]
+            );
+            expect(result.changes).toBe(1);
+        });
+
+        it("should throw error if no changes were made", async () => {
+            vi.spyOn(db, "Update").mockResolvedValue({ changes: 0 });
+
+            await expect(
+                dao.updateReportExternalMaintainer(999, 42)
+            ).rejects.toThrow("Report not found or no changes made");
+        });
+
+        it("should propagate database errors", async () => {
+            vi.spyOn(db, "Update").mockRejectedValue(new Error("DB failure"));
+
+            await expect(
+                dao.updateReportExternalMaintainer(1, 42)
+            ).rejects.toThrow("DB failure");
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────
+    describe("updateReportStatus", () => {
+        it("should update report status successfully", async () => {
+            const spy = vi.spyOn(db, "Update").mockResolvedValue({ changes: 1 });
+
+            const result = await dao.updateReportStatus(1, "resolved");
+
+            expect(spy).toHaveBeenCalledWith(
+                expect.stringContaining("UPDATE reports"),
+                ["resolved", 1]
+            );
+            expect(result.changes).toBe(1);
+        });
+
+        it("should throw error if no changes were made", async () => {
+            vi.spyOn(db, "Update").mockResolvedValue({ changes: 0 });
+
+            await expect(
+                dao.updateReportStatus(999, "resolved")
+            ).rejects.toThrow("Report not found or no changes made");
+        });
+
+        it("should propagate database errors", async () => {
+            vi.spyOn(db, "Update").mockRejectedValue(new Error("DB failure"));
+
+            await expect(
+                dao.updateReportStatus(1, "resolved")
+            ).rejects.toThrow("DB failure");
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────
     describe("updateReportStatusAndAssign", () => {
         it("should update report with all fields", async () => {
             const updateSpy = vi
@@ -241,10 +304,15 @@ describe("ReportDao", () => {
             reviewed_last_name: "Verdi",
             reviewed_username: "averdi",
 
+            // external user
+            external_user_id: 40,
+            external_first_name: "Marco",
+            external_last_name: "Neri",
+            external_username: "mneri",
+
             // first photo
             photo_url: "url1.jpg",
-            photo_ordering: 1
-
+            photo_ordering: 1,
         };
 
         it("should return complete report with photos", async () => {
@@ -253,13 +321,11 @@ describe("ReportDao", () => {
                 {
                     ...baseRow,
                     photo_url: "url2.jpg",
-                    photo_ordering: 2
-                }
+                    photo_ordering: 2,
+                },
             ];
 
-            const spy = vi
-                .spyOn(db, "getAll")
-                .mockResolvedValue(mockRows);
+            const spy = vi.spyOn(db, "getAll").mockResolvedValue(mockRows);
 
             const result = await dao.getCompleteReportById(1);
 
@@ -274,43 +340,51 @@ describe("ReportDao", () => {
             expect(result.user).toEqual({
                 id: 10,
                 complete_name: "Mario Rossi",
-                username: "mrossi"
+                username: "mrossi",
             });
 
             // category
             expect(result.category).toEqual({
                 id: 5,
-                name: "Road Issue"
+                name: "Road Issue",
             });
 
             // assigned_to
             expect(result.assigned_to).toEqual({
                 id: 20,
                 complete_name: "Luigi Bianchi",
-                username: "lbianchi"
+                username: "lbianchi",
             });
 
             // reviewed_by
             expect(result.reviewed_by).toEqual({
                 id: 30,
                 complete_name: "Anna Verdi",
-                username: "averdi"
+                username: "averdi",
+            });
+
+            // external_user
+            expect(result.external_user).toEqual({
+                id: 40,
+                complete_name: "Marco Neri",
+                username: "mneri",
             });
 
             // photos
             expect(result.photos).toEqual([
                 { url: "url1.jpg", ordering: 1 },
-                { url: "url2.jpg", ordering: 2 }
+                { url: "url2.jpg", ordering: 2 },
             ]);
         });
 
-        it("should handle assigned_to and reviewed_by being null", async () => {
+        it("should handle assigned_to, reviewed_by and external_user being null", async () => {
             const mockRows = [
                 {
                     ...baseRow,
                     assigned_user_id: null,
                     reviewed_user_id: null,
-                }
+                    external_user_id: null,
+                },
             ];
 
             vi.spyOn(db, "getAll").mockResolvedValue(mockRows);
@@ -319,6 +393,7 @@ describe("ReportDao", () => {
 
             expect(result.assigned_to).toBeUndefined();
             expect(result.reviewed_by).toBeUndefined();
+            expect(result.external_user).toBeUndefined();
         });
 
         it("should return report without photos if none exist", async () => {
@@ -326,8 +401,8 @@ describe("ReportDao", () => {
                 {
                     ...baseRow,
                     photo_url: null,
-                    photo_ordering: null
-                }
+                    photo_ordering: null,
+                },
             ];
 
             vi.spyOn(db, "getAll").mockResolvedValue(mockRows);
@@ -353,6 +428,7 @@ describe("ReportDao", () => {
             position_lat: 40.0,
             position_lng: 7.0,
             is_anonymous: false,
+            address: "456 Another St",
             photos: ["a.jpg", "b.jpg", "c.jpg"]
         };
 
@@ -384,6 +460,7 @@ describe("ReportDao", () => {
                     dto.category_id,
                     dto.title,
                     dto.description,
+                    dto.address,
                     dto.position_lat,
                     dto.position_lng,
                     0
@@ -438,6 +515,31 @@ describe("ReportDao", () => {
             expect(photoCalls.length).toBe(3);
         });
 
+        it("should create a report with anonymous set to true", async () => {
+            const dto = {
+                user_id: 1,
+                category_id: 2,
+                title: "Test",
+                description: "Desc",
+                position_lat: 10,
+                position_lng: 20,
+                is_anonymous: true,
+                photos: []
+            };
+
+            const updateSpy = vi.spyOn(db, "Update").mockResolvedValue({ changes: 1, lastID: 1 });
+            vi.spyOn(dao, "getCompleteReportById").mockResolvedValue({ id: 1 } as any);
+            vi.spyOn(db, "beginTransaction").mockResolvedValue(undefined);
+            vi.spyOn(db, "commitTransaction").mockResolvedValue(undefined);
+
+            await dao.createReport(dto);
+
+            expect(updateSpy).toHaveBeenCalledWith(
+                expect.stringContaining("INSERT INTO reports"),
+                expect.arrayContaining([1])
+            );
+        });
+
         it("should rollback and throw if report insert fails", async () => {
             vi.spyOn(db, "beginTransaction").mockResolvedValue(undefined);
             const rollbackSpy = vi.spyOn(db, "rollbackTransaction").mockResolvedValue(undefined);
@@ -464,4 +566,5 @@ describe("ReportDao", () => {
             expect(rollbackSpy).toHaveBeenCalled();
         });
     });
+
 });

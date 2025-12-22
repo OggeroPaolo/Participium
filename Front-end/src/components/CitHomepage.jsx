@@ -1,15 +1,13 @@
 import { useEffect, useState, useRef } from "react";
-import Map from "./Map";
+import CityMap from "./CityMap";
 import { getApprovedReports } from "../API/API";
 import { Container, Col, Row, Card } from "react-bootstrap";
 import { useNavigate } from "react-router";
-import { reverseGeocode } from "../utils/geocoding";
 
 
 function CitHomepage(props) {
   const [reports, setReports] = useState([]);
   const [selectedReportID, setSelectedReportID] = useState(0);
-  const [reportAddresses, setReportAddresses] = useState({});
   const [showMapOverlay, setShowMapOverlay] = useState(true);
   const [showReportList, setShowReportList] = useState(false);
   const reportRefs = useRef({});
@@ -18,23 +16,7 @@ function CitHomepage(props) {
   useEffect(() => {
     const loadReports = async () => {
       const reportList = await getApprovedReports();
-
       setReports(reportList);
-      
-      // Fetch addresses for all reports
-      const addresses = {};
-      for (const report of reportList) {
-        if (report.position?.lat && report.position?.lng) {
-          try {
-            const address = await reverseGeocode(report.position.lat, report.position.lng);
-            addresses[report.id] = address;
-          } catch (error) {
-            console.error(`Failed to geocode report ${report.id}:`, error);
-            addresses[report.id] = `${report.position.lat}, ${report.position.lng}`;
-          }
-        }
-      }
-      setReportAddresses(addresses);
     };
     loadReports();
   }, []);
@@ -80,7 +62,7 @@ function CitHomepage(props) {
                       </div>
                       <div className='small mt-2'>
                         <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
-                        {reportAddresses[r.id] || 'Loading address...'}
+                        {r.address}
                       </div>
                     </Card.Body>
                   </Card>
@@ -105,7 +87,7 @@ function CitHomepage(props) {
           onMouseDown={() => setShowMapOverlay(false)}
           onTouchStart={() => setShowMapOverlay(false)}
         >
-          <Map
+          <CityMap
             center={[45.0703, 7.6869]}
             zoom={13}
             approvedReports={reports}
@@ -170,7 +152,7 @@ function CitHomepage(props) {
                       </div>
                       <div className='small mt-2'>
                         <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
-                        {reportAddresses[r.id] || 'Loading address...'}
+                        {r.address}
                       </div>
                     </Card.Body>
                   </Card>

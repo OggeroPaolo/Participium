@@ -1,10 +1,10 @@
 import { Router } from "express";
 import type { Request, Response, NextFunction } from "express";
-import { body, validationResult, param } from "express-validator";
+import { body, validationResult, param, query } from "express-validator";
 import { verifyFirebaseToken } from "../middlewares/verifyFirebaseToken.js";
 import { ROLES } from "../models/userRoles.js";
 import UserDAO from "../dao/UserDAO.js";
-import OperatorDAO from "../dao/OperatorDAO.js";
+import OperatorDAO, { type ExternalMaintainerFilters } from "../dao/OperatorDAO.js";
 import { createUserWithFirebase, UserAlreadyExistsError, EmailOrUsernameConflictError } from "../services/userService.js";
 
 
@@ -108,6 +108,43 @@ router.post("/operator-registrations",
         return res.status(422).json({ error: error.message });
       }
       return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// GET external maintainers with optional filters
+router.get("/external-maintainers",
+  verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.PUB_RELATIONS, ROLES.ADMIN]),
+  [
+    query("companyId").optional().isInt({gt:0}).withMessage("CompanyId must be a positive integer"),
+    query("categoryId").optional().isInt({gt:0}).withMessage("CategoryId must be a positive integer"),
+  ],
+
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Handle validation errors
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        const extractedErrors = errors.array().map(err => err.msg);
+        return res.status(400).json({ errors: extractedErrors });
+      }
+
+      const operatorDao = new OperatorDAO();
+
+      const filters: ExternalMaintainerFilters = {
+        companyId: Number(req.query.companyId),
+        categoryId: Number(req.query.categoryId),
+      };
+
+      // Fetch external maintainers
+      const externalMaintainers = await operatorDao.getExternalMaintainersByFilter(filters);
+      if (!externalMaintainers || externalMaintainers.length === 0) {
+        return res.status(204).send(); // No external maintainers found
+      }
+
+      res.status(200).json(externalMaintainers);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
     }
   }
 );

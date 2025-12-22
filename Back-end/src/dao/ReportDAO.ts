@@ -8,6 +8,7 @@ export interface ReportFilters {
   status?: string;
   officerId?: number;
   userId?: number;
+  externalUser?: number;
 }
 
 export default class ReportDao {
@@ -28,6 +29,10 @@ export default class ReportDao {
       conditions.push("user_id = ?");
       params.push(filters.userId);
     }
+    if (typeof filters.externalUser === "number") {
+      conditions.push("external_user = ?");
+      params.push(filters.externalUser);
+    }
 
     let query = "SELECT * FROM reports";
     if (conditions.length > 0) {
@@ -41,7 +46,7 @@ export default class ReportDao {
 
   async getAcceptedReportsForMap(): Promise<ReportMap[]> {
     const sql = `
-      SELECT r.id, r.title, u.first_name, u.last_name, u.username, r.position_lat, r.position_lng
+      SELECT r.id, r.title, u.first_name, u.last_name, u.username, r.address, r.position_lat, r.position_lng
       FROM reports r
       JOIN users u ON r.user_id = u.id
       WHERE r.status != 'pending_approval' AND r.status != 'rejected'
@@ -58,6 +63,22 @@ export default class ReportDao {
     `;
 
     const result = await Update(query, [externalMaintainerId, reportId]);
+
+    if (result.changes === 0) {
+      throw new Error("Report not found or no changes made");
+    }
+
+    return result;
+  }
+
+  async updateReportStatus(reportId: number, status: string) {
+    const query = `
+      UPDATE reports
+      SET status = ?
+      WHERE id = ?;
+    `;
+
+    const result = await Update(query, [status, reportId]);
 
     if (result.changes === 0) {
       throw new Error("Report not found or no changes made");
@@ -99,29 +120,29 @@ export default class ReportDao {
     const sql = `
     SELECT 
       r.*,
-      -- utente autore
       u.id          AS user_id,
       u.first_name  AS user_first_name,
       u.last_name   AS user_last_name,
       u.username    AS user_username,
 
-      -- categoria
       c.id          AS category_id,
       c.name        AS category_name,
 
-      -- assegnatario (può essere null)
       au.id         AS assigned_user_id,
       au.first_name AS assigned_first_name,
       au.last_name  AS assigned_last_name,
       au.username   AS assigned_username,
 
-      -- revisore (può essere null)
       ru.id         AS reviewed_user_id,
       ru.first_name AS reviewed_first_name,
       ru.last_name  AS reviewed_last_name,
       ru.username   AS reviewed_username,
 
-      -- foto
+      eu.id         AS external_user_id,
+      eu.first_name AS external_first_name,
+      eu.last_name  AS external_last_name,
+      eu.username   AS external_username,
+
       p.url         AS photo_url,
       p.ordering    AS photo_ordering
     FROM reports r
@@ -129,6 +150,7 @@ export default class ReportDao {
     JOIN categories c ON c.id = r.category_id
     LEFT JOIN users au ON au.id = r.assigned_to
     LEFT JOIN users ru ON ru.id = r.reviewed_by
+    LEFT JOIN users eu ON eu.id = r.external_user
     LEFT JOIN photos p ON p.report_id = r.id
     WHERE r.id = ?
     ORDER BY p.ordering ASC
@@ -140,15 +162,15 @@ export default class ReportDao {
       throw new Error("Report not found");
     }
 
-    // Prendi i dati base del report dalla prima riga
     const baseRow = rows[0];
-    // Raggruppa le foto filtrando quelle non nulle e ordinandole
+
     const photos: ReportPhotoDTO[] = rows
       .filter(row => row.photo_url !== null)
       .map(row => ({
-        url: row.photo_url as string,
-        ordering: row.photo_ordering as number,
+        url: row.photo_url,
+        ordering: row.photo_ordering,
       }));
+
     const user: ReportUserDTO = {
       id: baseRow.user_id,
       complete_name: `${baseRow.user_first_name} ${baseRow.user_last_name}`,
@@ -160,7 +182,7 @@ export default class ReportDao {
       name: baseRow.category_name,
     };
 
-    let assigned_to: ReportUserDTO | undefined;
+    let assigned_to;
     if (baseRow.assigned_user_id) {
       assigned_to = {
         id: baseRow.assigned_user_id,
@@ -169,12 +191,21 @@ export default class ReportDao {
       };
     }
 
-    let reviewed_by: ReportUserDTO | undefined;
+    let reviewed_by;
     if (baseRow.reviewed_user_id) {
       reviewed_by = {
         id: baseRow.reviewed_user_id,
         complete_name: `${baseRow.reviewed_first_name} ${baseRow.reviewed_last_name}`,
         username: baseRow.reviewed_username,
+      };
+    }
+
+    let external_user;
+    if (baseRow.external_user_id) {
+      external_user = {
+        id: baseRow.external_user_id,
+        complete_name: `${baseRow.external_first_name} ${baseRow.external_last_name}`,
+        username: baseRow.external_username,
       };
     }
 
@@ -187,9 +218,11 @@ export default class ReportDao {
       status: baseRow.status,
       assigned_to,
       reviewed_by,
+      external_user,
       reviewed_at: baseRow.reviewed_at ?? undefined,
       note: baseRow.note ?? undefined,
       is_anonymous: Boolean(baseRow.is_anonymous),
+      address: baseRow.address,
       position_lat: baseRow.position_lat,
       position_lng: baseRow.position_lng,
       created_at: baseRow.created_at,
@@ -200,16 +233,17 @@ export default class ReportDao {
     return completeReport;
   }
 
+
   async createReport(data: CreateReportDTO): Promise<CompleteReportDTO> {
     try {
       await beginTransaction();
 
       const insertReportSql = `
       INSERT INTO reports (
-        user_id, category_id, title, description,
+        user_id, category_id, title, description, address,
         position_lat, position_lng, is_anonymous, status, created_at, updated_at
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, 'pending_approval', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       )
     `;
 
@@ -218,6 +252,7 @@ export default class ReportDao {
         data.category_id,
         data.title,
         data.description,
+        data.address,
         data.position_lat,
         data.position_lng,
         data.is_anonymous ? 1 : 0

@@ -144,6 +144,75 @@ async function getCategories() {
   }
 }
 
+// Get operators (internal officers) for a category
+async function getCategoryOperators(categoryId) {
+  if (!categoryId) {
+    throw new Error("Category ID is required to fetch operators");
+  }
+
+  try {
+    const response = await fetch(`${URI}/categories/${categoryId}/operators`, {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return [];
+    }
+
+    if (response.ok) {
+      return await response.json();
+    } else {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || "Failed to fetch operators for the category"
+      );
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
+// Get external maintainers filtered by category/company
+async function getExternalMaintainers(filters = {}) {
+  try {
+    const params = new URLSearchParams();
+    if (filters.categoryId) {
+      params.append("categoryId", filters.categoryId);
+    }
+    if (filters.companyId) {
+      params.append("companyId", filters.companyId);
+    }
+    const queryString = params.toString() ? `?${params.toString()}` : "";
+
+    const response = await fetch(`${URI}/external-maintainers${queryString}`, {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return [];
+    }
+
+    if (response.ok) {
+      return await response.json();
+    } else {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error ||
+          errorData.errors?.[0] ||
+          "Failed to fetch external maintainers"
+      );
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
 // Get list of approved reports in the short format
 async function getApprovedReports() {
   try {
@@ -171,12 +240,14 @@ async function getApprovedReports() {
 
 // Create a new report
 async function createReport(reportData, lat, lng) {
-  const { title, description, category, photos } = reportData;
+  const { title, description, category, photos, address } = reportData;
 
   const formData = new FormData();
   formData.append("category_id", category);
   formData.append("title", title);
   formData.append("description", description);
+  //TODO: Check if the address is collected in reportData
+  formData.append("address", address);
   formData.append("position_lat", lat);
   formData.append("position_lng", lng);
   formData.append("is_anonymous", false);
@@ -250,7 +321,7 @@ async function getPendingReports() {
 
 // Review a report (approve or reject)
 async function reviewReport(reportId, reviewData) {
-  const { status, note, categoryId } = reviewData;
+  const { status, note, categoryId, officerId } = reviewData;
 
   try {
     const body = {
@@ -265,6 +336,10 @@ async function reviewReport(reportId, reviewData) {
       body.categoryId = categoryId;
     }
 
+    if (officerId) {
+      body.officerId = officerId;
+    }
+
     const response = await fetch(`${URI}/pub_relations/reports/${reportId}`, {
       method: "PATCH",
       headers: {
@@ -276,13 +351,221 @@ async function reviewReport(reportId, reviewData) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || errorData.errors?.[0] || "Failed to submit review");
+      throw new Error(
+        errorData.error || errorData.errors?.[0] || "Failed to submit review"
+      );
     }
 
     return await response.json();
   } catch (err) {
     throw new Error(err.message || "Network error");
   }
+}
+
+// Get assigned reports for technical officer review
+async function getAssignedReports() {
+  try {
+    const response = await fetch(`${URI}/tech_officer/reports`, {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return [];
+    }
+
+    if (response.ok) {
+      const assignedReports = await response.json();
+      return assignedReports.reports || assignedReports;
+    } else {
+      throw new Error("Failed to fetch assigned reports");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
+// Get assigned reports for external maintainer review
+async function getExternalAssignedReports() {
+  try {
+    const response = await fetch(`${URI}/ext_maintainer/reports`, {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return [];
+    }
+
+    if (response.ok) {
+      const assignedReports = await response.json();
+      return assignedReports.reports || assignedReports;
+    } else {
+      throw new Error("Failed to fetch assigned reports");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
+// Update status of a report (external maintainer only)
+async function updateStatus(reportId, status) {
+  try {
+    const body = {
+      status: status,
+    };
+
+    const response = await fetch(`${URI}/ext_maintainer/reports/${reportId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${await getBearerToken()}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || errorData.errors?.[0] || "Failed to update status"
+      );
+    }
+
+    return await response.json();
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
+// Assign an external maintainer to a report
+async function assignExternalMaintainer(reportId, externalMaintainerId) {
+  if (!externalMaintainerId) {
+    throw new Error("External maintainer id is required");
+  }
+
+  try {
+    const response = await fetch(
+      `${URI}/tech_officer/reports/${reportId}/assign_external`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${await getBearerToken()}`,
+        },
+        body: JSON.stringify({ externalMaintainerId }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error ||
+          errorData.errors?.[0] ||
+          "Failed to assign external maintainer"
+      );
+    }
+
+    return await response.json();
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
+// Get comments for a report as an internal user
+async function getCommentsInternal(reportId) {
+  try {
+    const response = await fetch(
+      `${URI}/report/${reportId}/internal-comments`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `${await getBearerToken()}`,
+        },
+      }
+    );
+
+    if (response.status === 204) {
+      return [];
+    }
+
+    if (response.ok) {
+      const internalComments = await response.json();
+      return Array.isArray(internalComments.comments)
+        ? internalComments.comments
+        : [];
+    } else {
+      throw new Error("Failed to fetch internal comments");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
+// Create a new comment
+async function createComment(reportId, type, comment) {
+  const response = await fetch(`${URI}/reports/${reportId}/comments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${await getBearerToken()}`,
+    },
+    body: JSON.stringify({
+      type: type,
+      text: comment,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error?.[0] || "Failed to post comment");
+  }
+
+  return await response.json();
+}
+
+// verify email
+async function verifyEmail(email, code) {
+  const response = await fetch(`${URI}/verify-code`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: email,
+      code: code,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to verify code");
+  }
+
+  return await response.json();
+}
+
+// resend code if expired
+async function resendCode(email) {
+  const response = await fetch(`${URI}/resend-code`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: email,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to resend code");
+  }
+
+  return await response.json();
 }
 
 export {
@@ -292,10 +575,21 @@ export {
   getInternalUsers,
   getUserData,
   getCategories,
+  getCategoryOperators,
   getApprovedReports,
   createReport,
   getReport,
   getPendingReports,
   reviewReport,
   API_BASE_URL,
+  getAssignedReports,
+  getExternalAssignedReports,
+  updateStatus,
+  getExternalMaintainers,
+  assignExternalMaintainer,
+  getCommentsInternal,
+  createComment,
+  verifyEmail,
+  resendCode,
+
 };

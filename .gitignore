@@ -1,1 +1,4 @@
 Back-end/.env.tests
+#Sonar Scanner
+.sonar/
+.scannerwork/

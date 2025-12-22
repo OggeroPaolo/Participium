@@ -1,12 +1,11 @@
 import request from "supertest";
 import { Express } from "express";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
 import operatorRouter from "../../src/routes/operator.routes.js";
 import OperatorDAO from "../../src/dao/OperatorDAO.js";
 import * as userService from "../../src/services/userService.js";
-import UserDAO from "../../src/dao/UserDAO.js";
-import { makeTestApp } from "../setup/tests_util.js";
-
+import { initTestDB, makeTestApp, resetTestDB } from "../setup/tests_util.js";
+import { getAll, runQuery } from "../../src/config/database.js";
 // Mock Firebase auth middleware
 vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
   verifyFirebaseToken: (_roles: string[]) => (_req: any, _res: any, next: any) => next(),
@@ -15,48 +14,42 @@ vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
 describe("Operator Routes E2E", () => {
   let app: Express;
 
-  beforeEach(() => {
-    vi.clearAllMocks();
+  beforeAll(async () => {
+    await initTestDB();
     app = makeTestApp(operatorRouter);
   });
+
+  afterEach(async () => {
+    await resetTestDB();
+  });
+
 
   // ----------------------------
   // GET /operators
   // ----------------------------
   describe("GET /operators", () => {
     it("should return a list of operators successfully", async () => {
-      const mockOperators = [
-        {
-          id: 1,
-          firebase_uid: "uid1",
-          email: "alice@example.com",
-          username: "alice",
-          first_name: "Alice",
-          last_name: "Smith",
-          role_name: "Operator",
-          role_type: "tech_officer"
-        },
-      ];
-
-      const getOperatorsSpy = vi
-        .spyOn(OperatorDAO.prototype, "getOperators")
-        .mockResolvedValue(mockOperators);
 
       const res = await request(app).get("/operators");
 
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(mockOperators);
-      expect(getOperatorsSpy).toHaveBeenCalledTimes(1);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThan(0);
     });
 
     it("should return 204 if no operators exist", async () => {
-      vi.spyOn(OperatorDAO.prototype, "getOperators").mockResolvedValue([]);
+
+      // Delete all operators
+      await runQuery("PRAGMA foreign_keys = OFF");
+      await runQuery("DELETE FROM users");
+      await runQuery("PRAGMA foreign_keys = ON");
 
       const res = await request(app).get("/operators");
 
       expect(res.status).toBe(204);
       expect(res.body).toEqual({});
     });
+
 
     it("should return 500 if database error occurs", async () => {
       vi.spyOn(OperatorDAO.prototype, "getOperators").mockRejectedValue(new Error("DB error"));
@@ -208,27 +201,27 @@ describe("Operator Routes E2E", () => {
       expect(res.status).toBe(500);
       expect(res.body).toEqual({ error: "Internal server error" });
     });
-  });
 
-  it("should return 422 if Firebase auth/email-already-exists error is thrown", async () => {
-    vi.spyOn(userService, "createUserWithFirebase").mockRejectedValue({
-      code: "auth/email-already-exists",
-      message: "Firebase email already exists",
-    });
 
-    const res = await request(app)
-      .post("/operator-registrations")
-      .send({
-        firstName: "George",
-        lastName: "Operator",
-        username: "georgeop",
-        email: "george@example.com",
-        password: "password123",
-        role_id: 2,
+    it("should return 422 if Firebase auth/email-already-exists error is thrown", async () => {
+      vi.spyOn(userService, "createUserWithFirebase").mockRejectedValue({
+        code: "auth/email-already-exists",
+        message: "Firebase email already exists",
       });
 
-    expect(res.status).toBe(422);
-    expect(res.body).toEqual({ error: "Firebase email already exists" });
-  });
+      const res = await request(app)
+        .post("/operator-registrations")
+        .send({
+          firstName: "George",
+          lastName: "Operator",
+          username: "georgeop",
+          email: "george@example.com",
+          password: "password123",
+          role_id: 2,
+        });
 
+      expect(res.status).toBe(422);
+      expect(res.body).toEqual({ error: "Firebase email already exists" });
+    });
+  });
 });

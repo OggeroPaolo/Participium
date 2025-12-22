@@ -19,7 +19,7 @@ function UserCreation() {
     loadRoles();
   }, []);
 
-  const [state, formAction] = useActionState(submitCredentials, {
+  const [state, formAction, isPending] = useActionState(submitCredentials, {
     firstName: "",
     lastName: "",
     username: "",
@@ -29,8 +29,6 @@ function UserCreation() {
   });
 
   async function submitCredentials(prevData, formData) {
-    setIsFormLoading(true);
-
     const credentials = {
       firstName: formData.get("firstName"),
       lastName: formData.get("lastName"),
@@ -50,8 +48,6 @@ function UserCreation() {
       };
     } catch (error) {
       return { error: error.message };
-    } finally {
-      setIsFormLoading(false);
     }
   }
 
@@ -144,17 +140,16 @@ function UserCreation() {
                 {state.success}
               </Alert>
             )}
-            {isFormLoading && (
-              <>
+            {isPending && (
+              <div className='loading-overlay'>
                 <div
-                  className='d-flex justify-content-center align-items-center'
-                  style={{ minHeight: "10vh" }}
-                >
-                  <div className='spinner-border text-primary' role='status'>
-                    <span className='visually-hidden'>Loading...</span>
-                  </div>
+                  className='spinner-border text-light'
+                  style={{ width: "3rem", height: "3rem" }}
+                ></div>
+                <div className='mt-3 text-light fw-semibold'>
+                  Creating user...
                 </div>
-              </>
+              </div>
             )}
 
             <Button type='submit' className='mt-4 confirm-button w-100'>

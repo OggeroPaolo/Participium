@@ -45,10 +45,9 @@ export const initializeDatabase = async (): Promise<void> => {
  */
 export const seedDefaultData = async (): Promise<void> => {
   try {
-
     await seedDefaultCategories();
     await seedDefaultOffices();
-    await seedDefaultCompany();
+    await seedDefaultCompanies();
     await seedDefaultRoles();
     await seedDefaultUsers();
     await seedDefaultReports();
@@ -149,9 +148,6 @@ export const seedDefaultRoles = async (): Promise<void> => {
       return category ? officeMap[`${category.name} Office`]! : officeMap[`${firstCategory.name} Office`]!;
     };
 
-    // Get default company id
-    const company = await getOne<{ id: number }>("SELECT id FROM companies WHERE name = ?", ["Enel"]);
-    const defaultCompanyId = company?.id ?? 1;
 
     const roles: { name: string; type: string; office_id: number | null; company_id: number | null }[] = [
       { name: "Citizen", type: "citizen", office_id: null, company_id: null },
@@ -164,7 +160,16 @@ export const seedDefaultRoles = async (): Promise<void> => {
       { name: "Road_signs_urban_furnishings_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Roads and Urban Furnishings")!, company_id: null },
       { name: "Public_green_areas_playgrounds_officer", type: "tech_officer", office_id: getOfficeIdForCategory("Public Green Areas and Playgrounds")!, company_id: null },
       { name: "Admin", type: "admin", office_id: officeMap["Organization Office"]!, company_id: null },
-      { name: "External Maintainer", type: "external_maintainer", office_id: null, company_id: defaultCompanyId }
+      { name: "Perry Worker", type: "external_maintainer", office_id: null, company_id: 1 },
+      { name: "BarrierFix Worker", type: "external_maintainer", office_id: null, company_id: 2 },
+      { name: "SewerFlow Worker", type: "external_maintainer", office_id: null, company_id: 3 },
+      { name: "Enel Worker", type: "external_maintainer", office_id: null, company_id: 4 },
+      { name: "EcoWaste Worker", type: "external_maintainer", office_id: null, company_id: 5 },
+      { name: "TrafficTech Worker", type: "external_maintainer", office_id: null, company_id: 6 },
+      { name: "Apex Worker", type: "external_maintainer", office_id: null, company_id: 7 },
+      { name: "Clean Roads Worker", type: "external_maintainer", office_id: null, company_id: 8 },
+      { name: "GreenCare Worker", type: "external_maintainer", office_id: null, company_id: 9 },
+      { name: "GeneralWorks Worker", type: "external_maintainer", office_id: null, company_id: 10 },
     ];
 
 
@@ -290,13 +295,86 @@ export const seedDefaultUsers = async (): Promise<void> => {
         role_id: roleMap["Admin"]
       },
       {
-        firebase_uid: "pWlYdRgKb3aCTmAM1D7Rr8730W02",
-        email: "external-matainer@example.com",
+        firebase_uid: "PdzfTCrdM0SBkEPM4rtqgi1exEJ2",
+        email: "water-worker@example.com",
+        username: "PerryPlumber",
+        first_name: "Perry",
+        last_name: "Platapus",
+        role_id: roleMap["Perry Worker"]
+      }, 
+      {
+        firebase_uid: "GlPacXZgUBSp83zGzBxkFgmoVmq1",
+        email: "apex-worker@example.com",
+        username: "CarlosSainz",
+        first_name: "Carlos",
+        last_name: "Sainz",
+        role_id: roleMap["Apex Worker"]
+      },
+      {
+        firebase_uid: "nZNdQ4nTose57ldQ5QfQ82GmlSg2",
+        email: "barrier-worker@example.com",
+        username: "StephenKing",
+        first_name: "Stephen",
+        last_name: "King",
+        role_id: roleMap["BarrierFix Worker"]
+      },
+      {
+        firebase_uid: "VNkBGMLx05QWhgJVSG4Iazct54t1",
+        email: "sewer-worker@example.com",
+        username: "JosephCricket",
+        first_name: "Joseph",
+        last_name: "Cricket",
+        role_id: roleMap["SewerFlow Worker"]
+      },
+      {
+        firebase_uid: "jnRaXpgX0TNJHv0Ejd7vTjnM7NI2",
+        email: "enel-worker@example.com",
         username: "GabeNewell",
         first_name: "Gabe",
         last_name: "Newell",
-        role_id: roleMap["External Maintainer"]
+        role_id: roleMap["Enel Worker"]
       },
+      {
+        firebase_uid: "6u05OsQj1cgSEtXk37Woql3oo1h2",
+        email: "eco-worker@example.com",
+        username: "GertaTubogor",
+        first_name: "Gerta",
+        last_name: "Tubogor",
+        role_id: roleMap["EcoWaste Worker"]
+      },
+      {
+        firebase_uid: "xaYgBHJ9xXbipabyXKumonKugaR2",
+        email: "traffic-worker@example.com",
+        username: "MatthewSalvidor",
+        first_name: "Matthew",
+        last_name: "Salvidor",
+        role_id: roleMap["TrafficTech Worker"]
+      },
+      {
+        firebase_uid: "q45Hc2wZYYXW9v66j7f8Dpxe28A2",
+        email: "clean-worker@example.com",
+        username: "BenedictCumberbatch",
+        first_name: "Benedict",
+        last_name: "Cumberbatch",
+        role_id: roleMap["Clean Roads Worker"]
+      },
+      {
+        firebase_uid: "2tWT4MFii2SS93eJOanNV4FRMkW2",
+        email: "green-worker@example.com",
+        username: "MichaelAlexander",
+        first_name: "Michael",
+        last_name: "Alexander",
+        role_id: roleMap["GreenCare Worker"]
+      },
+      {
+        firebase_uid: "JOU5ucK2zDULRX5tSGXyzuHSxEu1",
+        email: "general-worker@example.com",
+        username: "PamelaAnderson",
+        first_name: "Pamela",
+        last_name: "Anderson",
+        role_id: roleMap["GeneralWorks Worker"]
+      },
+
     ];
 
     for (const user of users) {
@@ -345,6 +423,7 @@ export const seedDefaultReports = async (): Promise<void> => {
         description: "This area near Porta Nuova has been neglected and many people use it as a urinal, can something be done about it.",
         user_id: firstUser.id,
         category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
+        address: "Via Paolo Sacchi 11, 10125 Torino",
         position_lat: 45.06080,
         position_lng: 7.67613,
         status: "pending_approval"
@@ -354,6 +433,7 @@ export const seedDefaultReports = async (): Promise<void> => {
         description: "A road sign has fallen and requires prompt repair.",
         user_id: firstUser.id,
         category_id: categories.find(c => c.name.includes("Road Signs and Traffic Lights"))?.id ?? firstCategory.id,
+        address: "Piazza Giambattista Bodoni 1, 10123 Torino",
         position_lat: 45.0632,
         position_lng: 7.6835,
         status: "pending_approval"
@@ -363,17 +443,20 @@ export const seedDefaultReports = async (): Promise<void> => {
         description: "A bollard was cracked in an accident and needs repair",
         user_id: users[1]?.id ?? firstUser.id,
         category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
+        address: "Corso Stati Uniti 65, 10129 Torino",
         position_lat: 45.06555,
         position_lng: 7.66233,
         status: "assigned",
         reviewed_by: 3,
-        assigned_to: 10
+        assigned_to: 10,
+        external_user: 14
       },
       {
         title: "Wooden Bench with Missing Boards",
         description: "A wooden bench has several missing boards and requires maintenance.",
         user_id: firstUser.id,
         category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
+        address: "Corso Stati Uniti 67, 10129 Torino",
         position_lat: 45.06564,
         position_lng: 7.66166,
         status: "in_progress",
@@ -385,6 +468,7 @@ export const seedDefaultReports = async (): Promise<void> => {
         description: "This damaged and uneven sidewalk surface represents an accessibility barrier, especially for people using wheelchairs, walkers, strollers, or those with limited mobility.",
         user_id: firstUser.id,
         category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
+        address: "Corso Stati Uniti 55, 10129 Torino",
         position_lat: 45.06504,
         position_lng: 7.66376,
         status: "suspended",
@@ -396,18 +480,19 @@ export const seedDefaultReports = async (): Promise<void> => {
         description: "This road surface in poor condition, with several cracks, uneven patches, and worn asphalt. These defects can pose challenges for vehicles, as they may cause instability, discomfort, or even damage to tires and suspension systems.",
         user_id: firstUser.id,
         category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
+        address: "Corso Galileo Ferraris 49h, 10129 Torino",
         position_lat: 45.06297,
         position_lng: 7.66937,
         status: "resolved",
         reviewed_by: 3,
         assigned_to: 10,
-        external_user: 13
       },
       {
         title: "Abandoned Pole",
         description: "An abandoned pole in the green areas",
         user_id: firstUser.id,
         category_id: 8,
+        address: "Corso Trieste 7a, 10129 Torino",
         position_lat: 45.06222,
         position_lng: 7.66694,
         status: "pending_approval",
@@ -420,6 +505,7 @@ export const seedDefaultReports = async (): Promise<void> => {
         description: "Assigned to a technician for water supply issue.",
         user_id: users[1]?.id ?? firstUser.id,
         category_id: categories.find(c => c.name.includes("Water Supply"))?.id ?? firstCategory.id,
+        address: "Piazza Corpus Domini 17f, 10129 Torino",
         position_lat: 45.0725,
         position_lng: 7.6824,
         status: "assigned",
@@ -431,6 +517,7 @@ export const seedDefaultReports = async (): Promise<void> => {
         description: "A broken water pipe is causing flooding in the area.",
         user_id: users[1]?.id ?? firstUser.id,
         category_id: categories.find(c => c.name.includes("Water Supply"))?.id ?? firstCategory.id,
+        address: "Via Accademia Albertina 23c, 10129 Torino",
         position_lat: 45.0619,
         position_lng: 7.6860,
         status: "in_progress",
@@ -442,6 +529,7 @@ export const seedDefaultReports = async (): Promise<void> => {
         description: "Water supply work has been suspended temporarily.",
         user_id: users[1]?.id ?? firstUser.id,
         category_id: categories.find(c => c.name.includes("Water Supply"))?.id ?? firstCategory.id,
+        address: "Corso Verona 10, 10129 Torino",
         position_lat: 45.0793,
         position_lng: 7.6954,
         status: "suspended",
@@ -453,6 +541,7 @@ export const seedDefaultReports = async (): Promise<void> => {
         description: "Water supply report rejected for review errors.",
         user_id: users[1]?.id ?? firstUser.id,
         category_id: categories.find(c => c.name.includes("Water Supply"))?.id ?? firstCategory.id,
+        address: "Via Giovanni Giolitti 5d, 10129 Torino",
         position_lat: 45.0667,
         position_lng: 7.6841,
         status: "rejected",
@@ -464,6 +553,7 @@ export const seedDefaultReports = async (): Promise<void> => {
         description: "Water supply issue resolved successfully.",
         user_id: users[1]?.id ?? firstUser.id,
         category_id: categories.find(c => c.name.includes("Water Supply"))?.id ?? firstCategory.id,
+        address: "Lungo Dora Savona Giardino Gilardi, 10129 Torino",
         position_lat: 45.0759,
         position_lng: 7.6899,
         status: "resolved",
@@ -477,13 +567,14 @@ export const seedDefaultReports = async (): Promise<void> => {
       if (!existing) {
         await runQuery(
           `INSERT INTO reports 
-    (title, description, user_id, category_id, position_lat, position_lng, status, note, assigned_to, reviewed_by, external_user)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    (title, description, user_id, category_id, address, position_lat, position_lng, status, note, assigned_to, reviewed_by, external_user)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             report.title,
             report.description,
             report.user_id,
             report.category_id,
+            report.address,
             report.position_lat,
             report.position_lng,
             report.status,
@@ -596,44 +687,38 @@ export const seedDefaultPhotos = async (): Promise<void> => {
 /**
  * Seed default company
  */
-export const seedDefaultCompany = async (): Promise<void> => {
+export const seedDefaultCompanies = async (): Promise<void> => {
   try {
-    // Check if companies table is empty
+    // Check if any companies exist
     const companyCount = await getOne<{ count: number }>("SELECT COUNT(*) as count FROM companies");
-    let companyId: number;
 
     if (!companyCount || companyCount.count === 0) {
-      // Get first category as fallback
-      const category = await getOne<{ id: number }>("SELECT id FROM categories LIMIT 1");
 
-      // Insert default company "Enel"
-      await runQuery(
-        `INSERT INTO companies (name, category_id) VALUES (?, ?)`,
-        ["Enel", category?.id ?? null]
-      );
+      const defaultCompanies = [
+        { name: "Perry's Plumbers", category_id: 1 },         // Water Supply – Drinking Water
+        { name: "BarrierFix Solutions", category_id: 2 },     // Architectural Barriers
+        { name: "SewerFlow Services", category_id: 3 },       // Sewer System
+        { name: "Enel", category_id: 4 },                     // Public Lighting
+        { name: "EcoWaste Management", category_id: 5 },      // Waste
+        { name: "TrafficTech Signs", category_id: 6 },        // Road Signs and Traffic Lights
+        { name: "Apex Corp", category_id: 7 },                // Roads and Urban Furnishings
+        { name: "Clean Roads", category_id: 7 },              // Roads and Urban Furnishings
+        { name: "GreenCare Parks", category_id: 8 },          // Public Green Areas and Playgrounds
+        { name: "GeneralWorks Co.", category_id: 9 },         // Other
+      ];
 
-      // Get last inserted ID with fallback
-      const lastIdResult = await getOne<{ lastId: number }>("SELECT last_insert_rowid() as lastId");
-      companyId = lastIdResult?.lastId ?? 1;
+
+      for (const company of defaultCompanies) {
+        await runQuery(
+          `INSERT INTO companies (name, category_id) VALUES (?, ?)`,
+          [company.name, company.category_id]
+        );
+      }
     } else {
-      // If company exists, use the first one named Enel (or fallback)
-      const existingCompany = await getOne<{ id: number }>("SELECT id FROM companies WHERE name = ?", ["Enel"]);
-      companyId = existingCompany?.id ?? 1;
-    }
-
-    // Link only roles with type 'external_maintainer'
-    const externalRoles = await getAll<{ id: number }>(
-      "SELECT id FROM roles WHERE type = 'external_maintainer'"
-    );
-
-    for (const role of externalRoles) {
-      await runQuery(
-        "UPDATE roles SET company_id = ? WHERE id = ?",
-        [companyId, role.id]
-      );
+      logger.info("Companies already exist, skipping seeding");
     }
   } catch (error) {
-    logger.error({ error }, "Failed to seed default company");
+    logger.error({ error }, "Failed to seed default companies");
   }
 };
 
@@ -648,54 +733,40 @@ export const seedDefaultComments = async (): Promise<void> => {
       return;
     }
 
-    // Get some reports to link comments to
-    const reports: { id: number; title: string }[] = (await getAll<{ id: number; title: string }>(
-      "SELECT id, title FROM reports LIMIT 5"
-    )) ?? [];
-
-    if (reports.length != 0) {
-
-
-      const comments = [
-        {
-          report_id: reports[0]?.id,
-          username: "JohnDoe",
-          type: "public",
-          text: "This issue needs urgent attention."
-        },
-        {
-          report_id: reports[0]?.id,
-          username: "AdminUser",
-          type: "private",
-          text: "Assigned to maintenance team."
-        },
-        {
-          report_id: reports[1]?.id,
-          username: "JaneSmith",
-          type: "public",
-          text: "I noticed this problem too, it affects traffic."
-        },
-        {
-          report_id: reports[2]?.id,
-          username: "PublicUser",
-          type: "public",
-          text: "Please fix this as soon as possible."
-        },
-        {
-          report_id: reports[3]?.id,
-          username: "Operator",
-          type: "private",
-          text: "Scheduled maintenance for tomorrow."
-        }
-      ];
-
-      for (const comment of comments) {
-        await runQuery(
-          `INSERT INTO comments (report_id, username, type, text) VALUES (?, ?, ?, ?)`,
-          [comment.report_id, comment.username, comment.type, comment.text]
-        );
+    const comments = [
+      {
+        report_id: 3,
+        user_id: 1,
+        type: "public",
+        text: "Can we have an expected completion date for the maintenance?"
+      },
+      {
+        report_id: 3,
+        user_id: 10,
+        type: "private",
+        text: "This should be repaired in two days."
+      },
+      {
+        report_id: 4,
+        user_id: 10,
+        type: "private",
+        text: "The municipality ask to also repaint the bench."
+      },
+      {
+        report_id: 3,
+        user_id: 14,
+        type: "private",
+        text: "Ok, I will inform my team."
       }
+    ];
+
+    for (const comment of comments) {
+      await runQuery(
+        `INSERT INTO comments (report_id, user_id, type, text) VALUES (?, ?, ?, ?)`,
+        [comment.report_id, comment.user_id, comment.type, comment.text]
+      );
     }
+
   } catch (error) {
     console.error("Failed to seed default comments", error);
   }

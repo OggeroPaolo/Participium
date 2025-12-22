@@ -8,9 +8,11 @@ export type Report = {
   description: string;
   status: ReportStatus;
   assigned_to?: number | null;
+  external_user?: number | null;
   reviewed_by?: number | null;
   reviewed_at?: string | null;
   note?: string | null;
+  address: string;
   position_lat: number;
   position_lng: number;
   created_at: string;

@@ -2,10 +2,26 @@ import { body, param, validationResult } from 'express-validator';
 import type { Request, Response, NextFunction } from 'express';
 import { ReportStatus } from '../models/reportStatus.js';
 
+export const validateCreateComment = [
+    param("reportId").isInt().withMessage("reportId must be a valid integer"),
+    body("type").isString().notEmpty().withMessage("type is required"),
+    body("text").isString().notEmpty().withMessage("text is required"),
+    (req: Request, res: Response, next: NextFunction) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const extractedErrors = errors.array().map(err => err.msg);
+            return res.status(400).json({ errors: extractedErrors });
+        }
+        next();
+    }
+];
+
+
 export const validateCreateReport = [
     body("category_id").isInt().withMessage("category_id must be an integer"),
     body("title").isString().notEmpty().withMessage("title is required"),
     body("description").isString().notEmpty().withMessage("description is required"),
+    body("address").isString().notEmpty().withMessage("address is required"),
     body("position_lat").isFloat().withMessage("position_lat must be a number"),
     body("position_lng").isFloat().withMessage("position_lng must be a number"),
     body("is_anonymous").isBoolean().withMessage("is_anonymous must be a boolean"),
@@ -21,27 +37,13 @@ export const validateCreateReport = [
         next();
     },
     (req: Request, res: Response, next: NextFunction) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
+        validationResult(req);
         next();
     }
 ];
 
-export const validateGetReport = [
+export const validateReportId = [
     param("reportId").isInt().withMessage("reportId must be a valid integer"),
-    (req: Request, res: Response, next: NextFunction) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-        next();
-    }
-];
-
-export const validateOfficersGetReports = [
-    param("officerId").isInt().withMessage("officerId must be a valid integer"),
     (req: Request, res: Response, next: NextFunction) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -68,8 +70,21 @@ export const validateAssignExternalMaintainer = [
     (req: Request, res: Response, next: NextFunction) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            const extractedErrors = errors.array().map(err => err.msg);
+            return res.status(400).json({ errors: extractedErrors });
+        }
+        next();
+    }
+];
+
+export const validateExternalMaintainerUpdateStatus = [
+    param("reportId").isInt().withMessage("Report ID must be a valid integer"),
+    body("status").isIn(["in_progress", "resolved", "suspended"]).withMessage("Status must be one of: in_progress, resolved, suspended"),
+    (req: Request, res: Response, next: NextFunction) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
         next();
     }
-]
+];
