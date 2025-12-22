@@ -13,6 +13,7 @@ import * as passwordEnc from "../../src/services/passwordEncryptionSercive.js";
 import * as userService from "../../src/services/userService.js";
 import UserDAO from "../../src/dao/UserDAO.js";
 import bcrypt from "bcrypt";
+import { ROLES } from "../../src/models/userRoles.js";
 
 // Mock Firebase middleware for different user roles
 // Using actual seeded user IDs from init.ts:
@@ -588,10 +589,8 @@ describe("User Story Integration Tests", () => {
                 first_name: "John",
                 last_name: "Citizen",
                 email: testEmail,
-                roles: [{
-                    role_name: "Citizen",
-                    role_type: "citizen",
-                }]
+                role_type: ROLES.CITIZEN,
+                roles:["Citizen"]
             });
             vi.spyOn(pendingUsers, "removePendingUser").mockImplementation(() => { });
             vi.spyOn(UserDAO.prototype, "findUserByEmailOrUsername").mockResolvedValue(null);
@@ -754,10 +753,8 @@ describe("User Story Integration Tests", () => {
                 first_name: "Jane",
                 last_name: "Doe",
                 email: "janenewunique@example.com",
-                roles: [{
-                    role_name: "Citizen",
-                    role_type: "citizen",
-                }]
+                role_type: ROLES.CITIZEN,
+                roles: ["Citizen"]
             });
             vi.spyOn(pendingUsers, "removePendingUser").mockImplementation(() => { });
 

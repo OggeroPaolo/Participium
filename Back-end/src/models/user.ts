@@ -1,7 +1,4 @@
-export interface UserRoleDTO {
-  role_name: string;
-  role_type: string;
-}
+import type { RoleType } from "./userRoles.js";
 
 export interface User {
   id: number;
@@ -10,12 +7,17 @@ export interface User {
   username: string;
   first_name: string;
   last_name: string;
+
   profile_photo_url?: string | null;
   telegram_username?: string | null;
   email_notifications_enabled?: number;
   is_active?: number;
+
   created_at?: string;
   updated_at?: string;
   last_login_at?: string | null;
-  roles: UserRoleDTO[];
+
+
+  role_type: RoleType;
+  roles: string[];
 }

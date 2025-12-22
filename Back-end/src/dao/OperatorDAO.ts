@@ -232,4 +232,5 @@ export default class OperatorDao {
       throw error;
     }
   }
+  
 }

@@ -4,6 +4,7 @@ import { describe, it, expect, beforeAll, afterEach, vi } from "vitest";
 import userRouter from "../../src/routes/user.routes.js";
 import { makeTestApp, initTestDB, resetTestDB } from "../setup/tests_util.js";
 import UserDAO from "../../src/dao/UserDAO.js";
+import { ROLES } from "../../src/models/userRoles.js";
 
 // Mock firebase token verification middleware
 vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
@@ -35,10 +36,8 @@ describe("GET /users/:firebaseUid (E2E)", () => {
       username: "JohnDoe",
       first_name: "John",
       last_name: "Doe",
-      roles: [{
-        role_name: 'Citizen',
-        role_type: 'citizen',
-      }]
+      role_type: ROLES.CITIZEN,
+      roles: ['Citizen']
     });
   });
 

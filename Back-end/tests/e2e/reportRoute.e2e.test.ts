@@ -519,7 +519,6 @@ describe("Reports E2E", () => {
         .get(`/report/${reportId}/internal-comments`);
 
       expect(res.status).toBe(200);
-      console.log(res.body)
       expect(res.body.comments.length).toBeGreaterThan(0);
     });
 

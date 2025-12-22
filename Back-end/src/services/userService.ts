@@ -1,9 +1,9 @@
 import firebaseAdmin from "../config/firebaseAdmin.js";
 import UserDAO from "../dao/UserDAO.js";
-import type { User, UserRoleDTO } from "../models/user.js";
+import type { User } from "../models/user.js";
 
-export class UserAlreadyExistsError extends Error {}
-export class EmailOrUsernameConflictError extends Error {}
+export class UserAlreadyExistsError extends Error { }
+export class EmailOrUsernameConflictError extends Error { }
 
 /**
  * Creates a new user both in Firebase and local DB.
@@ -67,8 +67,8 @@ export async function createUserWithFirebase(
 /**
  * Maps a single DB row to a User object.
  */
-export function mapUserWithRoles(row: any): User | null {
-  if (!row) return null;
+export function mapUserWithRoles(row: any): User | undefined {
+  if (!row) return undefined;
 
   return {
     id: row.id,
@@ -77,18 +77,23 @@ export function mapUserWithRoles(row: any): User | null {
     username: row.username,
     first_name: row.first_name,
     last_name: row.last_name,
+
     profile_photo_url: row.profile_photo_url ?? null,
     telegram_username: row.telegram_username ?? null,
     email_notifications_enabled: row.email_notifications_enabled ?? 0,
     is_active: row.is_active ?? 0,
+
     created_at: row.created_at,
     updated_at: row.updated_at,
     last_login_at: row.last_login_at ?? null,
-    roles: row.role_name
-      ? [{ role_name: row.role_name, role_type: row.role_type }]
-      : [],
+
+    role_type: row.role_type,
+    roles: row.role_name ? [row.role_name] : [],
   };
 }
+
+
+
 
 /**
  * Maps multiple DB rows to an array of Users, aggregating roles.
@@ -97,21 +102,23 @@ export function mapUsersList(rows: any[]): User[] {
   const usersMap = new Map<number, User>();
 
   for (const row of rows) {
-    const mappedUser = mapUserWithRoles(row);
-    if (!mappedUser) continue;
+    if (!row) continue;
 
-    const existingUser = usersMap.get(mappedUser.id);
-    if (existingUser) {
-      // Append any new roles not already present
-      mappedUser.roles.forEach(role => {
-        if (!existingUser.roles.some(r => r.role_name === role.role_name && r.role_type === role.role_type)) {
-          existingUser.roles.push(role);
-        }
-      });
-    } else {
-      usersMap.set(mappedUser.id, mappedUser);
+    let user = usersMap.get(row.id);
+
+    if (!user) {
+      user = mapUserWithRoles(row);
+      if (!user) continue;
+      usersMap.set(user.id, user);
+      continue;
+    }
+
+    // Add role if not already present
+    if (row.role_name && !user.roles.includes(row.role_name)) {
+      user.roles.push(row.role_name);
     }
   }
 
   return Array.from(usersMap.values());
 }
+

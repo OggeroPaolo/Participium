@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import UserDAO from "../../../src/dao/UserDAO.js";
 import * as db from "../../../src/config/database.js";
 import { mapUserWithRoles } from "../../../src/services/userService.js";
+import { ROLES } from "../../../src/models/userRoles.js";
 
 const mockUser = {
   firebase_uid: "firebase_uid",
@@ -54,7 +55,7 @@ describe("UserDAO Integration Test Suite", () => {
 
       const result = await dao.findUserByUid("unknown_uid");
 
-      expect(result).toBeNull();
+      expect(result).toBeUndefined();
     });
 
     it("throws an error if database query fails", async () => {
@@ -86,7 +87,7 @@ describe("UserDAO Integration Test Suite", () => {
 
       const result = await dao.findUserByEmailOrUsername("notfound@example.com", "none");
 
-      expect(result).toBeNull();
+      expect(result).toBeUndefined();
     });
 
     it("throws if database query fails", async () => {
@@ -119,12 +120,8 @@ describe("UserDAO Integration Test Suite", () => {
         username: userData.username,
         first_name: userData.firstName,
         last_name: userData.lastName,
-        roles: [
-          {
-            role_name: "Citizen",
-            role_type: "citizen",
-          },
-        ],
+        role_type: ROLES.CITIZEN,
+        roles: ["Citizen"]
       });
 
       const result = await dao.createUser(userData);
@@ -136,12 +133,8 @@ describe("UserDAO Integration Test Suite", () => {
           username: userData.username,
           first_name: userData.firstName,
           last_name: userData.lastName,
-          roles: [
-            {
-              role_name: "Citizen",
-              role_type: "citizen",
-            },
-          ],
+          role_type: ROLES.CITIZEN,
+          roles: ["Citizen"]
         })
       );
 
@@ -168,12 +161,8 @@ describe("UserDAO Integration Test Suite", () => {
         username: userWithRole.username,
         first_name: userWithRole.firstName,
         last_name: userWithRole.lastName,
-        roles: [
-          {
-            role_name: "Admin",
-            role_type: "admin",
-          },
-        ],
+        role_type: ROLES.ADMIN,
+        roles: ["Admin"]
       });
 
       const result = await dao.createUser(userWithRole);
@@ -186,12 +175,8 @@ describe("UserDAO Integration Test Suite", () => {
           username: userWithRole.username,
           first_name: userWithRole.firstName,
           last_name: userWithRole.lastName,
-          roles: [
-            {
-              role_name: "Admin",
-              role_type: "admin",
-            },
-          ],
+          role_type: ROLES.ADMIN,
+          roles: ["Admin"]
         })
       );
 

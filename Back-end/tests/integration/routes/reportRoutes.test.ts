@@ -213,7 +213,6 @@ describe("Report Routes Integration Tests", () => {
                 .mockResolvedValue(mockCompleteReport);
 
             const res = await request(app).get("/reports/1");
-            console.log(res)
             expect(res.status).toBe(200);
             expect(res.body).toEqual({ report: mockCompleteReport });
         });
@@ -749,7 +748,6 @@ describe("Report Routes Integration Tests", () => {
                 .patch("/tech_officer/reports/1/assign_external")
                 .send({ externalMaintainerId: 5 });
 
-            console.log(res.error)
             expect(res.status).toBe(200);
             expect(spyUpdate).toHaveBeenCalledWith(1, 5);
             expect(res.body).toEqual({
@@ -837,7 +835,6 @@ describe("Report Routes Integration Tests", () => {
             const res = await request(app)
                 .patch("/ext_maintainer/reports/1")
                 .send({ status: ReportStatus.InProgress });
-            console.log(res.error)
             expect(res.status).toBe(200);
             expect(res.body).toEqual({
                 message: "Report status updated successfully"

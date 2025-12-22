@@ -28,6 +28,7 @@ vi.mock("../../../src/config/firebaseAdmin.js", () => {
 });
 
 import firebaseAdmin from "../../../src/config/firebaseAdmin.js";
+import { ROLES } from "../../../src/models/userRoles.js";
 
 // Mock DAO
 const mockUserDAO = {
@@ -165,7 +166,7 @@ describe("User services Integration Tests", () => {
         updated_at: "2025-01-02T00:00:00Z",
         last_login_at: null,
         role_name: "Admin",
-        role_type: "admin",
+        role_type: ROLES.ADMIN,
       };
 
       const user = mapUserWithRoles(row);
@@ -184,7 +185,8 @@ describe("User services Integration Tests", () => {
         created_at: "2025-01-01T00:00:00Z",
         updated_at: "2025-01-02T00:00:00Z",
         last_login_at: null,
-        roles: [{ role_name: "Admin", role_type: "admin" }],
+        role_type: ROLES.ADMIN,
+        roles: ["Admin"]
       });
     });
 
@@ -212,9 +214,9 @@ describe("User services Integration Tests", () => {
       expect(user?.roles).toEqual([]);
     });
 
-    it("should return null if row is null or undefined", () => {
-      expect(mapUserWithRoles(null)).toBeNull();
-      expect(mapUserWithRoles(undefined)).toBeNull();
+    it("should return undefined if row is null or undefined", () => {
+      expect(mapUserWithRoles(null)).toBeUndefined();
+      expect(mapUserWithRoles(undefined)).toBeUndefined();
     });
   });
 
@@ -235,8 +237,8 @@ describe("User services Integration Tests", () => {
           created_at: "2025-01-01T00:00:00Z",
           updated_at: "2025-01-02T00:00:00Z",
           last_login_at: null,
-          role_name: "Admin",
-          role_type: "admin",
+          role_name: "Tech 1",
+          role_type: ROLES.TECH_OFFICER,
         },
         {
           id: 1,
@@ -252,8 +254,8 @@ describe("User services Integration Tests", () => {
           created_at: "2025-01-01T00:00:00Z",
           updated_at: "2025-01-02T00:00:00Z",
           last_login_at: null,
-          role_name: "Officer",
-          role_type: "tech_officer",
+          role_name: "Tech 2",
+          role_type: ROLES.TECH_OFFICER, // same type as first row
         },
         {
           id: 2,
@@ -270,7 +272,7 @@ describe("User services Integration Tests", () => {
           updated_at: "2025-01-02T00:00:00Z",
           last_login_at: null,
           role_name: "Viewer",
-          role_type: "viewer",
+          role_type: ROLES.CITIZEN,
         },
       ];
 
@@ -279,18 +281,20 @@ describe("User services Integration Tests", () => {
       expect(users).toHaveLength(2);
 
       const multiUser = users.find(u => u.id === 1);
+      expect(multiUser).toBeDefined();
       expect(multiUser?.roles).toHaveLength(2);
       expect(multiUser?.roles).toEqual(
-        expect.arrayContaining([
-          { role_name: "Admin", role_type: "admin" },
-          { role_name: "Officer", role_type: "tech_officer" },
-        ])
+        expect.arrayContaining(["Tech 1" ,"Tech 2"])
       );
 
+      expect(multiUser?.role_type).toBe(ROLES.TECH_OFFICER);
       const singleUser = users.find(u => u.id === 2);
+      expect(singleUser).toBeDefined();
       expect(singleUser?.roles).toHaveLength(1);
-      expect(singleUser?.roles[0]).toEqual({ role_name: "Viewer", role_type: "viewer" });
+      expect(singleUser?.roles[0]).toEqual("Viewer");
+      expect(singleUser?.role_type).toBe(ROLES.CITIZEN);
     });
+
 
     it("should return empty array if input is empty", () => {
       expect(mapUsersList([])).toEqual([]);
@@ -314,7 +318,7 @@ describe("User services Integration Tests", () => {
           updated_at: "2025-01-02T00:00:00Z",
           last_login_at: null,
           role_name: "Admin",
-          role_type: "admin",
+          role_type: ROLES.ADMIN,
         },
       ];
 
