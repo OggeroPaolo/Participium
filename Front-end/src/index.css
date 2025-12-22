@@ -238,6 +238,23 @@ html {
   border-bottom: 2px solid #0d6efd;
 }
 
+/* make comment section scrollable*/
+.modal-comments-container {
+  display: flex;
+  flex-direction: column;
+  height: 65vh;
+}
+
+.comments-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.comment-input {
+  flex-shrink: 0;
+}
+
 /* Mobile styles */
 @media (max-width: 991px) {
   .cit-desktop-layout {
@@ -354,16 +371,16 @@ html {
   .site-header .navbar-brand {
     font-size: 1rem;
   }
-  
+
   .site-header .nav-text {
     font-size: 0.85rem;
     margin-right: 0.5rem !important;
   }
-  
+
   .site-header .navbar-nav {
     text-align: center;
   }
-  
+
   .site-header .navbar-nav .nav-link {
     padding: 0.5rem 0.75rem;
   }
@@ -376,12 +393,12 @@ html {
     padding-left: 1rem;
     padding-right: 1rem;
   }
-  
+
   /* Form inputs */
   .form-control {
     font-size: 16px; /* Prevents zoom on iOS */
   }
-  
+
   /* Buttons */
   .confirm-button {
     padding: 0.75rem 1.5rem;
@@ -395,7 +412,7 @@ html {
   .report-creation-map {
     height: 300px !important;
   }
-  
+
   /* Location info box */
   .location-info-box {
     max-width: calc(100% - 20px) !important;
@@ -405,7 +422,7 @@ html {
     left: 10px !important;
     top: 10px !important;
   }
-  
+
   /* Image previews */
   .img-preview {
     width: 120px;
@@ -417,12 +434,12 @@ html {
   .report-creation-map {
     height: 250px !important;
   }
-  
+
   .img-preview {
     width: 100px;
     height: 100px;
   }
-  
+
   .select-ph-btn {
     font-size: 0.85rem !important;
     padding: 0.5rem !important;
@@ -434,17 +451,17 @@ html {
   .report-info-container .row {
     flex-direction: column;
   }
-  
+
   .report-info-container .col-md-5,
   .report-info-container .col-md-6 {
     width: 100%;
     margin-bottom: 1.5rem;
   }
-  
+
   .car-img-box {
     height: 300px;
   }
-  
+
   .report-car {
     height: 300px;
   }
@@ -454,11 +471,11 @@ html {
   .car-img-box {
     height: 250px;
   }
-  
+
   .report-car {
     height: 250px;
   }
-  
+
   .report-info-container h2 {
     font-size: 1.5rem;
   }
@@ -469,14 +486,14 @@ html {
   .user-list-card .row {
     flex-direction: column;
   }
-  
+
   .user-list-card .col-md-8,
   .user-list-card .col-md-4 {
     width: 100%;
     text-align: left !important;
     margin-bottom: 0.5rem;
   }
-  
+
   .user-list-card .badge {
     display: inline-block;
     margin-top: 0.5rem;
@@ -494,29 +511,29 @@ html {
   .officer-review-cards .col-md-6 {
     width: 100%;
   }
-  
+
   /* Modal adjustments */
   .modal-lg {
     max-width: 95%;
     margin: 0.5rem auto;
   }
-  
+
   .modal-body {
     padding: 1rem;
   }
-  
+
   /* Map in modal */
   .modal-body .map-container {
     height: 200px !important;
   }
-  
+
   /* Form selects inline */
   .modal-body .form-select[style*="inline-block"] {
     display: block !important;
     width: 100% !important;
     margin-top: 0.5rem;
   }
-  
+
   /* Radio buttons */
   .modal-body .d-flex.gap-3 {
     flex-direction: column;
@@ -536,22 +553,22 @@ html {
   .assigned-reports-container .col-lg-3 {
     width: 100%;
   }
-  
+
   .assigned-reports-container h5 {
     font-size: 1.1rem;
   }
-  
+
   /* Modal tabs */
   .modal-tabs-container {
     flex-wrap: wrap;
     gap: 8px !important;
   }
-  
+
   .modal-tab {
     font-size: 1rem !important;
     padding: 6px 12px !important;
   }
-  
+
   /* Comments section */
   .modal-body .border-bottom {
     padding-bottom: 1rem;
@@ -564,11 +581,11 @@ html {
     margin: 1rem !important;
     padding: 1.5rem !important;
   }
-  
+
   .email-code-card h4 {
     font-size: 1.25rem;
   }
-  
+
   /* Code input boxes */
   .email-code-card input[type="text"] {
     width: 50px !important;
@@ -576,7 +593,7 @@ html {
     font-size: 24px !important;
     margin: 0 2px !important;
   }
-  
+
   .email-code-card .d-flex.gap-1 {
     gap: 0.25rem !important;
     flex-wrap: wrap;
@@ -589,13 +606,13 @@ html {
     margin: 0.5rem !important;
     padding: 1rem !important;
   }
-  
+
   .email-code-card input[type="text"] {
     width: 45px !important;
     height: 55px !important;
     font-size: 20px !important;
   }
-  
+
   .email-code-card .d-flex.justify-content-center {
     padding: 0.5rem;
   }
@@ -606,15 +623,15 @@ html {
   .dashboard-container h1.display-4 {
     font-size: 2rem;
   }
-  
+
   .dashboard-container .lead {
     font-size: 1rem;
   }
-  
+
   .dashboard-container h3 {
     font-size: 1.5rem;
   }
-  
+
   /* Citizen Dashboard padding */
   .body-font[style*="padding: 20px"] {
     padding: 10px !important;
@@ -632,7 +649,7 @@ html {
   .guest-dashboard .display-4 {
     font-size: 1.75rem;
   }
-  
+
   .guest-dashboard .lead {
     font-size: 0.95rem;
   }
@@ -651,11 +668,11 @@ html {
   .card {
     margin-bottom: 1rem;
   }
-  
+
   .card-body {
     padding: 1rem;
   }
-  
+
   .card h5 {
     font-size: 1.1rem;
   }
@@ -667,7 +684,7 @@ html {
     padding: 0.5rem 1rem;
     font-size: 0.9rem;
   }
-  
+
   .btn-lg {
     padding: 0.75rem 1.5rem;
     font-size: 1rem;
@@ -687,12 +704,12 @@ html {
   .loading-overlay {
     padding: 1rem;
   }
-  
+
   .loading-overlay .spinner-border {
     width: 2.5rem !important;
     height: 2.5rem !important;
   }
-  
+
   .loading-overlay div {
     font-size: 0.9rem;
   }
@@ -703,7 +720,7 @@ html {
   .modal-xl {
     max-width: 95%;
   }
-  
+
   .modal-xl .modal-body img {
     max-height: 70vh;
   }
@@ -714,17 +731,17 @@ html {
   .form-group {
     margin-bottom: 1rem;
   }
-  
+
   .form-label {
     font-size: 0.9rem;
     margin-bottom: 0.5rem;
   }
-  
+
   .form-control,
   .form-select {
     font-size: 16px; /* Prevents zoom on iOS */
   }
-  
+
   .input-group .btn {
     padding: 0.5rem 0.75rem;
   }
@@ -735,7 +752,7 @@ html {
   .small {
     font-size: 0.8rem;
   }
-  
+
   .text-muted {
     font-size: 0.85rem;
   }
@@ -746,16 +763,16 @@ html {
   .mt-4 {
     margin-top: 1.5rem !important;
   }
-  
+
   .mb-4 {
     margin-bottom: 1.5rem !important;
   }
-  
+
   .py-4 {
     padding-top: 1.5rem !important;
     padding-bottom: 1.5rem !important;
   }
-  
+
   .px-4 {
     padding-left: 1.5rem !important;
     padding-right: 1.5rem !important;
@@ -768,7 +785,7 @@ html {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
   }
-  
+
   .container {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
@@ -780,12 +797,12 @@ html {
   body {
     overflow-x: hidden;
   }
-  
+
   .row {
     margin-left: 0;
     margin-right: 0;
   }
-  
+
   [class*="col-"] {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
@@ -802,7 +819,7 @@ html {
     display: flex;
     align-items: center;
   }
-  
+
   .modal-tab {
     min-height: 44px;
     min-width: 80px;
@@ -817,7 +834,7 @@ html {
   .cit-mobile-toggle-btn {
     display: none !important;
   }
-  
+
   .container {
     max-width: 100%;
   }
