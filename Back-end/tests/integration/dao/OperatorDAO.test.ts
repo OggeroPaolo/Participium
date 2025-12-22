@@ -17,7 +17,9 @@ describe("OperatorDAO Integration Test Suite", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
-
+  // -------------------------
+  // getOperators
+  // -------------------------
   describe("getOperators", () => {
     it("returns a list of operators successfully", async () => {
       const mockRows = [
@@ -104,6 +106,89 @@ describe("OperatorDAO Integration Test Suite", () => {
       );
 
       await expect(dao.getOperators()).rejects.toThrow("Failed to retrieve operators");
+    });
+  });
+
+  // -------------------------
+  // getOperatorRolesId
+  // -------------------------
+  describe("getOperatorRolesId", () => {
+    it("returns a list of role IDs for a given operator", async () => {
+      const operatorId = 1;
+      const mockRows = [
+        { role_id: 2 },
+        { role_id: 3 },
+        { role_id: 5 },
+      ];
+
+      const getAllSpy = vi.spyOn(db, "getAll").mockResolvedValueOnce(mockRows);
+
+      const result = await dao.getOperatorRolesId(operatorId);
+
+      expect(result).toEqual([2, 3, 5]);
+      expect(getAllSpy).toHaveBeenCalledTimes(1);
+      expect(getAllSpy).toHaveBeenCalledWith(expect.stringContaining("SELECT"), [operatorId]);
+    });
+
+    it("returns an empty array if the operator has no roles", async () => {
+      const operatorId = 42;
+
+      const getAllSpy = vi.spyOn(db, "getAll").mockResolvedValueOnce([]);
+
+      const result = await dao.getOperatorRolesId(operatorId);
+
+      expect(result).toEqual([]);
+      expect(getAllSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("propagates database errors", async () => {
+      const operatorId = 1;
+
+      vi.spyOn(db, "getAll").mockRejectedValueOnce(new Error("Database error"));
+
+      await expect(dao.getOperatorRolesId(operatorId)).rejects.toThrow("Database error");
+    });
+  });
+
+  // -------------------------
+  // getOperatorRolesIfReportExists
+  // -------------------------
+  describe("getOperatorRolesIfReportExists", () => {
+    it("returns roles (id and name) for which the operator has at least one unresolved report", async () => {
+      const operatorId = 1;
+      const rolesIds = [2, 3, 5];
+      const mockRoles = [
+        { role_id: 2, role_name: "Tech Officer" },
+        { role_id: 5, role_name: "External Maintainer" },
+      ];
+
+      const getAllSpy = vi.spyOn(db, "getAll").mockResolvedValueOnce(mockRoles);
+
+      const result = await dao.getOperatorRolesIfReportExists(operatorId, rolesIds);
+
+      expect(result).toEqual(mockRoles);
+      expect(getAllSpy).toHaveBeenCalledTimes(1);
+      expect(getAllSpy).toHaveBeenCalledWith(expect.stringContaining("SELECT"), [operatorId, ...rolesIds]);
+    });
+
+    it("returns an empty array if the operator has no matching roles with reports", async () => {
+      const operatorId = 42;
+      const rolesIds = [2, 3];
+
+      vi.spyOn(db, "getAll").mockResolvedValueOnce([]);
+
+      const result = await dao.getOperatorRolesIfReportExists(operatorId, rolesIds);
+
+      expect(result).toEqual([]);
+    });
+
+    it("propagates database errors", async () => {
+      const operatorId = 1;
+      const rolesIds = [1, 2];
+
+      vi.spyOn(db, "getAll").mockRejectedValueOnce(new Error("DB failure"));
+
+      await expect(dao.getOperatorRolesIfReportExists(operatorId, rolesIds)).rejects.toThrow("DB failure");
     });
   });
 
@@ -397,6 +482,76 @@ describe("OperatorDAO Integration Test Suite", () => {
       await expect(dao.getExternalMaintainersByFilter()).rejects.toThrow(
         "Database crash"
       );
+    });
+  });
+
+  // -------------------------
+  // updateRolesOfOperator
+  // -------------------------
+  describe("updateRolesOfOperator", () => {
+    const operatorId = 1;
+
+    it("removes existing roles and inserts new roles successfully", async () => {
+      const rolesIds = [2, 3];
+
+      const beginSpy = vi.spyOn(db, "beginTransaction").mockResolvedValueOnce(undefined);
+      const commitSpy = vi.spyOn(db, "commitTransaction").mockResolvedValueOnce(undefined);
+      const updateSpy = vi
+        .spyOn(db, "Update")
+        .mockResolvedValueOnce({ changes: 0 }) // for DELETE
+        .mockResolvedValueOnce({ changes: 2 }); // for INSERT
+      const rollbackSpy = vi.spyOn(db, "rollbackTransaction");
+
+      const result = await dao.updateRolesOfOperator(operatorId, rolesIds);
+
+      expect(result).toEqual({ changes: 2 });
+      expect(beginSpy).toHaveBeenCalledTimes(1);
+      expect(updateSpy).toHaveBeenCalledTimes(2);
+      expect(commitSpy).toHaveBeenCalledTimes(1);
+      expect(rollbackSpy).not.toHaveBeenCalled();
+    });
+
+    it("only removes roles if roles_id is empty", async () => {
+      const rolesIds: number[] = [];
+
+      const beginSpy = vi.spyOn(db, "beginTransaction").mockResolvedValueOnce(undefined);
+      const updateSpy = vi.spyOn(db, "Update").mockResolvedValueOnce({ changes: 1 });
+      const commitSpy = vi.spyOn(db, "commitTransaction").mockResolvedValueOnce(undefined);
+      const rollbackSpy = vi.spyOn(db, "rollbackTransaction");
+
+      const result = await dao.updateRolesOfOperator(operatorId, rolesIds);
+
+      expect(result).toBeNull();
+      expect(updateSpy).toHaveBeenCalledTimes(1); // only DELETE
+      expect(commitSpy).toHaveBeenCalledTimes(1);
+      expect(rollbackSpy).not.toHaveBeenCalled();
+    });
+
+    it("rolls back and throws if INSERT makes no changes", async () => {
+      const rolesIds = [2, 3];
+
+      vi.spyOn(db, "beginTransaction").mockResolvedValueOnce(undefined);
+      vi.spyOn(db, "Update")
+        .mockResolvedValueOnce({ changes: 0 }) // DELETE
+        .mockResolvedValueOnce({ changes: 0 }); // INSERT
+      const rollbackSpy = vi.spyOn(db, "rollbackTransaction").mockResolvedValueOnce(undefined);
+
+      await expect(dao.updateRolesOfOperator(operatorId, rolesIds)).rejects.toThrow(
+        "Report not found or no changes made"
+      );
+
+      expect(rollbackSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("rolls back and propagates errors", async () => {
+      const rolesIds = [2];
+
+      vi.spyOn(db, "beginTransaction").mockResolvedValueOnce(undefined);
+      vi.spyOn(db, "Update").mockRejectedValueOnce(new Error("DB error"));
+      const rollbackSpy = vi.spyOn(db, "rollbackTransaction").mockResolvedValueOnce(undefined);
+
+      await expect(dao.updateRolesOfOperator(operatorId, rolesIds)).rejects.toThrow("DB error");
+      expect(rollbackSpy).toHaveBeenCalledTimes(1);
     });
   });
 
