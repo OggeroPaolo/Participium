@@ -46,7 +46,6 @@ router.get("/reports/map/accepted",
 
 //GET /reports/:reportId
 router.get("/reports/:reportId",
-    verifyFirebaseToken([ROLES.CITIZEN, ROLES.PUB_RELATIONS, ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]),
     validateReportId,
     async (req: Request, res: Response) => {
         try {
