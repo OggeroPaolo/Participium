@@ -1,8 +1,8 @@
-import { getAll, getOne } from "../config/database.js"
+import { getAll, getOne, Update, beginTransaction, commitTransaction, rollbackTransaction } from "../config/database.js"
 import { type User } from "../models/user.js"
 import UserDAO from "../dao/UserDAO.js";
 import { mapExternalUsersWithRoles, type ExternalUserDTO } from "../dto/externalUserDTO.js";
-import { mapUsersList} from "../services/userService.js";
+import { mapUsersList } from "../services/userService.js";
 
 const userDao = new UserDAO();
 
@@ -29,6 +29,40 @@ export default class OperatorDao {
     return mapUsersList(rows)
   }
 
+  // Returns the list of roles ids for a given user
+  async getOperatorRolesId(operatorId: number): Promise<number[]> {
+    const query = `
+    SELECT
+      ur.role_id
+    FROM users u
+    JOIN user_roles ur ON ur.user_id = u.id
+    WHERE u.id = ?
+  `;
+    const rows = await getAll<{ role_id: number }>(query, [operatorId]);
+    return rows.map(row => row.role_id);
+  }
+
+  // Returns the roles (ids and names) for which the operator has at least one report
+  async getOperatorRolesIfReportExists(operatorId: number, roles_id: number[]): Promise<{ role_id: number; role_name: string }[]> {
+
+    const rolesPlaceholders = roles_id.map(() => '?').join(',');
+
+    const query = `
+      SELECT DISTINCT ur.role_id, ro.name AS role_name
+      FROM user_roles ur
+      JOIN roles ro ON ro.id = ur.role_id
+      JOIN offices o ON o.id = ro.office_id
+      JOIN reports rpt ON rpt.assigned_to = ur.user_id 
+          AND rpt.category_id = o.category_id
+      WHERE ur.user_id = ?
+        AND ur.role_id IN (${rolesPlaceholders})
+        AND rpt.status != 'resolved'
+    `;
+
+    const roles = await getAll<{ role_id: number; role_name: string }>(query, [operatorId, ...roles_id]);
+
+    return roles;
+  }
 
 
   // Return the Id of the operator with the least assigned reports in a given category
@@ -159,5 +193,43 @@ export default class OperatorDao {
 
     const rows = await getAll(query, params);
     return mapExternalUsersWithRoles(rows);
+  }
+
+  async updateRolesOfOperator(operatorId: number, roles_id: Array<number>) {
+    try {
+
+      let result = null;
+
+      await beginTransaction();
+      // Remove existing roles
+      await Update(
+        `DELETE FROM user_roles WHERE user_id = ?`,
+        [operatorId]
+      );
+      if (roles_id.length > 0) {
+        // Insert new roles
+        const values = roles_id.map(() => "(?, ?)").join(", ");
+        const params = roles_id.flatMap(roleId => [operatorId, roleId]);
+
+        const query = `
+          INSERT INTO user_roles (user_id, role_id)
+          VALUES ${values}
+        `;
+
+        result = await Update(query, params);
+
+        if (result.changes === 0) {
+          throw new Error("Report not found or no changes made");
+        }
+      }
+
+      await commitTransaction();
+
+      return result;
+
+    } catch (error) {
+      await rollbackTransaction();
+      throw error;
+    }
   }
 }

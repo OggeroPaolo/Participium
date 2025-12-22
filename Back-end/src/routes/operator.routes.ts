@@ -149,4 +149,44 @@ router.get("/external-maintainers",
   }
 );
 
+
+// Patches the external_user field of a report in order to assign it to the correct external mantainer
+router.patch("/operators/:operatorId/roles",
+    // verifyFirebaseToken([ROLES.ADMIN]),
+    async (req: Request, res: Response) => {
+        try {
+
+            const operatorId = Number(req.params.operatorId);
+            const { roles_id } = req.body;
+
+            const existingRoles = await operatorDao.getOperatorRolesId(operatorId);
+            console.log(existingRoles)
+
+            const rolesToBeCanceled = existingRoles.filter(role => !roles_id.includes(role));
+
+            console.log(rolesToBeCanceled)
+
+            // get the roles to be canceled for which that operator has at least one report open 
+            const conflictingRoles = await operatorDao.getOperatorRolesIfReportExists(operatorId, rolesToBeCanceled);
+
+            console.log(conflictingRoles)
+
+            if (conflictingRoles.length > 0) {
+              return res.status(400).json({ error: "This internal officer has reports for some roles ", conflicting_roles: conflictingRoles });
+            }
+
+            await operatorDao.updateRolesOfOperator(operatorId, roles_id);
+           
+            return res.status(200).json({
+                message: "Roles successfully updated"
+            });
+
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
+// 30 mintues
+
 export default router;
