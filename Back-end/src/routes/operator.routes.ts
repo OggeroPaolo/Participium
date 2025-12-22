@@ -4,6 +4,7 @@ import { body, validationResult, param, query } from "express-validator";
 import { verifyFirebaseToken } from "../middlewares/verifyFirebaseToken.js";
 import { ROLES } from "../models/userRoles.js";
 import UserDAO from "../dao/UserDAO.js";
+import RolesDAO from "../dao/RolesDAO.js";
 import OperatorDAO, { type ExternalMaintainerFilters } from "../dao/OperatorDAO.js";
 import { createUserWithFirebase, UserAlreadyExistsError, EmailOrUsernameConflictError } from "../services/userService.js";
 
@@ -11,6 +12,7 @@ import { createUserWithFirebase, UserAlreadyExistsError, EmailOrUsernameConflict
 const router = Router();
 const operatorDao = new OperatorDAO();
 const userDao = new UserDAO();
+const rolesDao = new RolesDAO();
 
 // GET all operators
 router.get("/operators", verifyFirebaseToken([ROLES.ADMIN]), async (req: Request, res: Response) => {
@@ -158,6 +160,15 @@ router.patch("/operators/:operatorId/roles",
 
             const operatorId = Number(req.params.operatorId);
             const { roles_id } = req.body;
+
+            // Throw an error if the roles to be changed to are not of type tech officer
+            const rolesInfo = await rolesDao.getRolesByIds(roles_id);
+
+            const roles_type = rolesInfo.map(role => role.type);
+
+            if (roles_type.some(type => type !== "tech_officer")) {
+              return res.status(400).json({ error: "changing roles is not allowed to roles that are not of type tech officer" });
+            }
 
             const existingRoles = await operatorDao.getOperatorRolesId(operatorId);
             console.log(existingRoles)

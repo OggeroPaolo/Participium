@@ -7,4 +7,14 @@ export default class RolesDao {
     const roles = await getAll(query);
     return roles;
   }
+  
+  async getRolesByIds(roleIds: number[]): Promise<any[]> {
+    if (!roleIds.length) return [];
+
+    const placeholders = roleIds.map(() => "?").join(",");
+    const query = `SELECT * FROM roles WHERE id IN (${placeholders})`;
+
+    const roles = await getAll(query, roleIds);
+    return roles;
+  }
 }
