@@ -577,11 +577,6 @@ function ExtAssignedReports() {
                           <div className='d-flex justify-content-between align-items-start'>
 
                             <div className="d-flex flex-column">
-                              {c.user_id !== userId && c.role_name && (
-                                <small className="text-muted">
-                                  {c.role_name.replaceAll("_", " ")}
-                                </small>
-                              )}
                               <div className='d-flex align-items-center'>
                                 <div
                                   style={{
