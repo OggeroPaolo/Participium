@@ -4,11 +4,13 @@ import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
 import { initializeDatabase } from "./db/init.js";
 import { closeDatabase } from "./config/database.js";
+import { initializeRealtime } from "./realtime/realtimeGateway.js";
 
 // Initialize database before starting server
 await initializeDatabase();
 
 const server = http.createServer(app);
+initializeRealtime(server);
 
 server.listen(env.PORT, () => {
   logger.info(`Server listening on http://localhost:${env.PORT}`);
