@@ -82,14 +82,6 @@ class RealtimeGateway {
         "Realtime connection established"
       );
 
-      socket.emit("notifications:ready", {
-        message: "Realtime channel established",
-        user: {
-          uid,
-          role: role ?? "unknown",
-        },
-      });
-
       socket.on("disconnect", (reason) => {
         this.releaseSocket(uid, socket.id);
         logger.info(
