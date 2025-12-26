@@ -1,7 +1,6 @@
 import { getBearerToken } from "../firebaseService";
 
-const API_BASE_URL = "http://localhost:3000";
-const URI = API_BASE_URL;
+const URI = "http://localhost:3000";
 
 // Register a new user
 async function handleSignup(credentials) {
@@ -581,7 +580,6 @@ export {
   getReport,
   getPendingReports,
   reviewReport,
-  API_BASE_URL,
   getAssignedReports,
   getExternalAssignedReports,
   updateStatus,
@@ -591,5 +589,4 @@ export {
   createComment,
   verifyEmail,
   resendCode,
-
 };
