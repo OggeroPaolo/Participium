@@ -117,13 +117,16 @@ function UserList() {
                         </div>
                       </Col>
                       
-                      <Col xs={12} md={4} className='text-md-end mt-2 mt-md-0'>
-                        <span 
-                          className='badge bg-primary'
-                          style={{ fontSize: '0.85rem' }}
-                        >
-                          {formatRole(u.role_name)}
-                        </span>
+                      <Col xs={12} md={4} className="d-flex flex-column align-items-end mt-2 mt-md-0">
+                        {u.roles.map((role) => (
+                          <span
+                            key={role}
+                            className="badge bg-primary mb-1"
+                            style={{ fontSize: '0.85rem' }}
+                          >
+                            {formatRole(role)}
+                          </span>
+                        ))}
                       </Col>
                     </Row>
                   </Card.Body>
