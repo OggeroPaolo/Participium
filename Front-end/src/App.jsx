@@ -129,10 +129,12 @@ function App() {
               )
             }
           />
+
+          {/* Citizen and unlogged user routes */}
           <Route
             path='/reports/:rid'
             element={
-              user?.role_type === "citizen" ? (
+              user?.role_type === "citizen" || !isAuthenticated ? (
                 <ReportInfo />
               ) : (
                 <Navigate replace to='/' />

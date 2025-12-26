@@ -1370,6 +1370,108 @@ Authorization: Bearer <firebase-token>
 }
 ```
 
+**PATCH `/users/{userId}`**
+
+Updates the authenticated citizen’s user profile information.
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+Content-Type: multipart/form-data
+```
+
+* **Request Parameters:**
+
+  - userId: integer
+
+* **Request Body:**
+
+This endpoint accepts `multipart/form-data`.
+
+**Form fields:**
+
+```json
+{
+  "telegram_username": "john_doe",
+  "email_notifications_enabled": true
+}
+```
+
+**File field:**
+
+- `photo_profile`: image file (JPEG, PNG, etc.)
+
+---
+
+* **Field Usage Notes:**
+
+| Field                       | When Required | Types    | Notes                                                            |
+| --------------------------- | ------------- | -------- | ---------------------------------------------------------------- |
+| telegram_username           | Optional      | string   |                                                                  |
+| email_notifications_enabled | Optional      | boolean  | Automatically coerced to boolean                                 |
+| photo_profile               | Optional      | file     | Image is resized (max 720×720) not cropped                       |
+
+---
+
+* **Authorization Rules:**
+
+- The authenticated user **must** have role `CITIZEN`
+- A user may only update **their own** profile (`userId` must match token user ID)
+
+---
+
+* **Success Response (200 OK):**
+
+```json
+{
+  "message": "User information updated"
+}
+```
+
+---
+
+* **Error Response (400 Bad Request):**
+
+```json
+{
+  "errors": [
+    "User ID must be a valid integer",
+    "email_notifications_enabled must be a boolean"
+  ]
+}
+```
+
+---
+
+* **Error Response (401 Unauthorized):**
+
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+---
+
+* **Error Response (403 Forbidden):**
+
+```json
+{
+  "error": "You are not allowed to change the user information for another user"
+}
+```
+
+---
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server error"
+}
+```
+
 
 ## Project Structure
 

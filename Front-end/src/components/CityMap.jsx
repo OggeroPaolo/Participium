@@ -8,7 +8,7 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.awesome-markers/dist/leaflet.awesome-markers.css";
 import "leaflet.awesome-markers/dist/leaflet.awesome-markers.js";
 import { reverseGeocode } from "../utils/geocoding";
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 
 // Fix for default marker icons in Leaflet with React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -27,6 +27,7 @@ function CityMap({
   approvedReports,
   selectedReportID,
   onMarkerSelect,
+  isAuthenticated,
 }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -86,7 +87,7 @@ function CityMap({
     marker.openPopup();
     currentMarkerRef.current = marker;
     return marker;
-  }
+  };
 
   const attachCreateReportButton = (marker, lat, lng) => {
     // timeout per assicurarsi che il DOM sia pronto
@@ -97,9 +98,15 @@ function CityMap({
       const btn = popupNode.querySelector(".report-btn");
       if (!btn) return;
 
-      L.DomEvent.on(btn, "click", () =>
-        navigate("/create-report", { state: { lat, lng } })
-      );
+      const action = btn.dataset.action;
+
+      L.DomEvent.on(btn, "click", () => {
+        if (action === "create") {
+          navigate("/create-report", { state: { lat, lng } });
+        } else {
+          navigate("/login");
+        }
+      });
     }, 100);
   };
 
@@ -108,7 +115,10 @@ function CityMap({
       `<div class="body-font">
         <b>Selected Location</b><br>
         ${address}<br>
-        <button class="map-button report-btn">Create a new report</button>
+        <button class="map-button report-btn"
+        data-action="${isAuthenticated ? "create" : "login"}">${
+        isAuthenticated ? "Create a new report" : "Login to create reports"
+      }</button>
       </div>`
     );
     // Re-attach button listener
@@ -143,7 +153,7 @@ function CityMap({
     // Store coordinates immediately
     setSelectedPoint({ lat: lat.toFixed(5), lng: lng.toFixed(5) });
     setIsGeocoding(true);
-    setSelectedAddress('Loading address...');
+    setSelectedAddress("Loading address...");
 
     // Remove previous marker
     selectedLayerRef.current.clearLayers();
@@ -156,9 +166,10 @@ function CityMap({
       const address = await reverseGeocode(lat, lng);
       const lower = address.toLowerCase();
       // Check if address contains Torino/Turin/TO
-      const isTorino = lower.includes('torino') ||
-        lower.includes('turin') ||
-        lower.includes('to,');
+      const isTorino =
+        lower.includes("torino") ||
+        lower.includes("turin") ||
+        lower.includes("to,");
 
       setSelectedAddress(address);
       setIsGeocoding(false);
@@ -173,7 +184,6 @@ function CityMap({
 
       // Location outside Torino - show error, disable button
       setPopupLocationOutsideTorino(marker, address);
-
     } catch (error) {
       console.error("Geocoding failed:", error);
       setSelectedAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
@@ -183,7 +193,7 @@ function CityMap({
       if (!marker.getPopup()) return;
       setPopupGeocodingError(marker, lat, lng);
     }
-  }
+  };
 
   const handleReportPopupOpen = (e, reportId) => {
     setTimeout(() => {
@@ -195,19 +205,16 @@ function CityMap({
 
       const btnClone = btn.cloneNode(true);
       btn.parentNode.replaceChild(btnClone, btn);
-      L.DomEvent.on(btnClone, "click", () =>
-        navigate(`/reports/${reportId}`)
-      );
+      L.DomEvent.on(btnClone, "click", () => navigate(`/reports/${reportId}`));
     }, 0);
   };
 
   const addReportMarkerToCluster = (clusterGroup, report) => {
     if (!report.position?.lat || !report.position?.lng) return;
 
-    const marker = L.marker(
-      [report.position.lat, report.position.lng],
-      { icon: reportIcon }
-    ).bindPopup(
+    const marker = L.marker([report.position.lat, report.position.lng], {
+      icon: reportIcon,
+    }).bindPopup(
       `<div class="body-font">
         <p class="my-1"><b>${report.title}</b></p>
         <p class="my-1 d-inline reporte-by-size">Reported by: </p>
@@ -277,7 +284,6 @@ function CityMap({
       }
     }, 100);
 
-
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
@@ -296,18 +302,24 @@ function CityMap({
 
     const loadGeoJSON = async () => {
       try {
-        const response = await fetch('/turin_geojson.geojson');
+        const response = await fetch("/turin_geojson.geojson");
         const geojson = await response.json();
 
         const layer = L.geoJSON(geojson, {
-          style: { color: '#2886da', weight: 2, opacity: 0.4, fillColor: '#2886da', fillOpacity: 0.07 }
+          style: {
+            color: "#2886da",
+            weight: 2,
+            opacity: 0.4,
+            fillColor: "#2886da",
+            fillOpacity: 0.07,
+          },
         }).addTo(mapInstanceRef.current);
 
-        mapInstanceRef.current.fitBounds(layer.getBounds());      //maybe should take the pan to fit the boundary away
+        mapInstanceRef.current.fitBounds(layer.getBounds()); //maybe should take the pan to fit the boundary away
       } catch (err) {
         console.error("Failed loading GeoJSON", err);
       }
-    }
+    };
 
     loadGeoJSON();
   }, []);
@@ -323,7 +335,8 @@ function CityMap({
     markersRef.current = {};
 
     approvedReports.forEach((report) =>
-      addReportMarkerToCluster(clusterGroup, report));
+      addReportMarkerToCluster(clusterGroup, report)
+    );
   }, [approvedReports]);
 
   // highlight / un-highlight markers when selectedReportID changes
@@ -348,7 +361,6 @@ function CityMap({
       map.panTo(marker.getLatLng());
       marker.openPopup();
     });
-
   }, [selectedReportID]);
 
   return (
@@ -366,7 +378,7 @@ function CityMap({
 
       {selectedPoint && (
         <div
-          className="location-info-box"
+          className='location-info-box'
           style={{
             position: "absolute",
             top: "10px",
@@ -384,11 +396,11 @@ function CityMap({
           <div style={{ marginTop: "5px", color: "#555" }}>
             {isGeocoding ? (
               <span>
-                <i className="spinner-border spinner-border-sm me-2"></i>{' '}
+                <i className='spinner-border spinner-border-sm me-2'></i>{" "}
                 Loading address...
               </span>
             ) : (
-              selectedAddress || 'Unknown location'
+              selectedAddress || "Unknown location"
             )}
           </div>
           <div style={{ fontSize: "11px", color: "#999", marginTop: "5px" }}>
@@ -401,7 +413,7 @@ function CityMap({
 }
 
 CityMap.propTypes = {
-  center: PropTypes.arrayOf(PropTypes.number),          // [lat, lng]
+  center: PropTypes.arrayOf(PropTypes.number), // [lat, lng]
   zoom: PropTypes.number,
   approvedReports: PropTypes.arrayOf(
     PropTypes.shape({
@@ -414,12 +426,9 @@ CityMap.propTypes = {
       }),
     })
   ),
-  selectedReportID: PropTypes.oneOfType([
-    PropTypes.string,
-    PropTypes.number,
-  ]),
+  selectedReportID: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onMarkerSelect: PropTypes.func,
+  isAuthenticated: PropTypes.bool,
 };
-
 
 export default CityMap;
