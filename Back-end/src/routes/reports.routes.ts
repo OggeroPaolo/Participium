@@ -16,12 +16,21 @@ import path from 'node:path';
 import sharp from 'sharp';
 import type { ReportFilters } from "../dao/ReportDAO.js";
 import { ReportStatus } from "../models/reportStatus.js";
+
+import UserDAO from "../dao/UserDAO.js";
+import { getRealtimeGateway } from "../realtime/realtimeGateway.js";
+import { logger } from "../config/logger.js";
+
 import CommentDAO from "../dao/CommentDAO.js";
 import type { CreateCommentDTO } from "../dto/CommentDTO.js";
+
 
 const router = Router();
 const reportDAO = new ReportDAO();
 const operatorDAO = new OperatorDAO();
+
+const userDAO = new UserDAO();
+
 const commentDAO = new CommentDAO();
 
 //GET /reports/map
@@ -46,7 +55,6 @@ router.get("/reports/map/accepted",
 
 //GET /reports/:reportId
 router.get("/reports/:reportId",
-    verifyFirebaseToken([ROLES.CITIZEN, ROLES.PUB_RELATIONS, ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]),
     validateReportId,
     async (req: Request, res: Response) => {
         try {
@@ -404,6 +412,27 @@ router.patch("/pub_relations/reports/:reportId",
 
             // update the report and optionally assigne it if to be status is assigned
             await reportDAO.updateReportStatusAndAssign(reportId, status, user.id, note, categoryId, assigneeId);
+
+            if (status === ReportStatus.Assigned) {
+                try {
+                    const reportOwner = await userDAO.findUserById(report.user_id);
+                    if (reportOwner?.firebase_uid) {
+                        getRealtimeGateway().notifyUser(reportOwner.firebase_uid, {
+                            type: "report.accepted",
+                            title: "Report approved",
+                            message: `Your report "${report.title}" has been approved and assigned for action.`,
+                            metadata: {
+                                reportId,
+                                status,
+                                categoryId: categoryIdFinal,
+                                assignedOfficerId: assigneeId ?? null
+                            }
+                        });
+                    }
+                } catch (notifyError) {
+                    logger.warn({ notifyError, reportId }, "Failed to emit realtime report notification");
+                }
+            }
 
             return res.status(200).json({
                 message: "Report status updated successfully"

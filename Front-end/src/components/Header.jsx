@@ -3,6 +3,7 @@ import { Navbar } from "react-bootstrap";
 import { Container } from "react-bootstrap";
 import yellowbull from "../assets/yellowbull.png";
 import { Nav } from "react-bootstrap";
+import NotificationBell from "./NotificationBell.jsx";
 
 function Header(props) {
   const expand = "sm";
@@ -58,10 +59,11 @@ function Header(props) {
                     </>
                   )}
                   {user?.role_name === "Citizen" && (
-                    <>
-                      <Nav.Link href='/create-report'>New Report</Nav.Link>
-                    </>
+                    <Nav.Link href='/create-report'>New Report</Nav.Link>
                   )}
+
+                  <NotificationBell />
+
                   {user?.role_type === "tech_officer" && (
                     <>
                       <Nav.Link href='/tech-assigned-reports'>
@@ -83,6 +85,7 @@ function Header(props) {
                       </Nav.Link>
                     </>
                   )}
+
                   <Nav.Link href='#' onClick={handleLogout}>
                     Logout
                   </Nav.Link>
