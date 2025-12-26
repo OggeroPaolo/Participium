@@ -42,7 +42,7 @@ export function AuthenticatedUserDashboard({ user }) {
 
 
 function getDashboardMessage(user) {
-  if (user?.role_name === "Admin") {
+  if (user?.role_type === "admin") {
     return "Admin dashboard features coming soon."
   }
   if (user?.role_type === "tech_officer") {
@@ -51,7 +51,7 @@ function getDashboardMessage(user) {
   if (user?.role_type === "external_maintainer") {
     return "Discover the features of Participium."
   }
-  if (user?.role_name === "Municipal_public_relations_officer") {
+  if (user?.role_type === "pub_relations") {
     return "Municipal officer dashboard features coming soon."
   }
 

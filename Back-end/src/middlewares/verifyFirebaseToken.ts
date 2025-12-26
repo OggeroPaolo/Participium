@@ -27,6 +27,7 @@ export function verifyFirebaseToken(allowedRoles: string[]) {
 
             // Check role authorization
             if (!allowedRoles.includes(user.role_type)) {
+                console.log("if")
                 return res.status(403).json({ error: "Forbidden: insufficient permissions" });
             }
 

@@ -70,7 +70,7 @@ function App() {
             element={
               isAuthenticated ? (
                 <>
-                  {user?.role_name === "Admin" && (
+                  {user?.role_type === "admin" && (
                     <Navigate replace to='/user-list' />
                   )}
                   {user?.role_type === "tech_officer" && (
@@ -79,8 +79,8 @@ function App() {
                   {user?.role_type === "external_maintainer" && (
                     <Navigate replace to='/ext-assigned-reports' />
                   )}
-                  {user?.role_name === "Citizen" && <Navigate replace to='/' />}
-                  {user?.role_name === "Municipal_public_relations_officer" && (
+                  {user?.role_type === "citizen" && <Navigate replace to='/' />}
+                  {user?.role_type === "pub_relations" && (
                     <Navigate replace to='/review-reports' />
                   )}
                 </>
@@ -100,7 +100,7 @@ function App() {
           <Route
             path='/user-creation'
             element={
-              user?.role_name === "Admin" ? (
+              user?.role_type === "admin" ? (
                 <UserCreation />
               ) : (
                 <Navigate replace to='/' />
@@ -110,7 +110,7 @@ function App() {
           <Route
             path='/user-list'
             element={
-              user?.role_name === "Admin" ? (
+              user?.role_type === "admin" ? (
                 <UserList />
               ) : (
                 <Navigate replace to='/' />
@@ -122,7 +122,7 @@ function App() {
           <Route
             path='/create-report'
             element={
-              user?.role_name === "Citizen" ? (
+              user?.role_type === "citizen" ? (
                 <ReportCreation />
               ) : (
                 <Navigate replace to='/' />
@@ -132,7 +132,7 @@ function App() {
           <Route
             path='/reports/:rid'
             element={
-              user?.role_name === "Citizen" ? (
+              user?.role_type === "citizen" ? (
                 <ReportInfo />
               ) : (
                 <Navigate replace to='/' />
@@ -144,7 +144,7 @@ function App() {
           <Route
             path='/review-reports'
             element={
-              user?.role_name === "Municipal_public_relations_officer" ? (
+              user?.role_type === "pub_relations" ? (
                 <OfficerReviewList />
               ) : (
                 <Navigate replace to='/' />

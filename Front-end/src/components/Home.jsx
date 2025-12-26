@@ -16,7 +16,7 @@ function renderDashboard(user, isAuthenticated) {
     return <GuestDashboard />;
   }
 
-  if (user?.role_name === "Citizen") {
+  if (user?.role_type === "citizen") {
     return <CitizenDashboard />;
   }
 
