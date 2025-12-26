@@ -16,7 +16,8 @@ class UserDAO {
           `;
 
         const row = await getOne<any>(query, [firebaseUid]);
-        return mapUserWithRoles(row);
+        const user = mapUserWithRoles(row);
+        return user ?? null;
     }
 
 
@@ -33,7 +34,8 @@ class UserDAO {
           `;
 
         const row = await getOne<any>(query, [email, username]);
-        return mapUserWithRoles(row);
+        const user = mapUserWithRoles(row);
+        return user ?? null;
     }
 
 
