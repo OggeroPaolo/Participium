@@ -114,6 +114,29 @@ CREATE TABLE IF NOT EXISTS comments (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE set NULL
 );
 
+-- Notifications table
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  type TEXT NOT NULL CHECK(type IN (
+    'comment_on_created_report',
+    'comment_on_assigned_report', 
+    'status_update',
+    'report_assigned',
+    'report_reviewed',
+    'report_rejected'
+  )),
+  report_id INTEGER NOT NULL,
+  comment_id INTEGER NULL,
+  title TEXT NOT NULL,
+  message TEXT,
+  is_read INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE,
+  FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE
+);
+
 -- ============================================
 -- Indexes for better query performance
 -- ============================================
@@ -147,6 +170,12 @@ CREATE INDEX IF NOT EXISTS idx_photos_report_id ON photos(report_id);
 -- Indexes for comments
 CREATE INDEX IF NOT EXISTS idx_comments_report_id ON comments(report_id);
 CREATE INDEX IF NOT EXISTS idx_comments_type ON comments(type);
+
+-- Notifications indexes
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read);
 
 -- ============================================
 -- Triggers for updated_at timestamps
