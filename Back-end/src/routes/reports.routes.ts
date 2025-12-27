@@ -475,7 +475,7 @@ router.get("/report/:reportId/internal-comments",
     async (req: Request, res: Response) => {
         try {
             const reportId = Number(req.params.reportId);
-            const comments = await commentDAO.getPrivateCommentsByReportId(reportId);
+            const comments = await commentDAO.getCommentsByReportIdAndType(reportId, 'private');
 
             if (Array.isArray(comments) && comments.length === 0) {
                 return res.status(204).send();
@@ -489,5 +489,28 @@ router.get("/report/:reportId/internal-comments",
         }
     }
 );
+
+//GET /report/:reportId/external-comments
+router.get("/report/:reportId/external-comments",
+    validateReportId,
+    verifyFirebaseToken([ROLES.CITIZEN, ROLES.TECH_OFFICER]),
+    async (req: Request, res: Response) => {
+        try {
+            const reportId = Number(req.params.reportId);
+            const comments = await commentDAO.getCommentsByReportIdAndType(reportId, 'public');
+
+            if (Array.isArray(comments) && comments.length === 0) {
+                return res.status(204).send();
+            }
+
+            return res.status(200).json({ comments });
+
+        } catch (error: any) {
+            console.log(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
+
 
 export default router;

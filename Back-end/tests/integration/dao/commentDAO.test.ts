@@ -16,9 +16,9 @@ describe("CommentDAO Unit Test Suite", () => {
   });
 
   // ------------------------------
-  // getPrivateCommentsByReportId
+  // getCommentsByReportIdAndType
   // ------------------------------
-  describe("getPrivateCommentsByReportId", () => {
+  describe("getCommentsByReportIdAndType", () => {
     const reportId = 42;
 
     it("returns all private comments for a report", async () => {
@@ -29,7 +29,7 @@ describe("CommentDAO Unit Test Suite", () => {
 
       const getAllMock = vi.spyOn(db, "getAll").mockResolvedValueOnce(mockComments);
 
-      const result = await dao.getPrivateCommentsByReportId(reportId);
+      const result = await dao.getCommentsByReportIdAndType(reportId, 'private');
 
       expect(result).toEqual(mockComments);
       expect(getAllMock).toHaveBeenCalledTimes(1);
@@ -38,7 +38,7 @@ describe("CommentDAO Unit Test Suite", () => {
     it("returns empty array if no private comments found", async () => {
       vi.spyOn(db, "getAll").mockResolvedValueOnce([]);
 
-      const result = await dao.getPrivateCommentsByReportId(reportId);
+      const result = await dao.getCommentsByReportIdAndType(reportId, 'private');
 
       expect(result).toEqual([]);
     });
@@ -47,7 +47,7 @@ describe("CommentDAO Unit Test Suite", () => {
       const error = new Error("DB Error");
       vi.spyOn(db, "getAll").mockRejectedValueOnce(error);
 
-      await expect(dao.getPrivateCommentsByReportId(reportId)).rejects.toThrow("DB Error");
+      await expect(dao.getCommentsByReportIdAndType(reportId, 'private')).rejects.toThrow("DB Error");
     });
   });
 

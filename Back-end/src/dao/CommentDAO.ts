@@ -1,17 +1,17 @@
-import type { CreateCommentDTO, GetPrivateCommentDTO } from '../dto/CommentDTO.js';
+import type { CreateCommentDTO, GetCommentDTO } from '../dto/CommentDTO.js';
 import type { Comment } from "../models/comment.js";
 import { Update, getAll, getOne } from '../config/database.js';
 
 export default class CommentDAO {
 
-    async getPrivateCommentsByReportId(reportId: number): Promise<GetPrivateCommentDTO[]> {
+    async getCommentsByReportIdAndType(reportId: number, type: string): Promise<GetCommentDTO[]> {
         const sql = `
             SELECT c.id, c.report_id, c.user_id, c.type, c.text, c.timestamp, u.username, u.last_name, u.first_name, r.name AS role_name
             FROM comments c, users u, roles r
-            WHERE c.user_id = u.id AND u.role_id = r.id AND c.report_id = ? AND c.type = 'private'
+            WHERE c.user_id = u.id AND u.role_id = r.id AND c.report_id = ? AND c.type = ?
         `;
 
-        return getAll<GetPrivateCommentDTO>(sql, [reportId])
+        return getAll<GetCommentDTO>(sql, [reportId, type])
     }
 
     async getCommentById(id: number): Promise<Comment | undefined> {
