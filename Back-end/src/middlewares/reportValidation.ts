@@ -4,7 +4,6 @@ import { ReportStatus } from '../models/reportStatus.js';
 
 export const validateCreateComment = [
     param("reportId").isInt().withMessage("reportId must be a valid integer"),
-    body("type").isString().notEmpty().withMessage("type is required"),
     body("text").isString().notEmpty().withMessage("text is required"),
     (req: Request, res: Response, next: NextFunction) => {
         const errors = validationResult(req);
