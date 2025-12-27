@@ -284,6 +284,7 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
     verifyFirebaseToken([ROLES.TECH_OFFICER]),
     async (req: Request, res: Response) => {
         try {
+
             const reportId = Number(req.params.reportId);
             const user = (req as Request & { user: User }).user;
             let { externalMaintainerId } = req.body
@@ -307,8 +308,8 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
             }
 
 
-            const externalMaintainerCategoryId = await operatorDAO.getCategoryOfExternalMaintainer(externalMaintainerId);
-            if (externalMaintainerCategoryId === report.category_id) {
+            const externalMaintainerCategoryId = await operatorDAO.getCategoriesOfExternalMaintainer(externalMaintainerId);
+            if (externalMaintainerCategoryId.includes(report.category_id)) {
                 await reportDAO.updateReportExternalMaintainer(reportId, externalMaintainerId);
             } else {
                 return res.status(403).json({
@@ -424,8 +425,8 @@ router.patch("/pub_relations/reports/:reportId",
                 assigneeId = await operatorDAO.getAssigneeId(categoryIdFinal);
             }
             if (status === "assigned" && officerId) {
-                const officerCategoryId = await operatorDAO.getCategoryOfOfficer(officerId);
-                if (officerCategoryId === categoryIdFinal) {
+                const officerCategoryId = await operatorDAO.getCategoriesOfOfficer(officerId);
+                if (officerCategoryId.includes(categoryIdFinal)) {
                     assigneeId = officerId
                 } else {
                     return res.status(403).json({
@@ -467,7 +468,6 @@ router.patch("/pub_relations/reports/:reportId",
     }
 );
 
-
 //GET /report/:reportId/internal-comments
 router.get("/report/:reportId/internal-comments",
     validateReportId,
@@ -490,4 +490,27 @@ router.get("/report/:reportId/internal-comments",
     }
 );
 
+//POST /reports/:reportId/comments
+router.post("/reports/:reportId/comments",
+    validateCreateComment,
+    verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]),
+    async (req: Request, res: Response) => {
+        try {
+            const user = (req as Request & { user: User }).user;
+
+            const data: CreateCommentDTO = {
+                user_id: Number(user.id),
+                report_id: Number(req.params.reportId),
+                type: req.body.type,
+                text: req.body.text
+            };
+            const createdComment = await commentDAO.createComment(data);
+
+            return res.status(201).json({ comment: createdComment });
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
 export default router;

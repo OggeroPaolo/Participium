@@ -10,6 +10,7 @@ import { makeTestApp } from "../setup/tests_util.js";
 import * as emailService from "../../src/services/emailService.js";
 import * as pendingUsers from "../../src/services/pendingUsersService.js";
 import * as passwordEnc from "../../src/services/passwordEncryptionSercive.js";
+import { User } from "../../src/models/user.js";
 
 // Mock firebase token verification middleware
 vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
@@ -148,16 +149,17 @@ describe("Integrated Routes E2E  (check if all routes are correctly mount)", () 
 
   // === Get user by Firebase UID ===
   it("GET /users/:firebaseUid should return a user", async () => {
-    const mockUser = {
+    const mockUser: User = {
       id: 4,
       firebase_uid: "uid123",
       first_name: "John",
       last_name: "Doe",
       email: "john@example.com",
       username: "johndoe",
-      role_id: 2,
-      role_name: "org_office_operator",
-      role_type: "operator",
+      roles: [{
+        role_name: "org_office_operator",
+        role_type: "operator",
+      }]
 
     };
 

@@ -6,9 +6,13 @@ export default class CommentDAO {
 
     async getPrivateCommentsByReportId(reportId: number): Promise<GetPrivateCommentDTO[]> {
         const sql = `
-            SELECT c.id, c.report_id, c.user_id, c.type, c.text, c.timestamp, u.username, u.last_name, u.first_name, r.name AS role_name
-            FROM comments c, users u, roles r
-            WHERE c.user_id = u.id AND u.role_id = r.id AND c.report_id = ? AND c.type = 'private'
+        SELECT 
+          c.*,
+          u.username, u.first_name, u.last_name
+        FROM comments c
+        JOIN users u ON u.id = c.user_id
+        WHERE c.report_id = ?
+          AND c.type = 'private';
         `;
 
         return getAll<GetPrivateCommentDTO>(sql, [reportId])
