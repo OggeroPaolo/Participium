@@ -61,7 +61,12 @@ function CitHomepage(props) {
                     <Card.Body>
                       <strong>{r.title}</strong>
                       <div className='text-muted small'>
-                        Reported by: <b>{r.reporterName}</b>
+                        Reported by:{" "}
+                        {r.is_anonymous ? (
+                          <b>Anonymous</b>
+                        ) : (
+                          <b>{r.reporterName}</b>
+                        )}
                       </div>
                       <div className='small mt-2'>
                         <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
@@ -167,7 +172,12 @@ function CitHomepage(props) {
                       <Card.Body>
                         <strong>{r.title}</strong>
                         <div className='text-muted small'>
-                          Reported by: <b>{r.reporterName}</b>
+                          Reported by:{" "}
+                          {r.is_anonymous ? (
+                            <b>Anonymous</b>
+                          ) : (
+                            <b>{r.reporterName}</b>
+                          )}
                         </div>
                         <div className='small mt-2'>
                           <i className='bi bi-geo-alt-fill text-danger'></i>{" "}

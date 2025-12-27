@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router";
 import { getReport } from "../API/API";
-//import yellowbull from "../assets/yellowbull.png";
 import { Container, Row, Col, Carousel, Card } from "react-bootstrap";
 
 function ReportInfo() {
@@ -66,7 +65,7 @@ function ReportInfo() {
               </p>
               <p>
                 <i className='bi bi-person-fill me-2'></i> <b>Reported by:</b>{" "}
-                {report.user.complete_name}
+                {report.is_anonymous ? "Anonymous" : report.user.complete_name}
               </p>
               <p>
                 {" "}
