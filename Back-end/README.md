@@ -367,7 +367,56 @@ Authorization: Bearer <firebase-token>
 ```json
 {
   "errors": [
-    { "msg": "type is required", "param": "type", "location": "body" }
+    { "msg": "text is required", "param": "text", "location": "body" }
+  ]
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal Server Error"
+}
+```
+
+**POST `/reports/:reportId/external-comments`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** reportId
+
+* **Request Body:**
+```json
+{
+  "text": "Broken streetlight"
+}
+```  
+* **Success Response (201 Created):**
+
+```json
+{
+  "comment": {
+        "id": 10,
+        "user_id": 1,
+        "report_id": 2,
+        "type": "public",
+        "text": "Nice Work",
+        "timestamp": "2025-11-24 18:10:20"
+    }
+}
+```
+
+* **Error Response (400 Bad Request - Validation errors):**
+
+```json
+{
+  "errors": [
+    { "msg": "text is required", "param": "text", "location": "body" }
   ]
 }
 ```

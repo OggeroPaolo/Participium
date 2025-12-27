@@ -171,6 +171,30 @@ router.post("/reports/:reportId/internal-comments",
     }
 );
 
+//POST /reports/:reportId/external-comments
+router.post("/reports/:reportId/external-comments",
+    validateCreateComment,
+    verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.CITIZEN]),
+    async (req: Request, res: Response) => {
+        try {
+            const user = (req as Request & { user: User }).user;
+
+            const data: CreateCommentDTO = {
+                user_id: Number(user.id),
+                report_id: Number(req.params.reportId),
+                type: "public",
+                text: req.body.text
+            };
+            const createdComment = await commentDAO.createComment(data);
+
+            return res.status(201).json({ comment: createdComment });
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
+
 //POST /reports
 router.post("/reports",
     verifyFirebaseToken([ROLES.CITIZEN]),
