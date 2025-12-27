@@ -218,9 +218,6 @@ async function getApprovedReports() {
   try {
     const response = await fetch(URI + "/reports/map/accepted", {
       method: "GET",
-      headers: {
-        Authorization: `${await getBearerToken()}`,
-      },
     });
 
     if (response.status === 204) {
@@ -278,9 +275,6 @@ async function getReport(rid) {
   try {
     const response = await fetch(`${URI}/reports/${rid}`, {
       method: "GET",
-      headers: {
-        Authorization: `${await getBearerToken()}`,
-      },
     });
 
     if (response.ok) {
@@ -591,5 +585,4 @@ export {
   createComment,
   verifyEmail,
   resendCode,
-
 };
