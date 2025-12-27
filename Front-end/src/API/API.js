@@ -500,15 +500,14 @@ async function getCommentsInternal(reportId) {
 }
 
 // Create a new comment
-async function createComment(reportId, type, comment) {
-  const response = await fetch(`${URI}/reports/${reportId}/comments`, {
+async function createComment(reportId, comment) {
+  const response = await fetch(`${URI}/reports/${reportId}/internal-comments`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `${await getBearerToken()}`,
     },
     body: JSON.stringify({
-      type: type,
       text: comment,
     }),
   });

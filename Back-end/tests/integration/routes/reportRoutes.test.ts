@@ -356,7 +356,7 @@ describe("Report Routes Integration Tests", () => {
         });
     });
 
-    describe("POST /reports/:reportId/comments", () => {
+    describe("POST /reports/:reportId/internal-comments", () => {
         const reportId = 5;
 
         const mockComment = {
@@ -373,9 +373,8 @@ describe("Report Routes Integration Tests", () => {
                 .mockResolvedValueOnce(mockComment);
 
             const res = await request(app)
-                .post(`/reports/${reportId}/comments`)
+                .post(`/reports/${reportId}/internal-comments`)
                 .send({
-                    type: "private",
                     text: "Internal note",
                 });
 
@@ -392,9 +391,8 @@ describe("Report Routes Integration Tests", () => {
 
         it("returns 400 when validation fails (missing text)", async () => {
             const res = await request(app)
-                .post(`/reports/${reportId}/comments`)
+                .post(`/reports/${reportId}/internal-comments`)
                 .send({
-                    type: "private",
                 });
 
             expect(res.status).toBe(400);
@@ -403,9 +401,8 @@ describe("Report Routes Integration Tests", () => {
 
         it("returns 400 when reportId is invalid", async () => {
             const res = await request(app)
-                .post(`/reports/abc/comments`)
+                .post(`/reports/abc/internal-comments`)
                 .send({
-                    type: "private",
                     text: "ok",
                 });
 
@@ -418,9 +415,8 @@ describe("Report Routes Integration Tests", () => {
                 .mockRejectedValueOnce(new Error("DB error"));
 
             const res = await request(app)
-                .post(`/reports/${reportId}/comments`)
+                .post(`/reports/${reportId}/internal-comments`)
                 .send({
-                    type: "private",
                     text: "Test",
                 });
 

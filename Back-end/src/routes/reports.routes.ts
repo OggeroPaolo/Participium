@@ -147,8 +147,8 @@ router.get("/reports",
     }
 )
 
-//POST /reports/:reportId/comments
-router.post("/reports/:reportId/comments",
+//POST /reports/:reportId/internal-comments
+router.post("/reports/:reportId/internal-comments",
     validateCreateComment,
     verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]),
     async (req: Request, res: Response) => {
@@ -158,7 +158,7 @@ router.post("/reports/:reportId/comments",
             const data: CreateCommentDTO = {
                 user_id: Number(user.id),
                 report_id: Number(req.params.reportId),
-                type: req.body.type,
+                type: "private",
                 text: req.body.text
             };
             const createdComment = await commentDAO.createComment(data);

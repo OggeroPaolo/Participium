@@ -264,7 +264,7 @@ function ExtAssignedReports() {
     setIsSubmittingComment(true);
 
     try {
-      await createComment(completeReportData.id, "private", newComment);
+      await createComment(completeReportData.id, newComment);
 
       // clear textarea
       setNewComment("");

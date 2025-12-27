@@ -508,14 +508,13 @@ describe("Reports E2E", () => {
     });
   });
 
-  describe("POST /reports/:reportId/comments", () => {
+  describe("POST /reports/:reportId/internal-comments", () => {
     const reportId = 3;
 
     it("creates a comment successfully", async () => {
       const res = await request(app)
-        .post(`/reports/${reportId}/comments`)
+        .post(`/reports/${reportId}/internal-comments`)
         .send({
-          type: "private",
           text: "internal note",
         });
 

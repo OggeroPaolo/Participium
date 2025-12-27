@@ -331,7 +331,7 @@ status: pending_approval, assigned, in_progress, suspended, rejected, resolved
 }
 ```
 
-**POST `/reports/:reportId/comments`**
+**POST `/reports/:reportId/internal-comments`**
 
 * **Request Headers:**
 
@@ -344,7 +344,6 @@ Authorization: Bearer <firebase-token>
 * **Request Body:**
 ```json
 {
-  "type": "private",
   "text": "Broken streetlight"
 }
 ```  

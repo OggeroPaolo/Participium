@@ -466,9 +466,8 @@ describe("User Story Integration Tests", () => {
         it("should allow tech officer to create internal comment", async () => {
             // Execute: Create comment as tech officer
             const res = await request(reportsApp)
-                .post(`/reports/${reportId}/comments`)
+                .post(`/reports/${reportId}/internal-comments`)
                 .send({
-                    type: "private",
                     text: "Tech officer comment: Need to check materials",
                 })
                 .set("Authorization", "Bearer fake-token");
@@ -484,9 +483,8 @@ describe("User Story Integration Tests", () => {
         it("should allow external maintainer to create internal comment", async () => {
             // Execute: Create comment as external maintainer
             const res = await request(reportsApp)
-                .post(`/reports/${reportId}/comments`)
+                .post(`/reports/${reportId}/internal-comments`)
                 .send({
-                    type: "private",
                     text: "External maintainer comment: Materials ordered",
                 })
                 .set("Authorization", "Bearer fake-token");
@@ -561,9 +559,8 @@ describe("User Story Integration Tests", () => {
         it("should allow full conversation flow between tech officer and external maintainer", async () => {
             // Step 1: Tech officer creates initial comment
             const comment1 = await request(reportsApp)
-                .post(`/reports/${reportId}/comments`)
+                .post(`/reports/${reportId}/internal-comments`)
                 .send({
-                    type: "private",
                     text: "Tech officer: Please check the issue",
                 })
                 .set("Authorization", "Bearer fake-token");
@@ -572,9 +569,8 @@ describe("User Story Integration Tests", () => {
 
             // Step 2: External maintainer responds
             const comment2 = await request(reportsApp)
-                .post(`/reports/${reportId}/comments`)
+                .post(`/reports/${reportId}/internal-comments`)
                 .send({
-                    type: "private",
                     text: "External maintainer: Issue checked, starting work",
                 })
                 .set("Authorization", "Bearer fake-token");
