@@ -212,13 +212,15 @@ function CityMap({
   const addReportMarkerToCluster = (clusterGroup, report) => {
     if (!report.position?.lat || !report.position?.lng) return;
 
+    const reporter = report.is_anonymous ? "Anonymous" : report.reporterName;
+
     const marker = L.marker([report.position.lat, report.position.lng], {
       icon: reportIcon,
     }).bindPopup(
       `<div class="body-font">
         <p class="my-1"><b>${report.title}</b></p>
         <p class="my-1 d-inline reporte-by-size">Reported by: </p>
-        <p class="my-1 d-inline">${report.reporterName}</p>
+        <p class="my-1 d-inline">${reporter}</p>
         <button class="map-button report-btn">View full report</button>
       </div>`
     );

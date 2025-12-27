@@ -14,6 +14,8 @@ function ReportCreation() {
   const [categories, setCategories] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
   const [pics, setPics] = useState([]);
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [address, setAddress] = useState("Loading address...");
 
   const [pinpoint, setPinpoint] = useState({
     lat: initialLat.toFixed(5),
@@ -44,6 +46,8 @@ function ReportCreation() {
     description: "",
     category: "",
     photos: [],
+    is_anonymous: false,
+    address: "",
   });
 
   async function submitReport(prevData, formData) {
@@ -52,6 +56,8 @@ function ReportCreation() {
       description: formData.get("description"),
       category: formData.get("category"),
       photos: pics,
+      is_anonymous: isAnonymous,
+      address: address,
     };
 
     try {
@@ -69,6 +75,7 @@ function ReportCreation() {
     } catch (error) {
       setPics([]);
       setPreviewImages([]);
+      setIsAnonymous(false);
       return { error: error.message };
     }
   }
@@ -112,6 +119,7 @@ function ReportCreation() {
             propLng={pinpoint.lng}
             setPinpoint={setPinpoint}
             setIsValidLocation={setIsValidLocation}
+            setAddress={setAddress}
           />
           <Form action={formAction}>
             <Form.Group controlId='title' className='mb-3 mt-4'>
@@ -168,6 +176,18 @@ function ReportCreation() {
                   />
                 ))}
               </div>
+            </Form.Group>
+            <Form.Group className='mb-3' controlId='isAnonymous'>
+              <Form.Check
+                type='switch'
+                id='anonymous-switch'
+                label={<strong>I want to be anonymous</strong>}
+                checked={isAnonymous}
+                onChange={(e) => setIsAnonymous(e.target.checked)}
+              />
+              <Form.Text className='text-muted'>
+                Your name will not be visible to other users
+              </Form.Text>
             </Form.Group>
 
             {!isValidLocation && (
@@ -230,6 +250,7 @@ function MapReport(props) {
           parseFloat(props.propLng)
         );
         setAddress(addr);
+        props.setAddress?.(addr);
 
         // Validate location is in Torino
         const isTorino =
@@ -245,6 +266,7 @@ function MapReport(props) {
       } catch (error) {
         console.error("Geocoding failed:", error);
         setAddress("Failed to load address");
+        props.setAddress?.("Failed to load address");
         setIsValidLocation(false);
         if (props.setIsValidLocation) {
           props.setIsValidLocation(false);
@@ -296,10 +318,12 @@ function MapReport(props) {
       // Validate location and update address
       setIsGeocoding(true);
       setAddress("Verifying location...");
+      props.setAddress?.("Verifying location...");
 
       try {
         const addr = await reverseGeocode(lat, lng);
         setAddress(addr);
+        props.setAddress?.(addr);
 
         // Check if location is in Torino
         const isTorino =
@@ -315,6 +339,7 @@ function MapReport(props) {
       } catch (error) {
         console.error("Geocoding failed:", error);
         setAddress("Failed to verify location");
+        props.setAddress?.("Failed to verify location");
         setIsValidLocation(false);
         if (props.setIsValidLocation) {
           props.setIsValidLocation(false);
@@ -331,13 +356,18 @@ function MapReport(props) {
 
     async function loadGeoJSON() {
       try {
-        const response = await fetch('/turin_geojson.geojson');
+        const response = await fetch("/turin_geojson.geojson");
         const geojson = await response.json();
 
         const layer = L.geoJSON(geojson, {
-          style: { color: '#2886da', weight: 2, opacity: 0.4, fillColor: '#2886da', fillOpacity: 0.07 }
+          style: {
+            color: "#2886da",
+            weight: 2,
+            opacity: 0.4,
+            fillColor: "#2886da",
+            fillOpacity: 0.07,
+          },
         }).addTo(mapInstanceRef.current);
-
       } catch (err) {
         console.error("Failed loading GeoJSON", err);
       }
@@ -348,10 +378,14 @@ function MapReport(props) {
 
   return (
     <div style={{ position: "relative", width: "100%" }}>
-      <div ref={mapRef} className="report-creation-map" style={{ height: "400px", width: "100%" }} />
+      <div
+        ref={mapRef}
+        className='report-creation-map'
+        style={{ height: "400px", width: "100%" }}
+      />
 
       <div
-        className="location-info-box"
+        className='location-info-box'
         style={{
           position: "absolute",
           top: "10px",

@@ -237,7 +237,8 @@ async function getApprovedReports() {
 
 // Create a new report
 async function createReport(reportData, lat, lng) {
-  const { title, description, category, photos, address } = reportData;
+  const { title, description, category, photos, is_anonymous, address } =
+    reportData;
 
   const formData = new FormData();
   formData.append("category_id", category);
@@ -247,7 +248,7 @@ async function createReport(reportData, lat, lng) {
   formData.append("address", address);
   formData.append("position_lat", lat);
   formData.append("position_lng", lng);
-  formData.append("is_anonymous", false);
+  formData.append("is_anonymous", is_anonymous);
 
   // Append each photo
   photos.forEach((photo) => {

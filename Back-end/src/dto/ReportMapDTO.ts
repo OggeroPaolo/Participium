@@ -1,4 +1,4 @@
-import {type ReportMap } from '../models/reportMap.js';
+import { type ReportMap } from "../models/reportMap.js";
 
 export type ReportMapDTO = {
   id: number;
@@ -10,8 +10,8 @@ export type ReportMapDTO = {
     lat: number;
     lng: number;
   };
+  is_anonymous: boolean;
 };
-
 
 function mapToDTO(r: ReportMap): ReportMapDTO {
   return {
@@ -22,8 +22,9 @@ function mapToDTO(r: ReportMap): ReportMapDTO {
     address: r.address,
     position: {
       lat: r.position_lat,
-      lng: r.position_lng
-    }
+      lng: r.position_lng,
+    },
+    is_anonymous: r.is_anonymous,
   };
 }
 
