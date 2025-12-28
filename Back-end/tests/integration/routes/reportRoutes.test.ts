@@ -938,10 +938,10 @@ describe("Report Routes Integration Tests", () => {
                     type: "private",
                     text: "Check the issue",
                     timestamp: new Date().toISOString(),
-                    username: "Officer",
-                    last_name: "Test",
-                    first_name: "Officer",
-                    role_name: "Officer"
+                    username: "test",
+                    last_name: "test",
+                    first_name: "test",
+                    role_name: "test",
                 },
                 {
                     id: 2,
@@ -950,14 +950,14 @@ describe("Report Routes Integration Tests", () => {
                     type: "private",
                     text: "Started fixing",
                     timestamp: new Date().toISOString(),
-                    username: "Extarnal",
-                    last_name: "Test",
-                    first_name: "External",
-                    role_name: "External"
+                    username: "test",
+                    last_name: "test",
+                    first_name: "test",
+                    role_name: "test",
                 },
             ];
 
-            vi.spyOn(CommentDAO.prototype, "getPrivateCommentsByReportId").mockResolvedValue(mockComments);
+            vi.spyOn(CommentDAO.prototype, "getCommentsByReportIdAndType").mockResolvedValue(mockComments);
 
             const res = await request(app)
                 .get(`/report/${reportId}/internal-comments`)
@@ -967,7 +967,7 @@ describe("Report Routes Integration Tests", () => {
         });
 
         it("should return 204 if no comments exist", async () => {
-            vi.spyOn(CommentDAO.prototype, "getPrivateCommentsByReportId").mockResolvedValue([]);
+            vi.spyOn(CommentDAO.prototype, "getCommentsByReportIdAndType").mockResolvedValue([]);
 
             const res = await request(app)
                 .get(`/report/${reportId}/internal-comments`)
@@ -977,7 +977,7 @@ describe("Report Routes Integration Tests", () => {
         });
 
         it("should return 500 if DAO throws an error", async () => {
-            vi.spyOn(CommentDAO.prototype, "getPrivateCommentsByReportId").mockRejectedValue(new Error("DB failure"));
+            vi.spyOn(CommentDAO.prototype, "getCommentsByReportIdAndType").mockRejectedValue(new Error("DB failure"));
 
             const res = await request(app)
                 .get(`/report/${reportId}/internal-comments`)

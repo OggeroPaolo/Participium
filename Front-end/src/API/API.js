@@ -213,11 +213,12 @@ async function getExternalMaintainers(filters = {}) {
   }
 }
 
-// Get list of approved reports in the short format
+// Get list of approved reports in the short format (public endpoint - no auth required)
 async function getApprovedReports() {
   try {
     const response = await fetch(URI + "/reports/map/accepted", {
       method: "GET",
+
     });
 
     if (response.status === 204) {

@@ -475,7 +475,7 @@ router.get("/report/:reportId/internal-comments",
     async (req: Request, res: Response) => {
         try {
             const reportId = Number(req.params.reportId);
-            const comments = await commentDAO.getPrivateCommentsByReportId(reportId);
+            const comments = await commentDAO.getCommentsByReportIdAndType(reportId, 'private');
 
             if (Array.isArray(comments) && comments.length === 0) {
                 return res.status(204).send();
@@ -490,27 +490,27 @@ router.get("/report/:reportId/internal-comments",
     }
 );
 
-//POST /reports/:reportId/comments
-router.post("/reports/:reportId/comments",
-    validateCreateComment,
-    verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]),
+//GET /report/:reportId/external-comments
+router.get("/report/:reportId/external-comments",
+    validateReportId,
+    verifyFirebaseToken([ROLES.CITIZEN, ROLES.TECH_OFFICER]),
     async (req: Request, res: Response) => {
         try {
-            const user = (req as Request & { user: User }).user;
+            const reportId = Number(req.params.reportId);
+            const comments = await commentDAO.getCommentsByReportIdAndType(reportId, 'public');
 
-            const data: CreateCommentDTO = {
-                user_id: Number(user.id),
-                report_id: Number(req.params.reportId),
-                type: req.body.type,
-                text: req.body.text
-            };
-            const createdComment = await commentDAO.createComment(data);
+            if (Array.isArray(comments) && comments.length === 0) {
+                return res.status(204).send();
+            }
 
-            return res.status(201).json({ comment: createdComment });
-        } catch (error) {
+            return res.status(200).json({ comments });
+
+        } catch (error: any) {
             console.log(error);
             return res.status(500).json({ error: "Internal server error" });
         }
     }
 );
+
+
 export default router;
