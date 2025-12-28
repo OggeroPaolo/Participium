@@ -212,10 +212,10 @@ describe("UserDAO Integration Test Suite", () => {
 
     it("throws error if newly created user cannot be retrieved", async () => {
       vi.spyOn(db, "runQuery").mockResolvedValue(undefined);
-      vi.spyOn(dao, "findUserByUid").mockResolvedValueOnce(null);
+      vi.spyOn(dao, "findUserByUid").mockResolvedValueOnce(undefined);
 
       await expect(dao.createUser(userData)).rejects.toThrow(
-        "Failed to retrieve the created user"
+        "Failed to retrieve created user"
       );
     });
   });

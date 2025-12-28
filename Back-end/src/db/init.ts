@@ -216,14 +216,6 @@ export const seedDefaultUsers = async (): Promise<void> => {
       last_name: string;
       roles: string[];
     }> = [
-      {
-        firebase_uid: "CV0ZG2bmDva06EHVdSwcF4rz18F3",
-        email: "admin@example.com",
-        username: "EmilyCarter",
-        first_name: "Emily",
-        last_name: "Carter",
-        roles: ["Admin"]
-      },
         {
           firebase_uid: "QBUqptp5sYa46a2ALU3t8QXRIHz2",
           email: "citizen@example.com",
@@ -231,6 +223,13 @@ export const seedDefaultUsers = async (): Promise<void> => {
           first_name: "John",
           last_name: "Doe",
           roles: ["Citizen"]
+        }, {
+          firebase_uid: "CV0ZG2bmDva06EHVdSwcF4rz18F3",
+          email: "admin@example.com",
+          username: "EmilyCarter",
+          first_name: "Emily",
+          last_name: "Carter",
+          roles: ["Admin"]
         },
         {
           firebase_uid: "QF6qat0SyJcdX91zZINZLaTakM12",
@@ -265,14 +264,6 @@ export const seedDefaultUsers = async (): Promise<void> => {
           roles: ["Water_utility_officer"]
         },
         {
-          firebase_uid: "nclvO1Kk2fYQXcNUH4iIr9CLIip1",
-          email: "operator-water2@example.com",
-          username: "operator-water2",
-          first_name: "Marcus",
-          last_name: "Bennett",
-          roles: ["Water_utility_officer"]
-        },
-        {
           firebase_uid: "iT18eWAsjgQ0SBD8isKIFRBG1UD3",
           email: "operator-architectural@example.com",
           username: "operator-architectural",
@@ -302,7 +293,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
           username: "operator-urban",
           first_name: "Lewis",
           last_name: "Hamilton",
-          roles: ["Road_signs_urban_furnishings_officer","Architectural_barriers_officer"]
+          roles: ["Road_signs_urban_furnishings_officer", "Architectural_barriers_officer"]
         },
         {
           firebase_uid: "vPCfQ4wQoANVEwn7b6U5OFFeAGA2",
@@ -311,14 +302,6 @@ export const seedDefaultUsers = async (): Promise<void> => {
           first_name: "Pablo",
           last_name: "Jullones",
           roles: ["Public_green_areas_playgrounds_officer"]
-        },
-        {
-          firebase_uid: "Q9vW1htncqdzoLB0wRlZXpOlhUg1",
-          email: "multiroles@example.com",
-          username: "AlbertMug",
-          first_name: "Albert",
-          last_name: "Mug",
-          roles: ["Waste_officer","Sewer_system_officer"]
         },
         {
           firebase_uid: "PdzfTCrdM0SBkEPM4rtqgi1exEJ2",
@@ -363,9 +346,9 @@ export const seedDefaultUsers = async (): Promise<void> => {
         {
           firebase_uid: "6u05OsQj1cgSEtXk37Woql3oo1h2",
           email: "eco-worker@example.com",
-          username: "GertaTubogor",
-          first_name: "Gerta",
-          last_name: "Tubogor",
+          username: "AlbertMug",
+          first_name: "Albert",
+          last_name: "Mug",
           roles: ["EcoWaste Worker"]
         },
         {

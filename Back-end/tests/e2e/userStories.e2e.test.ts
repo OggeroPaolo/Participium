@@ -20,7 +20,7 @@ import { ROLES } from "../../src/models/userRoles.js";
 // User ID 10 = operator-urban (Road_signs_urban_furnishings_officer) - tech_officer
 // User ID 14 = CarlosSainz (Apex Worker) - external_maintainer for category 7 (Roads and Urban Furnishings)
 const mockTechOfficer = { id: 10, role_name: "tech_officer", role_type: "tech_officer" };
-const mockExternalMaintainer = { id: 14, role_name: "external_maintainer", role_type: "external_maintainer" };
+const mockExternalMaintainer = { id: 13, role_name: "external_maintainer", role_type: "external_maintainer" };
 const mockCitizen = { id: 1, role_name: "Citizen", role_type: "citizen" };
 
 vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
@@ -589,7 +589,7 @@ describe("User Story Integration Tests", () => {
                 roles:["Citizen"]
             });
             vi.spyOn(pendingUsers, "removePendingUser").mockImplementation(() => { });
-            vi.spyOn(UserDAO.prototype, "findUserByEmailOrUsername").mockResolvedValue(null);
+            vi.spyOn(UserDAO.prototype, "findUserByEmailOrUsername").mockResolvedValue(undefined);
         });
 
         it("should successfully verify email code and create user account", async () => {
@@ -696,7 +696,7 @@ describe("User Story Integration Tests", () => {
         it("should complete full registration flow: register -> verify -> account created", async () => {
             // Setup: Ensure no pending user exists for this email and user doesn't exist
             vi.spyOn(pendingUsers, "getPendingUser").mockReturnValue(undefined);
-            vi.spyOn(UserDAO.prototype, "findUserByEmailOrUsername").mockResolvedValue(null);
+            vi.spyOn(UserDAO.prototype, "findUserByEmailOrUsername").mockResolvedValue(undefined);
             vi.spyOn(emailService, "sendVerificationEmail").mockResolvedValue();
             vi.spyOn(pendingUsers, "savePendingUser").mockImplementation(() => { });
             vi.spyOn(passwordEnc, "encrypt").mockReturnValue({

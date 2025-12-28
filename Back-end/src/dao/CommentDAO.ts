@@ -6,11 +6,10 @@ export default class CommentDAO {
 
     async getCommentsByReportIdAndType(reportId: number, type: string): Promise<GetCommentDTO[]> {
         const sql = `
-            SELECT c.id, c.report_id, c.user_id, c.type, c.text, c.timestamp, u.username, u.last_name, u.first_name, r.name AS role_name
-            FROM comments c, users u, roles r
-            WHERE c.user_id = u.id AND u.role_id = r.id AND c.report_id = ? AND c.type = ?
+            SELECT c.id, c.report_id, c.user_id, c.type, c.text, c.timestamp, u.username, u.last_name, u.first_name
+            FROM comments c, users u
+            WHERE c.user_id = u.id AND c.report_id = ? AND c.type = ?
         `;
-
         return getAll<GetCommentDTO>(sql, [reportId, type])
     }
 

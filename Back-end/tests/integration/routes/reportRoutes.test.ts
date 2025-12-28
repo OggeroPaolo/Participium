@@ -11,7 +11,7 @@ import cloudinary from "../../../src/config/cloudinary.js";
 import { ReportStatus } from "../../../src/models/reportStatus.js";
 import { CompleteReportDTO } from "../../../src/dto/ReportWithPhotosDTO.js";
 import CommentDAO from "../../../src/dao/CommentDAO.js";
-import { GetPrivateCommentDTO } from "../../../src/dto/CommentDTO.js";
+import { GetCommentDTO } from "../../../src/dto/CommentDTO.js";
 
 
 const mockTechOfficer = { id: 10, roles: [{ role_name: "tech_officer", role_type: "tech_officer" }] };
@@ -183,6 +183,7 @@ describe("Report Routes Integration Tests", () => {
                         reporterUsername: "jdoe",
                         address: "123 Main St",
                         position: { lat: 45.1, lng: 9.2 },
+                        is_anonymous: false
                     },
                 ],
             });
@@ -359,7 +360,7 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ comment: mockComment });
 
             expect(CommentDAO.prototype.createComment).toHaveBeenCalledWith({
-                user_id: 11,
+                user_id: mockCitizen.id,
                 report_id: reportId,
                 type: "private",
                 text: "Internal note",
@@ -402,6 +403,73 @@ describe("Report Routes Integration Tests", () => {
         });
     });
 
+    describe("POST /reports/:reportId/external-comments", () => {
+        const reportId = 5;
+
+        const mockComment = {
+            id: 101,
+            report_id: reportId,
+            user_id: mockCitizen.id,
+            type: "public",
+            text: "Public comment",
+            timestamp: new Date().toISOString(),
+        };
+
+        it("creates a public comment and returns 201", async () => {
+            vi.spyOn(CommentDAO.prototype, "createComment")
+                .mockResolvedValueOnce(mockComment);
+
+            const res = await request(app)
+                .post(`/reports/${reportId}/external-comments`)
+                .send({
+                    text: "Public comment",
+                });
+
+            expect(res.status).toBe(201);
+            expect(res.body).toEqual({ comment: mockComment });
+
+            expect(CommentDAO.prototype.createComment).toHaveBeenCalledWith({
+                user_id: mockCitizen.id,
+                report_id: reportId,
+                type: "public",
+                text: "Public comment",
+            });
+        });
+
+        it("returns 400 when validation fails (missing text)", async () => {
+            const res = await request(app)
+                .post(`/reports/${reportId}/external-comments`)
+                .send({});
+
+            expect(res.status).toBe(400);
+            expect(res.body.errors).toContain("text is required");
+        });
+
+        it("returns 400 when reportId is invalid", async () => {
+            const res = await request(app)
+                .post(`/reports/abc/external-comments`)
+                .send({
+                    text: "ok",
+                });
+
+            expect(res.status).toBe(400);
+            expect(res.body.errors).toContain("reportId must be a valid integer");
+        });
+
+        it("returns 500 when DAO throws", async () => {
+            vi.spyOn(CommentDAO.prototype, "createComment")
+                .mockRejectedValueOnce(new Error("DB error"));
+
+            const res = await request(app)
+                .post(`/reports/${reportId}/external-comments`)
+                .send({
+                    text: "Test",
+                });
+
+            expect(res.status).toBe(500);
+            expect(res.body).toEqual({ error: "Internal server error" });
+        });
+    });
 
     describe("POST /reports", () => {
 
@@ -729,6 +797,7 @@ describe("Report Routes Integration Tests", () => {
         });
 
     });
+
     describe("PATCH /tech_officer/reports/:reportId/assign_external", () => {
         const validReport: Report = {
             id: 1,
@@ -838,6 +907,7 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
+    
     describe("PATCH /ext_maintainer/reports/:reportId", () => {
 
         const baseReport: Report = {
@@ -926,34 +996,33 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
+
     describe("GET /report/:reportId/internal-comments", () => {
         const reportId = 1;
 
         it("should return 200 with comments if comments exist", async () => {
-            const mockComments: GetPrivateCommentDTO[] = [
+            const mockComments: GetCommentDTO[] = [
                 {
                     id: 1,
                     report_id: reportId,
-                    user_id: 11,
+                    user_id: mockTechOfficer.id,
                     type: "private",
                     text: "Check the issue",
                     timestamp: new Date().toISOString(),
                     username: "test",
                     last_name: "test",
-                    first_name: "test",
-                    role_name: "test",
+                    first_name: "test"
                 },
                 {
                     id: 2,
                     report_id: reportId,
-                    user_id: 12,
+                    user_id: mockExternalMaintainer.id,
                     type: "private",
                     text: "Started fixing",
                     timestamp: new Date().toISOString(),
                     username: "test",
                     last_name: "test",
-                    first_name: "test",
-                    role_name: "test",
+                    first_name: "test"
                 },
             ];
 
@@ -986,76 +1055,77 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
-    describe("POST /reports/:reportId/comments", () => {
-        const reportId = 5;
 
-        const mockComment = {
-            id: 99,
-            report_id: reportId,
-            user_id: mockCitizen.id,
-            type: "private",
-            text: "Internal note",
-            timestamp: new Date().toISOString(),
-        };
+    describe("GET /report/:reportId/external-comments", () => {
+        const reportId = 1;
 
-        it("creates a comment and returns 201", async () => {
-            vi.spyOn(CommentDAO.prototype, "createComment")
-                .mockResolvedValueOnce(mockComment);
+        it("should return 200 with comments if comments exist", async () => {
+            const mockComments: GetCommentDTO[] = [
+                {
+                    id: 1,
+                    report_id: reportId,
+                    user_id: mockCitizen.id,
+                    type: "public",
+                    text: "Public comment",
+                    timestamp: new Date().toISOString(),
+                    username: "test",
+                    last_name: "test",
+                    first_name: "test",
+                },
+                {
+                    id: 2,
+                    report_id: reportId,
+                    user_id: mockTechOfficer.id,
+                    type: "public",
+                    text: "Official response",
+                    timestamp: new Date().toISOString(),
+                    username: "test",
+                    last_name: "test",
+                    first_name: "test",
+                },
+            ];
+
+            vi.spyOn(
+                CommentDAO.prototype,
+                "getCommentsByReportIdAndType"
+            ).mockResolvedValue(mockComments);
 
             const res = await request(app)
-                .post(`/reports/${reportId}/comments`)
-                .send({
-                    type: "private",
-                    text: "Internal note",
-                });
+                .get(`/report/${reportId}/external-comments`);
 
-            expect(res.status).toBe(201);
-            expect(res.body).toEqual({ comment: mockComment });
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({ comments: mockComments });
 
-            expect(CommentDAO.prototype.createComment).toHaveBeenCalledWith({
-                user_id: mockCitizen.id,
-                report_id: reportId,
-                type: "private",
-                text: "Internal note",
-            });
+            expect(
+                CommentDAO.prototype.getCommentsByReportIdAndType
+            ).toHaveBeenCalledWith(reportId, "public");
         });
 
-        it("returns 400 when validation fails (missing text)", async () => {
-            const res = await request(app)
-                .post(`/reports/${reportId}/comments`)
-                .send({
-                    type: "private",
-                });
+        it("should return 204 if no comments exist", async () => {
+            vi.spyOn(
+                CommentDAO.prototype,
+                "getCommentsByReportIdAndType"
+            ).mockResolvedValue([]);
 
-            expect(res.status).toBe(400);
-            expect(res.body.errors).toContain("text is required");
+            const res = await request(app)
+                .get(`/report/${reportId}/external-comments`);
+
+            expect(res.status).toBe(204);
+            expect(res.body).toEqual({});
         });
 
-        it("returns 400 when reportId is invalid", async () => {
-            const res = await request(app)
-                .post(`/reports/abc/comments`)
-                .send({
-                    type: "private",
-                    text: "ok",
-                });
-
-            expect(res.status).toBe(400);
-            expect(res.body.errors).toContain("reportId must be a valid integer");
-        });
-
-        it("returns 500 when DAO throws", async () => {
-            vi.spyOn(CommentDAO.prototype, "createComment")
-                .mockRejectedValueOnce(new Error("DB error"));
+        it("should return 500 if DAO throws an error", async () => {
+            vi.spyOn(
+                CommentDAO.prototype,
+                "getCommentsByReportIdAndType"
+            ).mockRejectedValue(new Error("DB failure"));
 
             const res = await request(app)
-                .post(`/reports/${reportId}/comments`)
-                .send({
-                    type: "private",
-                    text: "Test",
-                });
+                .get(`/report/${reportId}/external-comments`);
 
             expect(res.status).toBe(500);
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
+
 });

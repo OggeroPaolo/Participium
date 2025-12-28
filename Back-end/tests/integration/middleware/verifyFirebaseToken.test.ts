@@ -4,6 +4,7 @@ import { verifyFirebaseToken } from "../../../src/middlewares/verifyFirebaseToke
 import firebaseAdmin from "../../../src/config/firebaseAdmin.js";
 import UserDAO from "../../../src/dao/UserDAO.js";
 import type { User } from "../../../src/models/user.js";
+import { ROLES } from "../../../src/models/userRoles.js";
 
 // Extend Request locally for testing
 interface TestRequest extends Request {
@@ -47,10 +48,8 @@ const mockUser: User = {
   username: "john",
   first_name: "John",
   last_name: "Doe",
-  roles: [{
-    role_name: "admin",
-    role_type: "admin",
-  }]
+  role_type: ROLES.ADMIN,
+  roles: ["admin"]
 };
 
 // ---------------------------
@@ -136,7 +135,7 @@ describe("verifyFirebaseToken middleware", () => {
 
   it("should return 403 if role is not allowed", async () => {
     mockVerifyIdToken.mockResolvedValue({ uid: "uid-123" });
-    const userWithWrongRole = { ...mockUser, roles: [{role_name: "test" ,role_type: "user"}] };
+    const userWithWrongRole = { ...mockUser, role_type: ROLES.CITIZEN, roles:["citizen"]};
     vi.spyOn(UserDAO.prototype, "findUserByUid").mockResolvedValue(userWithWrongRole);
 
     const req = mockReq("Bearer valid-token");

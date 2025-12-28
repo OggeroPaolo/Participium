@@ -5,7 +5,7 @@ import { mapUserWithRoles } from "../services/userService.js";
 class UserDAO {
     private readonly baseSelect = `
         SELECT
-            u.*
+            u.*,
             r.name AS role_name,
             r.type AS role_type
         FROM users u

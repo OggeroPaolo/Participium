@@ -373,8 +373,8 @@ describe("Reports E2E", () => {
     });
   });
 
-
   describe("PATCH /pub_relations/reports/:reportId", () => {
+
     it("should return multiple validation errors together", async () => {
       const res = await request(app)
         .patch("/pub_relations/reports/xyz")
@@ -450,7 +450,7 @@ describe("Reports E2E", () => {
     it("should update the category, assign a specific operator and return 200 ", async () => {
       const res = await request(app)
         .patch("/pub_relations/reports/1")
-        .send({ status: ReportStatus.Assigned, categoryId: 1, officerId: 5 });
+        .send({ status: ReportStatus.Assigned, categoryId: 1, officerId: 6 });
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ message: "Report status updated successfully" });
@@ -510,7 +510,6 @@ describe("Reports E2E", () => {
     });
   });
 
-
   describe("GET /report/:reportId/internal-comments", () => {
 
     const reportId = 3;
@@ -532,7 +531,7 @@ describe("Reports E2E", () => {
 
     it("should return 500 if DAO throws an error", async () => {
       const spy = vi
-        .spyOn(CommentDAO.prototype, "getPrivateCommentsByReportId")
+        .spyOn(CommentDAO.prototype, "getCommentsByReportIdAndType")
         .mockRejectedValue(new Error("DB failure"));
 
       const res = await request(app)
@@ -547,6 +546,49 @@ describe("Reports E2E", () => {
     it("should return 400 for invalid reportId", async () => {
       const res = await request(app)
         .get("/report/abc/internal-comments");
+
+      expect(res.status).toBe(400);
+    });
+
+  });
+
+  describe("GET /report/:reportId/external-comments", () => {
+
+    const reportId = 3;
+
+    it("should return 200 with external comments", async () => {
+      const res = await request(app)
+        .get(`/report/${reportId}/external-comments`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.comments.length).toBeGreaterThan(0);
+    });
+
+    it("should return 204 when no external comments exist", async () => {
+      const res = await request(app)
+        .get(`/report/999/external-comments`);
+
+      expect(res.status).toBe(204);
+      expect(res.body).toEqual({});
+    });
+
+    it("should return 500 if DAO throws an error", async () => {
+      const spy = vi
+        .spyOn(CommentDAO.prototype, "getCommentsByReportIdAndType")
+        .mockRejectedValue(new Error("DB failure"));
+
+      const res = await request(app)
+        .get(`/report/${reportId}/external-comments`);
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: "Internal server error" });
+
+      spy.mockRestore();
+    });
+
+    it("should return 400 for invalid reportId", async () => {
+      const res = await request(app)
+        .get("/report/abc/external-comments");
 
       expect(res.status).toBe(400);
     });

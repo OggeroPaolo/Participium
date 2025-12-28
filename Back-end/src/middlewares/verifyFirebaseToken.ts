@@ -36,6 +36,7 @@ export function verifyFirebaseToken(allowedRoles: string[]) {
 
             next();
         } catch (error) {
+            console.log(error);
             return res.status(401).json({ error: "Unauthorized" });
         }
 
