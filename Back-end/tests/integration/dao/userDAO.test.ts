@@ -220,6 +220,51 @@ describe("UserDAO Integration Test Suite", () => {
     });
   });
 
+  // ------------------------------
+  // updateUserInfo
+  // ------------------------------
+  describe("updateUserInfo", () => {
+    const userId = 123;
+
+    it("updates user info successfully", async () => {
+      const updateMock = vi.spyOn(db, "Update").mockResolvedValueOnce({ changes: 1 });
+
+      await dao.updateUserInfo(userId, "newTelegram", true, "http://new.url/photo.png");
+
+      expect(updateMock).toHaveBeenCalledTimes(1);
+      expect(updateMock).toHaveBeenCalledWith(
+        expect.stringContaining("UPDATE users"),
+        ["newTelegram", true, "http://new.url/photo.png", userId]
+      );
+    });
+
+    it("uses COALESCE to keep existing values if arguments undefined", async () => {
+      const updateMock = vi.spyOn(db, "Update").mockResolvedValueOnce({ changes: 1 });
+
+      await dao.updateUserInfo(userId);
+
+      expect(updateMock).toHaveBeenCalledWith(
+        expect.stringContaining("UPDATE users"),
+        [undefined, undefined, undefined, userId]
+      );
+    });
+
+    it("throws error if no rows are updated", async () => {
+      vi.spyOn(db, "Update").mockResolvedValueOnce({ changes: 0 });
+
+      await expect(
+        dao.updateUserInfo(userId, "telegram", false, "url")
+      ).rejects.toThrow("User not found or no changes made");
+    });
+
+    it("throws error if Update fails", async () => {
+      vi.spyOn(db, "Update").mockRejectedValueOnce(new Error("DB Error"));
+
+      await expect(
+        dao.updateUserInfo(userId, "telegram", true, "url")
+      ).rejects.toThrow("DB Error");
+    });
+  });
 
 
 });
