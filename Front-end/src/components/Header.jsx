@@ -58,7 +58,7 @@ function Header(props) {
                       <Nav.Link href='/user-list'>User List</Nav.Link>
                     </>
                   )}
-                  {user?.role_name === "Citizen" && (
+                  {user?.role_type === "citizen" && (
                     <>
                       <Nav.Link href='/create-report'>New Report</Nav.Link>
                       <Nav.Link

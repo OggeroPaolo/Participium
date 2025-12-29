@@ -135,7 +135,7 @@ function App() {
           <Route
             path='/profile'
             element={
-              user?.role_name === "Citizen" ? (
+              user?.role_type === "citizen" ? (
                 <ProfilePage />
               ) : (
                 <Navigate replace to='/' />
