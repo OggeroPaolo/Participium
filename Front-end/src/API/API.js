@@ -563,6 +563,47 @@ async function resendCode(email) {
   return await response.json();
 }
 
+// Modify user information
+async function modifyUserInfo(userInfo, profilePic, userId) {
+  if (!userId) {
+    throw new Error("User id is required");
+  }
+
+  const { telegram_username, email_notifications_enabled } = userInfo;
+
+  const formData = new FormData();
+  formData.append("telegram_username", telegram_username);
+  formData.append(
+    "email_notifications_enabled",
+    email_notifications_enabled ? 1 : 0
+  );
+  formData.append("photo_profile", profilePic);
+
+  try {
+    const response = await fetch(`${URI}/users/${userId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `${await getBearerToken()}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error ||
+          errorData.errors?.[0] ||
+          "Failed to modify user information"
+      );
+    }
+
+    return await response.json();
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
 export {
   handleSignup,
   createInternalUser,
@@ -586,4 +627,5 @@ export {
   createComment,
   verifyEmail,
   resendCode,
+  modifyUserInfo,
 };

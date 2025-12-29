@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Dropdown, Badge } from "react-bootstrap";
+import { Dropdown, Badge, Nav } from "react-bootstrap";
 import useNotificationStore from "../store/notificationStore";
 
 function NotificationBell() {
@@ -18,8 +18,8 @@ function NotificationBell() {
   return (
     <Dropdown align='end' className='notification-bell'>
       <Dropdown.Toggle
-        variant='link'
-        className='nav-link d-flex align-items-center gap-1'
+        as={Nav.Link}
+        className='d-flex align-items-center gap-1 nav-icon-link'
       >
         <i className='bi bi-bell fs-5'></i>
         {count > 0 && (
@@ -39,9 +39,7 @@ function NotificationBell() {
       <Dropdown.Menu className='notifications-dropdown p-2'>
         <Dropdown.Header>Notifications</Dropdown.Header>
         {latestNotifications.length === 0 ? (
-          <div className='text-muted small px-2 pb-2'>
-            Nothing to show yet
-          </div>
+          <div className='text-muted small px-2 pb-2'>Nothing to show yet</div>
         ) : (
           latestNotifications.map((notification) => (
             <div key={notification.id} className='notification-item py-2'>
@@ -75,4 +73,3 @@ function formatTimestamp(value) {
 }
 
 export default NotificationBell;
-

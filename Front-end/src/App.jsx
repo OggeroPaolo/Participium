@@ -18,6 +18,7 @@ import OfficerReviewList from "./components/OfficerReviewList.jsx";
 import TechAssignedReports from "./components/TechAssignedReports.jsx";
 import ExtAssignedReports from "./components/ExtAssignedReports.jsx";
 import EmailCode from "./components/EmailCode.jsx";
+import ProfilePage from "./components/ProfilePage.jsx";
 
 function App() {
   // Sync Zustand store with Firebase auth state
@@ -126,6 +127,16 @@ function App() {
             element={
               user?.role_name === "Citizen" ? (
                 <ReportCreation />
+              ) : (
+                <Navigate replace to='/' />
+              )
+            }
+          />
+          <Route
+            path='/profile'
+            element={
+              user?.role_name === "Citizen" ? (
+                <ProfilePage />
               ) : (
                 <Navigate replace to='/' />
               )

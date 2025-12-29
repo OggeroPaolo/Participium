@@ -59,7 +59,16 @@ function Header(props) {
                     </>
                   )}
                   {user?.role_name === "Citizen" && (
-                    <Nav.Link href='/create-report'>New Report</Nav.Link>
+                    <>
+                      <Nav.Link href='/create-report'>New Report</Nav.Link>
+                      <Nav.Link
+                        href='/profile'
+                        className='nav-icon-link'
+                        title='Profile'
+                      >
+                        <i className='bi bi-person-circle fs-5'></i>
+                      </Nav.Link>
+                    </>
                   )}
 
                   <NotificationBell />
@@ -80,9 +89,7 @@ function Header(props) {
                   )}
                   {user?.role_name === "Municipal_public_relations_officer" && (
                     <>
-                      <Nav.Link href='/review-reports'>
-                        Review reports
-                      </Nav.Link>
+                      <Nav.Link href='/review-reports'>Review reports</Nav.Link>
                     </>
                   )}
 
