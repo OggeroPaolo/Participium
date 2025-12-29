@@ -1,7 +1,11 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import CityMap from "./CityMap";
 import { getApprovedReports } from "../API/API";
-import { Card, Modal, Button } from "react-bootstrap";
+
+import {  Container, Col, Row, Card, Form, InputGroup , Modal, Button } from "react-bootstrap";
+
+
+
 import { useNavigate } from "react-router";
 import useUserStore from "../store/userStore.js";
 
@@ -10,6 +14,11 @@ function CitHomepage(props) {
   const [selectedReportID, setSelectedReportID] = useState(0);
   const [showMapOverlay, setShowMapOverlay] = useState(true);
   const [showReportList, setShowReportList] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedAddress, setSelectedAddress] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchInputRef = useRef(null);
+  const dropdownRef = useRef(null);
   const reportRefs = useRef({});
   const navigate = useNavigate();
 
@@ -24,8 +33,38 @@ function CitHomepage(props) {
     loadReports();
   }, []);
 
+  // Filter reports for dropdown suggestions based on address
+  const reportSuggestions = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return [];
+    }
+    const query = searchQuery.toLowerCase().trim();
+    return reports.filter((report) =>
+      report.address?.toLowerCase().includes(query)
+    );
+  }, [reports, searchQuery]);
+
+  // Handle clicking outside dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(event.target)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   // handle selection from list or map
-  const handleSelectReport = (id) => {
+  const handleReportClick = (id) => {
     setSelectedReportID(id);
 
     // autoscroll
@@ -37,12 +76,148 @@ function CitHomepage(props) {
     }
   };
 
+  // Handle report selection from dropdown
+  const handleSelectReport = (reportId, address) => {
+    setSelectedReportID(reportId);
+    setSelectedAddress(address);
+    setSearchQuery(address);
+    setShowDropdown(false);
+    
+    // Scroll to the selected report in the list
+    if (reportRefs.current[reportId]) {
+      reportRefs.current[reportId].scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  };
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setSelectedAddress(""); // Clear selection when typing
+    setSelectedReportID(0); // Clear report selection when typing
+    setShowDropdown(value.trim().length > 0 && reportSuggestions.length > 0);
+  };
+
+  // Handle clear search
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setSelectedAddress("");
+    setShowDropdown(false);
+  };
+
   return (
     <div className='cit-homepage-wrapper body-font'>
       <div className='cit-desktop-layout'>
         {/* Desktop sidebar - hidden on mobile */}
-        <div className='d-none d-lg-block cit-reports-section'>
-          <h5 className='cit-reports-header'>Reports Overview</h5>
+
+        <div className="d-none d-lg-block cit-reports-section">
+          <h5 className="cit-reports-header">Reports Overview</h5>
+          
+          {/* Search bar with dropdown */}
+          <Form.Group className="mb-3 mt-3" style={{ position: "relative" }}>
+            <InputGroup>
+              <InputGroup.Text style={{ backgroundColor: "#0350b5", color: "white", borderColor: "#0350b5" }}>
+                <i className="bi bi-search"></i>
+              </InputGroup.Text>
+              <div style={{ position: "relative", flex: 1 }}>
+                <Form.Control
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search by address..."
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  onFocus={() => {
+                    if (searchQuery.trim().length > 0 && reportSuggestions.length > 0) {
+                      setShowDropdown(true);
+                    }
+                  }}
+                  style={{ borderColor: "#0350b5" }}
+                />
+              </div>
+              {searchQuery && (
+                <InputGroup.Text
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Clear search"
+                  style={{ cursor: "pointer", backgroundColor: "#0350b5", color: "white", borderColor: "#0350b5" }}
+                  onClick={handleClearSearch}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleClearSearch();
+                    }
+                  }}
+                >
+                  <i className="bi bi-x"></i>
+                </InputGroup.Text>
+              )}
+            </InputGroup>
+            {/* Dropdown with report suggestions */}
+            {showDropdown && reportSuggestions.length > 0 && (
+              <div
+                ref={dropdownRef}
+                style={{
+                  position: "absolute",
+                  top: "100%",
+                  left: 0,
+                  right: 0,
+                  zIndex: 1000,
+                  backgroundColor: "white",
+                  border: "1px solid #dee2e6",
+                  borderRadius: "0.375rem",
+                  marginTop: "2px",
+                  maxHeight: "300px",
+                  overflowY: "auto",
+                  boxShadow: "0 0.5rem 1rem rgba(0, 0, 0, 0.15)",
+                }}
+              >
+                {reportSuggestions.map((report, index) => (
+                  <div
+                    key={report.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Select report: ${report.title}`}
+                    onClick={() => handleSelectReport(report.id, report.address)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleSelectReport(report.id, report.address);
+                      }
+                    }}
+                    style={{
+                      padding: "10px 15px",
+                      cursor: "pointer",
+                      borderBottom: index < reportSuggestions.length - 1 ? "1px solid #f0f0f0" : "none",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = "#f8f9fa";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = "white";
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.backgroundColor = "#f8f9fa";
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.backgroundColor = "white";
+                    }}
+                  >
+                    <div style={{ fontWeight: "500", marginBottom: "4px" }}>
+                      {report.title}
+                    </div>
+                    <div style={{ fontSize: "0.875rem", color: "#6c757d" }}>
+                      <i className="bi bi-geo-alt-fill text-danger me-2"></i>
+                      {report.address}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Form.Group>
+
 
           {reports.length !== 0 && (
             <>
@@ -51,11 +226,22 @@ function CitHomepage(props) {
                   <Card
                     key={r.id}
                     ref={(el) => (reportRefs.current[r.id] = el)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Select report: ${r.title}`}
                     className={`mt-2 shadow-sm report-card ${
                       selectedReportID === r.id ? "selected" : ""
                     }`}
-                    onClick={() => handleSelectReport(r.id)}
+                    onClick={() => handleReportClick(r.id)}
                     onDoubleClick={() => navigate(`/reports/${r.id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleReportClick(r.id);
+                      } else if (e.key === " " && !e.shiftKey) {
+                        e.preventDefault();
+                        handleReportClick(r.id);
+                      }
+                    }}
                     style={{ cursor: "pointer" }}
                   >
                     <Card.Body>
@@ -104,14 +290,23 @@ function CitHomepage(props) {
             zoom={13}
             approvedReports={reports}
             selectedReportID={selectedReportID}
-            onMarkerSelect={handleSelectReport}
+            onMarkerSelect={handleReportClick}
           />
 
           {/* Interactive Overlay */}
           {showMapOverlay && (
             <div
               className='cit-map-overlay'
+              role="button"
+              tabIndex={0}
+              aria-label="Close map overlay"
               onClick={() => setShowMapOverlay(false)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setShowMapOverlay(false);
+                }
+              }}
             >
               <i
                 className='bi bi-hand-index-thumb'
@@ -141,7 +336,16 @@ function CitHomepage(props) {
         <>
           <div
             className='d-lg-none cit-mobile-overlay-backdrop'
+            role="button"
+            tabIndex={0}
+            aria-label="Close report list"
             onClick={() => setShowReportList(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setShowReportList(false);
+              }
+            }}
           />
           <div className='d-lg-none cit-mobile-reports-overlay'>
             <div className='d-flex justify-content-between align-items-center mb-3'>
@@ -154,18 +358,135 @@ function CitHomepage(props) {
               </button>
             </div>
 
+            {/* Search bar for mobile */}
+            <Form.Group className="mb-3" style={{ position: "relative" }}>
+              <InputGroup>
+                <InputGroup.Text style={{ backgroundColor: "#0350b5", color: "white", borderColor: "#0350b5" }}>
+                  <i className="bi bi-search"></i>
+                </InputGroup.Text>
+                <div style={{ position: "relative", flex: 1 }}>
+                  <Form.Control
+                    type="text"
+                    placeholder="Search by address..."
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    onFocus={() => {
+                      if (searchQuery.trim().length > 0 && reportSuggestions.length > 0) {
+                        setShowDropdown(true);
+                      }
+                    }}
+                    style={{ borderColor: "#0350b5" }}
+                  />
+                </div>
+                {searchQuery && (
+                  <InputGroup.Text
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Clear search"
+                    style={{ cursor: "pointer", backgroundColor: "#0350b5", color: "white", borderColor: "#0350b5" }}
+                    onClick={handleClearSearch}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleClearSearch();
+                      }
+                    }}
+                  >
+                    <i className="bi bi-x"></i>
+                  </InputGroup.Text>
+                )}
+              </InputGroup>
+              {/* Dropdown with report suggestions */}
+              {showDropdown && reportSuggestions.length > 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    right: 0,
+                    zIndex: 1000,
+                    backgroundColor: "white",
+                    border: "1px solid #dee2e6",
+                    borderRadius: "0.375rem",
+                    marginTop: "2px",
+                    maxHeight: "300px",
+                    overflowY: "auto",
+                    boxShadow: "0 0.5rem 1rem rgba(0, 0, 0, 0.15)",
+                  }}
+                >
+                  {reportSuggestions.map((report, index) => (
+                    <div
+                      key={report.id}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Select report: ${report.title}`}
+                      onClick={() => {
+                        handleSelectReport(report.id, report.address);
+                        setShowReportList(false);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleSelectReport(report.id, report.address);
+                          setShowReportList(false);
+                        }
+                      }}
+                      style={{
+                        padding: "10px 15px",
+                        cursor: "pointer",
+                        borderBottom: index < reportSuggestions.length - 1 ? "1px solid #f0f0f0" : "none",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = "#f8f9fa";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = "white";
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.backgroundColor = "#f8f9fa";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.backgroundColor = "white";
+                      }}
+                    >
+                      <div style={{ fontWeight: "500", marginBottom: "4px" }}>
+                        {report.title}
+                      </div>
+                      <div style={{ fontSize: "0.875rem", color: "#6c757d" }}>
+                        <i className="bi bi-geo-alt-fill text-danger me-2"></i>
+                        {report.address}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Form.Group>
+
             {reports.length !== 0 && (
               <>
                 {reports.map((r) => {
                   return (
                     <Card
                       key={r.id}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Select report: ${r.title}`}
                       className={`mt-2 shadow-sm report-card ${
                         selectedReportID === r.id ? "selected" : ""
                       }`}
                       onClick={() => {
-                        handleSelectReport(r.id);
+                        handleReportClick(r.id);
                         setShowReportList(false);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleReportClick(r.id);
+                          setShowReportList(false);
+                        } else if (e.key === " " && !e.shiftKey) {
+                          e.preventDefault();
+                          handleReportClick(r.id);
+                          setShowReportList(false);
+                        }
                       }}
                       style={{ cursor: "pointer" }}
                     >

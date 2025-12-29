@@ -4,7 +4,6 @@ import { ReportStatus } from '../models/reportStatus.js';
 
 export const validateCreateComment = [
     param("reportId").isInt().withMessage("reportId must be a valid integer"),
-    body("type").isString().notEmpty().withMessage("type is required"),
     body("text").isString().notEmpty().withMessage("text is required"),
     (req: Request, res: Response, next: NextFunction) => {
         const errors = validationResult(req);
@@ -37,7 +36,11 @@ export const validateCreateReport = [
         next();
     },
     (req: Request, res: Response, next: NextFunction) => {
-        validationResult(req);
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            const extractedErrors = errors.array().map(err => err.msg);
+            return res.status(400).json({ errors: extractedErrors });
+        }
         next();
     }
 ];

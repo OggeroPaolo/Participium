@@ -54,11 +54,13 @@ npm test
 The project uses **SQLite** with the following structure:
 
 ### Tables
-- **users** - User accounts with Firebase authentication (includes role_id)
-- **roles** - User roles (citizen, operators, admin)
-- **offices** - Organization and technical offices
-- **categories** - Issue report categories
-- **category_offices** - Category-office assignments (many-to-many)
+- **users** — User accounts with Firebase authentication  
+- **roles** — Predefined roles (citizen, operator, admin)  
+- **user_roles** — Maps users to their assigned roles (many-to-many)  
+- **offices** — Organizational and technical offices  
+- **categories** — Report issue categories  
+- **category_offices** — Assigns categories to offices (many-to-many)
+
 
 ### Default Data
 The database is automatically seeded with:
@@ -83,13 +85,11 @@ Each `tech_officer` role points to one of the offices above (see `seedDefaultRol
 
 ## API Endpoints
 
-### Health Check
-
-- **GET** `/health` - Returns the health status of the server
-
 ### Reports
 
 **GET `/reports/map`**
+
+Return all the reports visible in the map (approved reports)
 
 * **Request Headers:** None
 
@@ -98,26 +98,26 @@ Each `tech_officer` role points to one of the offices above (see `seedDefaultRol
 * **Success Response (200 OK):**
 ```json
 "reports": [
-        {
-            "id": 1,
-            "title": "Problem with street illumination",
-            "reporterName": "John Doe",
-            "reporterUsername": "johndoee",
-            "position": {
-                "lat": 45.4642,
-                "lng": 9.19
-            }
-        },
-        {
-            "id": 2,
-            "title": "Holes in the street",
-            "reporterName": "Jane Smith",
-            "reporterUsername": "janesmithh",
-            "position": {
-                "lat": 45.465,
-                "lng": 9.191
-            }
-        }
+  {
+      "id": 1,
+      "title": "Problem with street illumination",
+      "reporterName": "John Doe",
+      "reporterUsername": "johndoee",
+      "position": {
+          "lat": 45.4642,
+          "lng": 9.19
+      }
+  },
+  {
+      "id": 2,
+      "title": "Holes in the street",
+      "reporterName": "Jane Smith",
+      "reporterUsername": "janesmithh",
+      "position": {
+          "lat": 45.465,
+          "lng": 9.191
+      }
+  }
 ]
 ```
 
@@ -137,6 +137,7 @@ Each `tech_officer` role points to one of the offices above (see `seedDefaultRol
 
 **GET `/reports/:reportId`**
 
+Return the report with id equal to `reportId`
 * **Request Headers:** 
   
 ```http
@@ -147,16 +148,26 @@ Authorization: Bearer <firebase-token>
 
 * **Success Response (200 OK):**
 ```json
-        {
-            "id": 1,
-            "title": "Neglected street corner",
-            "description": "This area near Porta Nuova has been neglected and many people use it as a urinal, can something be done about it.",
-            "user_id": 1,
-            "address": "Via Paolo Sacchi Santa Maria delle Grazie, 10125 Torino",
-            "position_lat": 45.06080,
-            "position_lng": 7.67613,
-            "status": "pending_approval"
-        }
+{
+  "id": 10,
+  "user_id": 1,
+  "category_id": 2,
+  "title": "Broken street light",
+  "description": "The street light is broken and needs urgent repair.",
+  "status": "pending_approval",
+  "assigned_to": null,
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "external_user": null,
+  "note": null,
+  "is_anonymous": false,
+  "address": "Via camposanto 3",
+  "position_lat": 45.0632,
+  "position_lng": 7.6835,
+  "created_at": "2025-11-24 18:10:20",
+  "updated_at": "2025-11-24 18:10:20",
+  "photos": [{ "url": "https://res.cloudinary.com/", "ordering": 1 }]
+}
 ```
 
 * **Error Response (404 Not Found):**
@@ -192,6 +203,7 @@ Authorization: Bearer <firebase-token>
 
 **POST `/reports`**
 
+Create a new report in the DB
 * **Request Headers:**
 
 ```http
@@ -220,30 +232,34 @@ Authorization: Bearer <firebase-token>
 ```json
 {
   "report": {
-        "id": 10,
-        "user_id": 1,
-        "category_id": 2,
-        "title": "\"Broken street light on 5th avenue\"",
-        "description": "\"The street light on 5th avenue is broken and needs urgent repair.\"",
-        "status": "pending_approval",
-        "assigned_to": null,
-        "reviewed_by": null,
-        "reviewed_at": null,
-        "note": null,
-        "is_anonymous": false,
-        "address": "Via camposanto 3",
-        "position_lat": 45.0632,
-        "position_lng": 7.6835,
-        "created_at": "2025-11-24 18:10:20",
-        "updated_at": "2025-11-24 18:10:20",
-        "photos": [
-            {
-                "url": "https://res.cloudinary.com/di9n3y9dd/raw/upload/v1764007820/Participium/izvuzpkmk2yybjfxphwb",
-                "ordering": 1
-            }
-        ]
-    }
+    "id": 1,
+    "user": {
+      "id": 10,
+      "complete_name": "Albert Mug",
+      "username": "operator-urban"
+    },
+    "category": {
+      "id": 1,
+      "name": "Water Supply – Drinking Water"
+    },
+    "title": "Test Report",
+    "description": "Test report description",
+    "status": "pending_approval",
+    "is_anonymous": false,
+    "address": "Test address",
+    "position_lat": 40.7128,
+    "position_lng": -74.006,
+    "created_at": "2025-12-20 16:53:29",
+    "updated_at": "2025-12-20 16:53:29",
+    "photos": [
+      {
+        "url": "https://example.com/photo1.jpg",
+        "ordering": 1
+      }
+    ]
+  }
 }
+
 ```
 
 * **Error Response (400 Bad Request - Validation errors):**
@@ -251,7 +267,8 @@ Authorization: Bearer <firebase-token>
 ```json
 {
   "errors": [
-    { "msg": "title is required", "param": "title", "location": "body" }
+    "Title is required",
+    "Description is required"
   ]
 }
 ```
@@ -266,6 +283,7 @@ Authorization: Bearer <firebase-token>
 
 **GET `/reports`**
 
+Return all the reports
 * **Request Headers:** 
 ```http
 Authorization: Bearer <firebase-token>
@@ -280,26 +298,25 @@ status: pending_approval, assigned, in_progress, suspended, rejected, resolved
 
 * **Success Response (200 OK):**
 ```json
-"reports": [
-        {
-        "id": 10,
-        "user_id": 1,
-        "category_id": 2,
-        "title": "\"Broken street light on 5th avenue\"",
-        "description": "\"The street light on 5th avenue is broken and needs urgent repair.\"",
-        "status": "pending_approval",
-        "assigned_to": null,
-        "reviewed_by": null,
-        "reviewed_at": null,
-        "note": null,
-        "is_anonymous": false,
-        "address": "Via camposanto 3",
-        "position_lat": 45.0632,
-        "position_lng": 7.6835,
-        "created_at": "2025-11-24 18:10:20",
-        "updated_at": "2025-11-24 18:10:20"
-    }
-]
+{
+"reports": [{
+    "id": 1,
+    "user_id": 1,
+    "category_id": 7,
+    "title": "Neglected street corner",
+    "description": "This area near Porta Nuova has been neglected.",
+    "status": "pending_approval",
+    "assigned_to": null,
+    "external_user": null,
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "note": null,
+    "is_anonymous": 0,
+    "address": "Via Paolo Sacchi 11, 10125 Torino",
+    "position_lat": 45.0608,
+    "position_lng": 7.67613
+  }]
+}
 ```
 
 * **No Content Response (204 No Content):**
@@ -331,7 +348,9 @@ status: pending_approval, assigned, in_progress, suspended, rejected, resolved
 }
 ```
 
-**POST `/reports/:reportId/comments`**
+**POST `/reports/:reportId/internal-comments`**
+
+Create a new comment for the report with id `ReportId` 
 
 * **Request Headers:**
 
@@ -344,7 +363,6 @@ Authorization: Bearer <firebase-token>
 * **Request Body:**
 ```json
 {
-  "type": "private",
   "text": "Broken streetlight"
 }
 ```  
@@ -368,7 +386,56 @@ Authorization: Bearer <firebase-token>
 ```json
 {
   "errors": [
-    { "msg": "type is required", "param": "type", "location": "body" }
+    { "msg": "text is required", "param": "text", "location": "body" }
+  ]
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal Server Error"
+}
+```
+
+**POST `/reports/:reportId/external-comments`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** reportId
+
+* **Request Body:**
+```json
+{
+  "text": "Broken streetlight"
+}
+```  
+* **Success Response (201 Created):**
+
+```json
+{
+  "comment": {
+        "id": 10,
+        "user_id": 1,
+        "report_id": 2,
+        "type": "public",
+        "text": "Nice Work",
+        "timestamp": "2025-11-24 18:10:20"
+    }
+}
+```
+
+* **Error Response (400 Bad Request - Validation errors):**
+
+```json
+{
+  "errors": [
+    { "msg": "text is required", "param": "text", "location": "body" }
   ]
 }
 ```
@@ -382,6 +449,8 @@ Authorization: Bearer <firebase-token>
 ```
 
 **GET `/reports/:reportId/internal-comments`**
+
+Return all the comments with type `private` for the report with id  `ReportId` 
 
 * **Request Headers:** 
 ```http
@@ -438,7 +507,68 @@ Authorization: Bearer <firebase-token>
   "error": "Unauthorized"
 }
 ```
+
+**GET `/reports/:reportId/external-comments`**
+
+* **Request Headers:** 
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** reportId
+
+* **Query Parameters:**  None
+
+* **Success Response (200 OK):**
+```json
+"comments": [
+        {
+        "id": 10,
+        "report_id": 1,
+        "user_id": 2,
+        "type": "public",
+        "text": "Nice work",
+        "timestamp": "2025-11-24 18:10:20",
+        "username": "CarlosSainz",
+        "first_name": "Carlos",
+        "last_name": "Sainz",
+        "role_name": "officer"
+    }
+]
+```
+
+* **No Content Response (204 No Content):**
+
+```json
+// Empty response body
+```
+
+* **Error Response (400 Bad Request):**
+```json
+{
+  "error": "reportId must be a valid integer"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server Error"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
 **GET `/ext_maintainer/reports`**
+
+Return all the reports assign to user
 
 * **Request Headers:** 
 ```http
@@ -454,10 +584,11 @@ Authorization: Bearer <firebase-token>
         "id": 10,
         "user_id": 1,
         "category_id": 2,
-        "title": "\"Broken street light on 5th avenue\"",
-        "description": "\"The street light on 5th avenue is broken and needs urgent repair.\"",
+        "title": "Broken street light",
+        "description": "The street light is broken and needs urgent repair.",
         "status": "pending_approval",
-        "assigned_to": null,
+        "assigned_to": 10,
+        "external_maintainer":13,
         "reviewed_by": null,
         "reviewed_at": null,
         "note": null,
@@ -1185,9 +1316,9 @@ Authorization: Bearer <firebase-token>
 
 * **Field Usage Notes:**
 
-| Field      | When Required                        | Types                    |
-| ---------- | ------------------------------------ | ------------------------ |
-| status     | Always                               | ["assigned", "in_progress", "suspended"] |
+| Field  | When Required | Types                                    |
+| ------ | ------------- | ---------------------------------------- |
+| status | Always        | ["assigned", "in_progress", "suspended"] |
 
 
 * **Success Response (200 OK):**

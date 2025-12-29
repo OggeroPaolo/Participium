@@ -11,7 +11,7 @@ function Home() {
 }
 
 function renderDashboard(user, isAuthenticated) {
-  if (user?.role_name === "Citizen" || !isAuthenticated) {
+  if (user?.role_type === "citizen" || !isAuthenticated) {
     return <CitizenDashboard />;
   }
 

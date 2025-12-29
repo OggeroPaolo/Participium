@@ -52,7 +52,7 @@ function Header(props) {
                       <span>{displayName}</span>
                     </Navbar.Text>
                   )}
-                  {user?.role_name === "Admin" && (
+                  {user?.role_type === "admin" && (
                     <>
                       <Nav.Link href='/user-creation'>User Creation</Nav.Link>
                       <Nav.Link href='/user-list'>User List</Nav.Link>
@@ -87,7 +87,7 @@ function Header(props) {
                       </Nav.Link>
                     </>
                   )}
-                  {user?.role_name === "Municipal_public_relations_officer" && (
+                  {user?.role_type === "pub_relations" && (
                     <>
                       <Nav.Link href='/review-reports'>Review reports</Nav.Link>
                     </>

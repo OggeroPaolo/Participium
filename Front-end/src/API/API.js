@@ -213,11 +213,12 @@ async function getExternalMaintainers(filters = {}) {
   }
 }
 
-// Get list of approved reports in the short format
+// Get list of approved reports in the short format (public endpoint - no auth required)
 async function getApprovedReports() {
   try {
     const response = await fetch(URI + "/reports/map/accepted", {
       method: "GET",
+
     });
 
     if (response.status === 204) {
@@ -501,15 +502,14 @@ async function getCommentsInternal(reportId) {
 }
 
 // Create a new comment
-async function createComment(reportId, type, comment) {
-  const response = await fetch(`${URI}/reports/${reportId}/comments`, {
+async function createComment(reportId, comment) {
+  const response = await fetch(`${URI}/reports/${reportId}/internal-comments`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `${await getBearerToken()}`,
     },
     body: JSON.stringify({
-      type: type,
       text: comment,
     }),
   });

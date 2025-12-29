@@ -8,3 +8,6 @@ export const ROLES = {
   EXT_MAINTAINER: "external_maintainer",
   CITIZEN: "citizen"
 } as const;
+
+//Type for dto
+export type RoleType = typeof ROLES[keyof typeof ROLES];
