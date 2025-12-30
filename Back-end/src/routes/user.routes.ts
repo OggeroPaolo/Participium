@@ -32,7 +32,7 @@ router.get("/users/:firebaseUid", verifyFirebaseToken([ROLES.ADMIN, ROLES.CITIZE
     }
 });
 
-// Patches the status of a report optionally attaching a rejection note
+// Patches the user setting (profile picture, email notifications adn telegram name)
 router.patch("/users/:userId",
     upload.single("photo_profile"),
     [
@@ -64,7 +64,6 @@ router.patch("/users/:userId",
             }
 
             const file = req.file;
-            console.log("got file")
 
             if (file) {
 

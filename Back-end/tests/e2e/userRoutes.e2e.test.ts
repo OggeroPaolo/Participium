@@ -18,6 +18,8 @@ vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
   },
 }));
 
+
+
 describe("User (E2E)", () => {
   let app: Express;
 
@@ -34,7 +36,6 @@ describe("User (E2E)", () => {
     vi.restoreAllMocks();
   });
 
-  // ---------------- GET USER ----------------
   describe("GET /users/:firebaseUid", () => {
     it("should return user data for an existing firebaseUid", async () => {
       const res = await request(app).get(`/users/${seededFirebaseUid}`);
@@ -70,7 +71,7 @@ describe("User (E2E)", () => {
   });
 
 
-  describe("PATCH /users/:userId (E2E)", () => {
+  describe("PATCH /users/:userId", () => {
 
 
     it("updates user info successfully without file", async () => {
@@ -132,10 +133,6 @@ describe("User (E2E)", () => {
   });
 
   it("should return 500", async () => {
-    // Mock Cloudinary upload
-    vi.spyOn(cloudinary.uploader, "upload").mockResolvedValueOnce({
-      secure_url: "http://cloud.url/photo.png",
-    } as any);
 
     // Force DAO update to throw
     vi.spyOn(UserDAO.prototype, "updateUserInfo").mockRejectedValueOnce(new Error("DB error"));
