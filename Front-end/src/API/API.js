@@ -583,7 +583,6 @@ async function modifyUserInfo(userInfo, profilePic, userId) {
     const response = await fetch(`${URI}/users/${userId}`, {
       method: "PATCH",
       headers: {
-        "Content-Type": "multipart/form-data",
         Authorization: `${await getBearerToken()}`,
       },
       body: formData,
