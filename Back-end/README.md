@@ -1135,6 +1135,79 @@ Authorization: Bearer <firebase-token>
 }
 ```
 
+**PATCH `/operators/{operatorId}/roles`**
+
+Updates the roles assigned to an internal operator.
+Only accessible as an `ADMIN`
+
+* **Request Headers:**
+
+``` http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters**
+
+  -   **operatorId**: integer
+
+* **Request Body:**
+
+``` json
+{
+  "roles_id": [1, 2, 3]
+}
+```
+
+* **Field Usage Notes**
+
+  The list of roles ids will replace the current roles for the operator
+
+* **Success Response (200 OK)**
+
+``` json
+{
+  "message": "Roles successfully updated"
+}
+```
+
+* **Error Response (400 Bad Request)**
+
+``` json
+{
+  "error": "Changing roles is not allowed to roles that are not of type tech officer"
+}
+
+{
+  "error": "This internal officer has reports for some roles",
+  "conflicting_roles": [4, 7]
+}
+```
+
+* **Error Response (401 Unauthorized)**
+
+``` json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+* **Error Response (403 Forbidden)**
+
+``` json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+
+* **Error Response (500 Internal Server Error)**
+
+``` json
+{
+  "error": "Internal server error"
+}
+```
+
+
 ## GET `/external-maintainers`
 
 Retrieve a list of **external maintainers**, optionally filtered by `companyId` and/or `categoryId`.
