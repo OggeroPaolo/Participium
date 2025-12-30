@@ -6,6 +6,7 @@ import { makeTestApp, initTestDB, resetTestDB } from "../setup/tests_util.js";
 import UserDAO from "../../src/dao/UserDAO.js";
 import { ROLES } from "../../src/models/userRoles.js";
 import path from "node:path";
+import { User } from "../../src/models/user.js";
 import cloudinary from "../../src/config/cloudinary.js";
 
 
@@ -73,7 +74,6 @@ describe("User (E2E)", () => {
 
   describe("PATCH /users/:userId", () => {
 
-
     it("updates user info successfully without file", async () => {
       const res = await request(app)
         .patch(`/users/${testUserId}`)
@@ -120,7 +120,6 @@ describe("User (E2E)", () => {
       vi.spyOn(cloudinary.uploader, "upload").mockResolvedValueOnce({
         secure_url: "http://cloud.url/photo.png",
       } as any);
-
       const res = await request(app)
         .patch(`/users/${testUserId}`)
         .attach("photo_profile", testImg)

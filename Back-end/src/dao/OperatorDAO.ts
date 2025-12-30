@@ -130,19 +130,7 @@ export default class OperatorDao {
   async getOperatorsByCategory(categoryId: number): Promise<User[]> {
     const query = `
     SELECT
-      u.id,
-      u.firebase_uid,
-      u.email,
-      u.username,
-      u.first_name,
-      u.last_name,
-      u.profile_photo_url,
-      u.telegram_username,
-      u.email_notifications_enabled,
-      u.is_active,
-      u.created_at,
-      u.updated_at,
-      u.last_login_at,
+      u.*,
       r.name AS role_name,
       r.type AS role_type
     FROM users u
