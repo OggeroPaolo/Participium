@@ -24,6 +24,9 @@ import { logger } from "../config/logger.js";
 import CommentDAO from "../dao/CommentDAO.js";
 import type { CreateCommentDTO } from "../dto/CommentDTO.js";
 
+import NotificationDAO from "../dao/NotificationDAO.js";
+import type { CreateNotificationDTO } from "../dto/NotificationDTO.js";
+
 
 const router = Router();
 const reportDAO = new ReportDAO();
@@ -32,6 +35,8 @@ const operatorDAO = new OperatorDAO();
 const userDAO = new UserDAO();
 
 const commentDAO = new CommentDAO();
+
+const notificationDAO = new NotificationDAO();
 
 //GET /reports/map
 router.get("/reports/map/accepted",
@@ -163,9 +168,25 @@ router.post("/reports/:reportId/internal-comments",
             };
             const createdComment = await commentDAO.createComment(data);
 
+            const report = await reportDAO.getReportById(Number(req.params.reportId));
+
+            const recipientId = user.role_type === ROLES.TECH_OFFICER ? report?.external_user : report?.assigned_to;
+
+            if (recipientId != null) {
+                const notification: CreateNotificationDTO = {
+                    user_id: recipientId,
+                    report_id: Number(req.params.reportId),
+                    comment_id: createdComment.id,
+                    type: 'comment_on_assigned_report',
+                    title: 'A new comment has arrived',
+                };
+
+                await notificationDAO.createNotification(notification);
+            }
+
             return res.status(201).json({ comment: createdComment });
         } catch (error) {
-            console.log(error);
+            console.error(error);
             return res.status(500).json({ error: "Internal server error" });
         }
     }
@@ -187,9 +208,25 @@ router.post("/reports/:reportId/external-comments",
             };
             const createdComment = await commentDAO.createComment(data);
 
+            const report = await reportDAO.getReportById(Number(req.params.reportId));
+
+            const recipientId = user.role_type === ROLES.TECH_OFFICER ? report?.user_id : report?.assigned_to;
+
+            if (recipientId != null) {
+                const notification: CreateNotificationDTO = {
+                    user_id: recipientId,
+                    report_id: Number(req.params.reportId),
+                    comment_id: createdComment.id,
+                    type: 'comment_on_created_report',
+                    title: 'A new comment has arrived',
+                };
+            
+                await notificationDAO.createNotification(notification);
+            }
+
             return res.status(201).json({ comment: createdComment });
         } catch (error) {
-            console.log(error);
+            console.error(error);
             return res.status(500).json({ error: "Internal server error" });
         }
     }
@@ -357,6 +394,19 @@ router.patch("/ext_maintainer/reports/:reportId",
 
             await reportDAO.updateReportStatus(reportId, status)
 
+            const recipientId = report?.user_id;
+
+            if (recipientId != null) {
+                const notification: CreateNotificationDTO = {
+                    user_id: recipientId,
+                    report_id: Number(req.params.reportId),
+                    type: 'status_update',
+                    title: `The status of your report "${report.title}" was set to ${status}`
+                };
+            
+                await notificationDAO.createNotification(notification);
+            }
+
             return res.status(200).json({
                 message: "Report status updated successfully"
             });
@@ -437,6 +487,19 @@ router.patch("/pub_relations/reports/:reportId",
 
             // update the report and optionally assigne it if to be status is assigned
             await reportDAO.updateReportStatusAndAssign(reportId, status, user.id, note, categoryId, assigneeId);
+
+            const recipientId = report?.user_id;
+
+            if (recipientId != null) {
+                const notification: CreateNotificationDTO = {
+                    user_id: recipientId,
+                    report_id: Number(req.params.reportId),
+                    type: 'status_update',
+                    title: `The status of your report "${report.title}" was set to ${status}`
+                };
+            
+                await notificationDAO.createNotification(notification);
+            }
 
             if (status === ReportStatus.Assigned) {
                 try {
