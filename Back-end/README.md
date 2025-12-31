@@ -1652,6 +1652,71 @@ This endpoint accepts `multipart/form-data`.
 }
 ```
 
+---
+### Notificaitons
+**PATCH `/notifications/{notificationId}/set-read`**
+
+Sets the notification as read given the notificationId only if the notificaiton belongs to the user calling the api
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:**
+
+  - notificationId: integer
+
+* **Request Body:**
+  
+  None
+
+* **Success Response (200 OK):**
+
+```json
+{
+  "message": "Notification is_read set to true successfully"
+}
+```
+
+* **Error Response (400 Bad Request):**
+```json
+{
+  "errors": [
+    "Notificaiton ID must be a valid integer"
+  ]
+}
+```
+
+* **Error Response (401 Unauthorized):**
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+* **Error Response (403 Forbidden):**
+```json
+{
+  "error": "You cannot set as read notificaitons of another user"
+}
+```
+
+* **Error Response (404 Not Found):**
+```json
+{
+  "error": "Notification not found"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+```json
+{
+  "error": "Internal server error"
+}
+```
+
 
 ## Project Structure
 
