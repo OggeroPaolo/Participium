@@ -10,8 +10,6 @@ import avatarPlaceholder from "../assets/avatar_placeholder.png";
 import { useNavigate } from "react-router";
 import AlertBlock from "./AlertBlock";
 
-// TODO: check form implementation
-
 function ProfilePage() {
   const { user } = useUserStore();
   const navigate = useNavigate();
@@ -31,6 +29,9 @@ function ProfilePage() {
     user.profile_photo_url || avatarPlaceholder
   );
   const [currentPage, setCurrentPage] = useState(1);
+  const [telegramUsername, setTelegramUsername] = useState(
+    user.telegram_username ?? ""
+  );
 
   const totalPages = Math.ceil(reports.length / REPORTS_PER_PAGE);
   const paginatedReports = reports.slice(
@@ -45,7 +46,7 @@ function ProfilePage() {
 
   async function updateUserInfo(prevData, formData) {
     const attributes = {
-      telegram_username: formData.get("telegram_username"),
+      telegram_username: telegramUsername,
       email_notifications_enabled: enableNotifications,
     };
 
@@ -214,8 +215,12 @@ function ProfilePage() {
                   )}
                   {editProfile && (
                     <>
-                      <Button type='submit' className='confirm-button'>
-                        Save
+                      <Button
+                        type='submit'
+                        className='confirm-button'
+                        disabled={isPending}
+                      >
+                        {isPending ? "Saving..." : "Save"}
                       </Button>
                       <Button
                         variant='outline-secondary'
@@ -238,9 +243,10 @@ function ProfilePage() {
                   </Form.Label>
                   <Form.Control
                     type='text'
-                    defaultValue={user.telegram_username}
+                    value={telegramUsername}
                     placeholder='Telegram username'
                     readOnly={!editProfile}
+                    onChange={(e) => setTelegramUsername(e.target.value)}
                   />
                 </Form.Group>
                 <Form.Group className='mb-3' controlId='email'>
