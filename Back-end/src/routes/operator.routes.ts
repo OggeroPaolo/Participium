@@ -175,7 +175,7 @@ router.patch("/operators/:operatorId/roles",
             const rolesToBeCanceled = existingRoles.filter(role => !roles_id.includes(role));
 
 
-            // get the roles to be canceled for which that operator has at least one report open 
+            // get the roles to be canceled for which that operator has at least one report open [open is defined as not resolved]
             const conflictingRoles = await operatorDao.getOperatorRolesIfReportExists(operatorId, rolesToBeCanceled);
 
 
@@ -195,6 +195,5 @@ router.patch("/operators/:operatorId/roles",
         }
     }
 );
-// 30 mintues
 
 export default router;

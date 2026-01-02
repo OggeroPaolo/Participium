@@ -13,8 +13,6 @@ describe("POST /user-registrations", () => {
     beforeEach(async () => {
         await initTestDB();
         app = makeTestApp(userRouter);
-        dao = new UserDAO();
-
         vi.restoreAllMocks();
     });
 

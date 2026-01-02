@@ -75,7 +75,7 @@ router.post("/user-registrations",
     }
 );
 
-
+//Create a new user if the given verification code is valid
 router.post("/verify-code",
     [
         body("email").isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage("Email must be valid"),
@@ -138,7 +138,7 @@ router.post("/verify-code",
     }
 );
 
-
+//Resend the verification code
 router.post("/resend-code",
     [
         body("email").isEmail().normalizeEmail({ gmail_remove_dots: false }),
@@ -175,6 +175,7 @@ router.post("/resend-code",
             });
         }
         catch (error: any) {
+            console.log(error)
             return res.status(500).json({ error: "Internal server error" });
         }
     }

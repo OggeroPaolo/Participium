@@ -178,7 +178,21 @@ The `comments` table stores comments on reports, either public or private.
 | type      | TEXT                     | Comment type (`public` or `private`)   |
 | text      | TEXT                     | Comment content                        |
 | timestamp | DATETIME                 | Timestamp when the comment was created |
+# Notifications Table
 
+The `notifications` table stores system-generated notifications for users related to report activity, such as comments, status updates, and assignments.
+
+| Column      | Type                         | Description                                                                 |
+| ----------- | ---------------------------- | --------------------------------------------------------------------------- |
+| id          | INTEGER PK                   | Primary key                                                                 |
+| user_id     | INTEGER FK → users(id)       | User who receives the notification                                          |
+| type        | TEXT                         | Notification type (e.g. `comment_on_created_report`, `status_update`)       |
+| report_id   | INTEGER FK → reports(id)     | Report the notification refers to                                           |
+| comment_id  | INTEGER FK → comments(id)    | Related comment (nullable, for comment-based notifications)                 |
+| title       | TEXT                         | Short notification title                                                    |
+| message     | TEXT                         | Detailed notification message (optional)                                   |
+| is_read     | INTEGER                      | Read status (`0` = unread, `1` = read)                                      |
+| created_at  | DATETIME                     | Timestamp when the notification was created  
 
 ## Initialization Process
 
@@ -213,14 +227,18 @@ Optimized for common queries:
 
 The database enforces referential integrity with specific deletion rules:
 
-| Relationship                              | On Delete | Description                                                        |
-| ----------------------------------------- | --------- | ------------------------------------------------------------------ |
-| users → roles                             | RESTRICT  | Prevent deleting a role that has active users                      |
-| reports → users (creator)                 | RESTRICT  | Prevent deleting a user who has created reports                    |
-| reports → users (reviewed_by/assigned_to) | SET NULL  | When a reviewer or assigned officer is deleted, set field to NULL  |
-| reports → categories                      | RESTRICT  | Prevent deleting a category that has reports                       |
-| photos → reports                          | CASCADE   | When a report is deleted, all associated photos are also deleted   |
-| comments → reports                        | CASCADE   | When a report is deleted, all associated comments are also deleted |
+| Relationship                              | On Delete | Description                                                                  |
+| ----------------------------------------- | --------- | ---------------------------------------------------------------------------- |
+| users → roles                             | RESTRICT  | Prevent deleting a role that has active users                                |
+| reports → users (creator)                 | RESTRICT  | Prevent deleting a user who has created reports                              |
+| reports → users (reviewed_by/assigned_to) | SET NULL  | When a reviewer or assigned officer is deleted, set field to NULL            |
+| reports → categories                      | RESTRICT  | Prevent deleting a category that has reports                                 |
+| photos → reports                          | CASCADE   | When a report is deleted, all associated photos are also deleted             |
+| comments → reports                        | CASCADE   | When a report is deleted, all associated comments are also deleted           |
+| comments → users                          | SET NULL  | When a user is deleted, their comments remain but author is set to NULL     |
+| notifications → users                    | CASCADE   | When a user is deleted, all their notifications are also deleted             |
+| notifications → reports                  | CASCADE   | When a report is deleted, all related notifications are also deleted         |
+| notifications → comments                 | CASCADE   | When a comment is deleted, related notifications are also deleted            |
 
 ---
 ## Pre-defined Database Promises

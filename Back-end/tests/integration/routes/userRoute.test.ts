@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { makeTestApp } from "../../setup/tests_util.js";
 import router from "../../../src/routes/user.routes.js";
 import UserDAO from "../../../src/dao/UserDAO.js";
+import { User } from "../../../src/models/user.js";
 
 // ---------------------------
 // Mock Firebase middleware
@@ -20,15 +21,15 @@ beforeEach(() => {
 describe("User Routes Integration Tests", () => {
   describe("GET /users/:firebaseUid", () => {
     it("should return 200 with user data if the user exists", async () => {
-      const mockUser = {
+      const mockUser: User= {
         id: 1,
         firebase_uid: "uid_citizen",
         first_name: "John",
         last_name: "Doe",
         username: "citizen_user",
         email: "citizen@example.com",
-        role_name: "citizen",
         role_type: "citizen",
+        roles: ["citizen"],
       };
       vi.spyOn(UserDAO.prototype, "findUserByUid").mockResolvedValue(mockUser);
 
@@ -39,7 +40,7 @@ describe("User Routes Integration Tests", () => {
     });
 
     it("should return 404 if the user does not exist", async () => {
-      vi.spyOn(UserDAO.prototype, "findUserByUid").mockResolvedValue(null);
+      vi.spyOn(UserDAO.prototype, "findUserByUid").mockResolvedValue(undefined);
 
       const res = await request(app).get("/users/nonexistent_uid");
 
