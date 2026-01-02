@@ -218,7 +218,6 @@ async function getApprovedReports() {
   try {
     const response = await fetch(URI + "/reports/map/accepted", {
       method: "GET",
-
     });
 
     if (response.status === 204) {
@@ -604,6 +603,34 @@ async function modifyUserInfo(userInfo, profilePic, userId) {
   }
 }
 
+async function updateRole(userId, roleList) {
+  try {
+    const body = {
+      roles_id: roleList,
+    };
+
+    const response = await fetch(`${URI}/operators/${userId}/roles`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${await getBearerToken()}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || errorData.errors?.[0] || "Failed to update roles"
+      );
+    }
+
+    return await response.json();
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
 export {
   handleSignup,
   createInternalUser,
@@ -628,4 +655,5 @@ export {
   verifyEmail,
   resendCode,
   modifyUserInfo,
+  updateRole,
 };
