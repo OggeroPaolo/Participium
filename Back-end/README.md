@@ -87,7 +87,7 @@ Each `tech_officer` role points to one of the offices above (see `seedDefaultRol
 
 ### Reports
 
-**GET `/reports/map`**
+**GET `/reports/map/accepted`**
 
 Return all the reports visible in the map (approved reports)
 
@@ -204,6 +204,7 @@ Authorization: Bearer <firebase-token>
 **POST `/reports`**
 
 Create a new report in the DB
+
 * **Request Headers:**
 
 ```http
@@ -350,7 +351,7 @@ status: pending_approval, assigned, in_progress, suspended, rejected, resolved
 
 **POST `/reports/:reportId/internal-comments`**
 
-Create a new comment for the report with id `ReportId` 
+Create a new private comment for the report with id `ReportId` 
 
 * **Request Headers:**
 
@@ -363,7 +364,7 @@ Authorization: Bearer <firebase-token>
 * **Request Body:**
 ```json
 {
-  "text": "Broken streetlight"
+  "text": "Nice Work"
 }
 ```  
 * **Success Response (201 Created):**
@@ -372,7 +373,7 @@ Authorization: Bearer <firebase-token>
 {
   "comment": {
         "id": 10,
-        "user_id": 1,
+        "user_id": 10,
         "report_id": 2,
         "type": "private",
         "text": "Nice Work",
@@ -401,6 +402,8 @@ Authorization: Bearer <firebase-token>
 
 **POST `/reports/:reportId/external-comments`**
 
+Create a new public comment for the report with id `ReportId` 
+
 * **Request Headers:**
 
 ```http
@@ -420,11 +423,11 @@ Authorization: Bearer <firebase-token>
 ```json
 {
   "comment": {
-        "id": 10,
+        "id": 1,
         "user_id": 1,
         "report_id": 2,
         "type": "public",
-        "text": "Nice Work",
+        "text": "Broken streetlight",
         "timestamp": "2025-11-24 18:10:20"
     }
 }
@@ -565,69 +568,11 @@ Authorization: Bearer <firebase-token>
   "error": "Unauthorized"
 }
 ```
-
-**GET `/ext_maintainer/reports`**
-
-Return all the reports assign to user
-
-* **Request Headers:** 
-```http
-Authorization: Bearer <firebase-token>
-```
-
-* **Request Parameters:** None
-
-* **Success Response (200 OK):**
-```json
-"reports": [
-        {
-        "id": 10,
-        "user_id": 1,
-        "category_id": 2,
-        "title": "Broken street light",
-        "description": "The street light is broken and needs urgent repair.",
-        "status": "pending_approval",
-        "assigned_to": 10,
-        "external_maintainer":13,
-        "reviewed_by": null,
-        "reviewed_at": null,
-        "note": null,
-        "is_anonymous": false,
-        "address": "Via camposanto 3",
-        "position_lat": 45.0632,
-        "position_lng": 7.6835,
-        "created_at": "2025-11-24 18:10:20",
-        "updated_at": "2025-11-24 18:10:20"
-    }
-]
-```
-
-* **No Content Response (204 No Content):**
-
-```json
-// Empty response body
-```
-
-* **Error Response (500 Internal Server Error):**
-
-```json
-{
-  "error": "Internal server Error"
-}
-```
-
-* **Error Response (401 Unauthorized):**
-
-```json
-{
-  "error": "Unauthorized"
-}
-```
-
-### Roles
-
+### Technical Officer
 
 **GET `/tech_officer/reports`**
+
+Retrieve all reports assigned to loggen-in the technical officer 
 
 * **Request Headers:** 
 ```http
@@ -682,603 +627,9 @@ Authorization: Bearer <firebase-token>
 }
 ```
 
-### Roles
+**PATCH `/tech_officer/reports/:reportId/assign_external`**
 
-**GET `/roles`**
-
-* **Request Headers:**
-
-```http
-Authorization: Bearer <firebase-token>
-```
-
-* **Request Parameters:** None
-
-* **Success Response (200 OK):**
-
-```json
-[
-  {
-    "id": 2,
-    "name": "Roads_Maintenance_Office_Staff",
-    "type": "tech_officer",
-    "created_at": "2025-11-08 11:46:55"
-  },
-  {
-    "id": 3,
-    "name": "Water_Utility_Office_Staff",
-    "type": "tech_officer",
-    "created_at": "2025-11-08 11:46:55"
-  }
-]
-```
-
-* **No Content Response (204 No Content):**
-
-```json
-// Empty response body
-```
-
-* **Error Response (401 Unauthorized):**
-  Returned when no valid authentication token is provided.
-
-```json
-{
-  "error": "Unauthorized: missing or invalid token"
-}
-```
-
-* **Error Response (403 Forbidden):**
-  Returned when the authenticated user is not an admin.
-
-```json
-{
-  "error": "Forbidden: insufficient permissions"
-}
-```
-
-* **Error Response (500 Internal Server Error):**
-
-```json
-{
-  "error": "Database connection failed"
-}
-```
-
-```json
-{
-  "error": "Failed to retrieve roles"
-}
-```
-
-### Registration
-
-**POST `/user-registrations`**
-
-- **Request Parameters:** None
-
-- **Request Body content:**
-```json
-{
-  "firstName": "Mario",
-  "lastName": "Rossi",
-  "username": "SuperMario",
-  "email": "mario.rossi@gmail.com",
-  "password": "passwordincredibile"
-}
-```
-
-- **Success Response (200):**
-```json
-{
-  "message": "Verification code sent to your email"
-}
-```
-- **Error Response (400 Bad Request):**
-```json
-{
-  "error": "Invalid request data"
-}
-```
-- **Error Response (422 Unprocessable Entity):**
-```json
-{
-  "error": "Email or username already in use"
-}
-```
-- **Error Response (500 Internal Server Error):**
-```json
-{
-  "error": "Internal server error"
-}
-```
-
-**POST `/verify-code`**
-
-- **Request Parameters:** None
-
-- **Request Body content:**
-```json
-{
-  "email": "mario.rossi@gmail.com",
-  "code": "3784"
-}
-```
-
-- **Success Response (201 Created):**
-```json
-{
-  "message": "User verified and registered successfully",
-  "userId": 12
-}
-```
-- **Error Response (400 Bad Request):**
-```json
-{
-  "error": "Invalid request data"
-}
-{
-  "error": "No pending verification for this email"
-}
-```
-- **Error Response (401 Unauthorized):**
-```json
-{
-  "error": "Invalid verification code"
-}
-```
-- **Error Response (409 Conflict):**
-```json
-{
-  "error": "User already registered"
-}
-```
-- **Error Response (410 Expired):**
-```json
-{
-  "error": "Verification code expired"
-}
-```
-- **Error Response (422 Unprocessable Entity):**
-```json
-{
-  "error": "Email or username already in use"
-}
-```
-- **Error Response (500 Internal Server Error):**
-```json
-{
-  "error": "Internal server error"
-}
-```
-
-**POST `/resend-code`**
-
-- **Request Parameters:** None
-
-- **Request Body content:**
-```json
-{
-  "email": "mario.rossi@gmail.com"
-}
-```
-
-- **Success Response (200):**
-```json
-{
-  "message": "Code resent via email"
-}
-```
-- **Error Response (400 Bad Request):**
-```json
-{
-  "error": "Invalid request data"
-}
-{
-  "error": "No pending verification for this email"
-}
-```
-- **Error Response (500 Internal Server Error):**
-```json
-{
-  "error": "Internal server error"
-}
-```
-
-### Operators
-
-**GET `/operators`**
-
-* **Request Headers:**
-
-```http
-Authorization: Bearer <firebase-token>
-```
-
-- **Request Parameters:** None
-
-- **Success Response (200 OK):**
-```json
-[
-  {
-    "id": 1,
-    "firebase_uid": "uid_operator1",
-    "email": "operator1@example.com",
-    "username": "operator_user1",
-    "first_name": "John",
-    "last_name": "Amber",
-    "role_type": "tech_officer",
-    "role_name": "Water_Utility_Office_Staff",
-    "profile_photo_url": null,
-    "telegram_username": null,
-    "email_notifications_enabled": 1,
-    "is_active": 1,
-    "created_at": "2025-11-08 11:46:55",
-    "updated_at": "2025-11-08 11:46:55",
-    "last_login_at": null
-  },
-  {
-    "id": 2,
-    "firebase_uid": "uid_operator2",
-    "email": "operator2@example.com",
-    "username": "operator_user2",
-    "first_name": "Jane",
-    "last_name": "Smith",
-    "role_type": "tech_officer",
-    "role_name": "Water_Utility_Office_Staff",
-    "profile_photo_url": null,
-    "telegram_username": null,
-    "email_notifications_enabled": 1,
-    "is_active": 1,
-    "created_at": "2025-11-08 11:46:55",
-    "updated_at": "2025-11-08 11:46:55",
-    "last_login_at": null
-  }
-]
-```
-
-- **No Content Response (204 No Content):**
-```json
-// Empty response body
-```
-
-- **Error Response (401 Unauthorized):**
-Returned when no valid authentication token is provided.
-```json
-{
-  "error": "Unauthorized: missing or invalid token"
-}
-```
-
-- **Error Response (403 Forbidden):**
-Returned when the authenticated user is not an admin.
-```json
-{
-  "error": "Forbidden: insufficient permissions"
-}
-```
-
-- **Error Response (500 Internal Server Error):**
-```json
-{
-  "error": "Database connection failed"
-}
-```
-```json
-{
-  "error": "Failed to retrieve operators"
-}
-```
-
-**GET `/categories/:categoryId/operators`**
-
-* **Request Headers:**
-
-```http
-Authorization: Bearer <firebase-token>
-```
-
-- **Request Parameters:** categoryId: Integer
-
-- **Success Response (200 OK):**
-```json
-[
-  {
-    "id": 1,
-    "firebase_uid": "uid_operator1",
-    "email": "operator1@example.com",
-    "username": "operator_user1",
-    "first_name": "John",
-    "last_name": "Amber",
-    "role_type": "tech_officer",
-    "role_name": "Water_Utility_Office_Staff",
-    "profile_photo_url": null,
-    "telegram_username": null,
-    "email_notifications_enabled": 1,
-    "is_active": 1,
-    "created_at": "2025-11-08 11:46:55",
-    "updated_at": "2025-11-08 11:46:55",
-    "last_login_at": null
-  },
-  {
-    "id": 2,
-    "firebase_uid": "uid_operator2",
-    "email": "operator2@example.com",
-    "username": "operator_user2",
-    "first_name": "Jane",
-    "last_name": "Smith",
-    "role_type": "tech_officer",
-    "role_name": "Water_Utility_Office_Staff",
-    "profile_photo_url": null,
-    "telegram_username": null,
-    "email_notifications_enabled": 1,
-    "is_active": 1,
-    "created_at": "2025-11-08 11:46:55",
-    "updated_at": "2025-11-08 11:46:55",
-    "last_login_at": null
-  }
-]
-```
-
-- **No Content Response (204 No Content):**
-```json
-// Empty response body
-```
-
-- **Error Response (400 Bad Request):**
-```json
-{
-  "error": "Invalid request data"
-}
-```
-
-- **Error Response (401 Unauthorized):**
-Returned when no valid authentication token is provided.
-```json
-{
-  "error": "Unauthorized: missing or invalid token"
-}
-```
-
-- **Error Response (403 Forbidden):**
-Returned when the authenticated user is not an admin.
-```json
-{
-  "error": "Forbidden: insufficient permissions"
-}
-```
-
-- **Error Response (500 Internal Server Error):**
-```json
-{
-  "error": "Database connection failed"
-}
-```
-
-**POST `/operator-registrations`**
-
-* **Request Headers:**
-
-```http
-Authorization: Bearer <firebase-token>
-```
-
-* **Request Parameters:** None
-
-* **Request Body:**
-
-```json
-{
-  "firstName": "Mario",
-  "lastName": "Rossi",
-  "username": "SuperMario",
-  "email": "mario.rossi@gmail.com",
-  "password": "securePassword123",
-  "role_id": 2
-}
-```
-
-* **Success Response (201 Created):**
-```json
-{
-  "message": "Operator created successfully",
-  "userId": "XPbEc2V01QhOQm6YRNlYNo57aQl1"
-}
-```
-
-* **Error Response (400 Bad Request):**
-```json
-{
-  "error": "Invalid request data"
-}
-```
-
-* **Error Response (401 Unauthorized):**
-```json
-{
-  "error": "Unauthorized: missing or invalid token"
-}
-```
-
-* **Error Response (403 Forbidden):**
-```json
-{
-  "error": "Forbidden: insufficient permissions"
-}
-```
-
-* **Error Response (409 Conflict):**
-```json
-{
-  "error": "User already registered"
-}
-```
-
-* **Error Response (422 Unprocessable Entity):**
-```json
-{
-  "error": "Invalid role data, cannot assign admin or citizen"
-}
-```
-
-```json
-{
-  "error": "Email or username already in use"
-}
-```
-
-* **Error Response (500 Internal Server Error):**
-
-```json
-{
-  "error": "Internal server error"
-}
-```
-
-**PATCH `/operators/{operatorId}/roles`**
-
-Updates the roles assigned to an internal operator.
-Only accessible as an `ADMIN`
-
-* **Request Headers:**
-
-``` http
-Authorization: Bearer <firebase-token>
-```
-
-* **Request Parameters**
-
-  -   **operatorId**: integer
-
-* **Request Body:**
-
-``` json
-{
-  "roles_id": [1, 2, 3]
-}
-```
-
-* **Field Usage Notes**
-
-  The list of roles ids will replace the current roles for the operator
-
-* **Success Response (200 OK)**
-
-``` json
-{
-  "message": "Roles successfully updated"
-}
-```
-
-* **Error Response (400 Bad Request)**
-
-``` json
-{
-  "error": "Changing roles is not allowed to roles that are not of type tech officer"
-}
-
-{
-  "error": "This internal officer has reports for some roles",
-  "conflicting_roles": [4, 7]
-}
-```
-
-* **Error Response (401 Unauthorized)**
-
-``` json
-{
-  "error": "Unauthorized: missing or invalid token"
-}
-```
-
-* **Error Response (403 Forbidden)**
-
-``` json
-{
-  "error": "Forbidden: insufficient permissions"
-}
-```
-
-* **Error Response (500 Internal Server Error)**
-
-``` json
-{
-  "error": "Internal server error"
-}
-```
-
-
-## GET `/external-maintainers`
-
-Retrieve a list of **external maintainers**, optionally filtered by `companyId` and/or `categoryId`.
-
----
-
-* **Request Headers**
-```http
-Authorization: Bearer <firebase-token>
-```
-
-Allowed roles: TECH_OFFICER, PUB_RELATIONS, ADMIN
-
----
-
-**Query Parameters (Optional)**
-- companyId 
-- categoryId 
-Example: `/external-maintainers?companyId=3&categoryId=2`
-
----
-
-### Success Response (200 OK)
-```json
-{
-  "id": 12,
-  "fullName": "Alice Brown",
-  "username": "ext_maintainer1",
-  "email": "maintainer@example.com",
-  "roleName": "External Maintainer",
-  "roleType": "external_maintainer",
-  "companyId": 3,
-  "companyName": "HydroTech Ltd"
-}
-```
-### No Content Response (204 No Content)
-```json
-// empty response
-```
-###  Error Response (400 Bad Request)
-```json
-{
-  "errors": [
-    "CompanyId must be a positive integer",
-    "CategoryId must be a positive integer"
-  ]
-}
-```
-### Error Response (401 Unauthorized):
-```json
-{
-  "error": "Unauthorized: missing or invalid token"
-}
-```
-
-### Error Response (403 Forbidden):
-```json
-{
-  "error": "Forbidden: insufficient permissions"
-}
-```
-### Error Response (500 Internal Server Error):
-
-```json
-{
-  "error": "Internal server error"
-}
-```
----
-### Reports
-**PATCH `/tech_officer/reports/{reportId}/assign_external`**
+Patches the external_user field of a report in order to assign it to an external mantainer
 
 * **Request Headers:**
 
@@ -1368,7 +719,139 @@ Authorization: Bearer <firebase-token>
 }
 ```
 
-**PATCH `/ext_maintainer/reports/{reportId}`**
+## External Maintainer
+
+**GET `/external-maintainers`**
+
+Retrieve a list of **external maintainers**, optionally filtered by `companyId` and/or `categoryId`.
+
+---
+
+* **Request Headers**
+```http
+Authorization: Bearer <firebase-token>
+```
+
+Allowed roles: TECH_OFFICER, PUB_RELATIONS, ADMIN
+
+---
+
+**Query Parameters (Optional)**
+- companyId 
+- categoryId 
+Example: `/external-maintainers?companyId=3&categoryId=2`
+
+---
+
+### Success Response (200 OK)
+```json
+{
+  "id": 12,
+  "fullName": "Alice Brown",
+  "username": "ext_maintainer1",
+  "email": "maintainer@example.com",
+  "roleName": "External Maintainer",
+  "roleType": "external_maintainer",
+  "companyId": 3,
+  "companyName": "HydroTech Ltd"
+}
+```
+### No Content Response (204 No Content)
+```json
+// empty response
+```
+###  Error Response (400 Bad Request)
+```json
+{
+  "errors": [
+    "CompanyId must be a positive integer",
+    "CategoryId must be a positive integer"
+  ]
+}
+```
+### Error Response (401 Unauthorized):
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+### Error Response (403 Forbidden):
+```json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+### Error Response (500 Internal Server Error):
+
+```json
+{
+  "error": "Internal server error"
+}
+```
+---
+
+**GET `/ext_maintainer/reports`**
+
+Retrieve all reports assigned to the logged-in external maintainer
+
+* **Request Headers:** 
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** None
+
+* **Success Response (200 OK):**
+```json
+"reports": [
+        {
+        "id": 10,
+        "user_id": 1,
+        "category_id": 2,
+        "title": "Broken street light",
+        "description": "The street light is broken and needs urgent repair.",
+        "status": "pending_approval",
+        "assigned_to": 10,
+        "external_maintainer":13,
+        "reviewed_by": null,
+        "reviewed_at": null,
+        "note": null,
+        "is_anonymous": false,
+        "address": "Via camposanto 3",
+        "position_lat": 45.0632,
+        "position_lng": 7.6835,
+        "created_at": "2025-11-24 18:10:20",
+        "updated_at": "2025-11-24 18:10:20"
+    }
+]
+```
+
+* **No Content Response (204 No Content):**
+
+```json
+// Empty response body
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server Error"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
+**PATCH `/ext_maintainer/reports/:reportId`**
+
+Permits to an external maintainer to update the status of a report assigned to him
 
 * **Request Headers:**
 
@@ -1465,7 +948,602 @@ Authorization: Bearer <firebase-token>
 }
 ```
 
-**PATCH `/pub_relations/reports/{reportId}`**
+
+### Roles
+
+**GET `/roles`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** None
+
+* **Success Response (200 OK):**
+
+```json
+[
+  {
+    "id": 2,
+    "name": "Roads_Maintenance_Office_Staff",
+    "type": "tech_officer",
+    "created_at": "2025-11-08 11:46:55"
+  },
+  {
+    "id": 3,
+    "name": "Water_Utility_Office_Staff",
+    "type": "tech_officer",
+    "created_at": "2025-11-08 11:46:55"
+  }
+]
+```
+
+* **No Content Response (204 No Content):**
+
+```json
+// Empty response body
+```
+
+* **Error Response (401 Unauthorized):**
+  Returned when no valid authentication token is provided.
+
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+* **Error Response (403 Forbidden):**
+  Returned when the authenticated user is not an admin.
+
+```json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Database connection failed"
+}
+```
+
+```json
+{
+  "error": "Failed to retrieve roles"
+}
+```
+
+### Registration
+
+**POST `/user-registrations`**
+
+Registrates a new User
+
+- **Request Parameters:** None
+
+- **Request Body content:**
+```json
+{
+  "firstName": "Mario",
+  "lastName": "Rossi",
+  "username": "SuperMario",
+  "email": "mario.rossi@gmail.com",
+  "password": "passwordincredibile"
+}
+```
+
+- **Success Response (200):**
+```json
+{
+  "message": "Verification code sent to your email"
+}
+```
+- **Error Response (400 Bad Request):**
+```json
+{
+  "error": "Invalid request data"
+}
+```
+- **Error Response (422 Unprocessable Entity):**
+```json
+{
+  "error": "Email or username already in use"
+}
+```
+- **Error Response (500 Internal Server Error):**
+```json
+{
+  "error": "Internal server error"
+}
+```
+
+**POST `/verify-code`**
+
+Create a new user if the given verification code is valid.
+
+- **Request Parameters:** None
+
+- **Request Body content:**
+```json
+{
+  "email": "mario.rossi@gmail.com",
+  "code": "3784"
+}
+```
+
+- **Success Response (201 Created):**
+```json
+{
+  "message": "User verified and registered successfully",
+  "userId": 12
+}
+```
+- **Error Response (400 Bad Request):**
+```json
+{
+  "error": "Invalid request data"
+}
+{
+  "error": "No pending verification for this email"
+}
+```
+- **Error Response (401 Unauthorized):**
+```json
+{
+  "error": "Invalid verification code"
+}
+```
+- **Error Response (409 Conflict):**
+```json
+{
+  "error": "User already registered"
+}
+```
+- **Error Response (410 Expired):**
+```json
+{
+  "error": "Verification code expired"
+}
+```
+- **Error Response (422 Unprocessable Entity):**
+```json
+{
+  "error": "Email or username already in use"
+}
+```
+- **Error Response (500 Internal Server Error):**
+```json
+{
+  "error": "Internal server error"
+}
+```
+
+**POST `/resend-code`**
+
+Resend the verification code
+
+- **Request Parameters:** None
+
+- **Request Body content:**
+```json
+{
+  "email": "mario.rossi@gmail.com"
+}
+```
+
+- **Success Response (200):**
+```json
+{
+  "message": "Code resent via email"
+}
+```
+- **Error Response (400 Bad Request):**
+```json
+{
+  "error": "Invalid request data"
+}
+{
+  "error": "No pending verification for this email"
+}
+```
+- **Error Response (500 Internal Server Error):**
+```json
+{
+  "error": "Internal server error"
+}
+```
+
+### Operators
+
+**GET `/operators`**
+
+Get all the user with type `pub_relations` or `tech_officer`
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+- **Request Parameters:** None
+
+- **Success Response (200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "firebase_uid": "uid_operator1",
+    "email": "operator1@example.com",
+    "username": "operator_user1",
+    "first_name": "John",
+    "last_name": "Amber",
+    "role_type": "tech_officer",
+    "role_name": "Water_Utility_Office_Staff",
+    "profile_photo_url": null,
+    "telegram_username": null,
+    "email_notifications_enabled": 1,
+    "is_active": 1,
+    "created_at": "2025-11-08 11:46:55",
+    "updated_at": "2025-11-08 11:46:55",
+    "last_login_at": null
+  },
+  {
+    "id": 2,
+    "firebase_uid": "uid_operator2",
+    "email": "operator2@example.com",
+    "username": "operator_user2",
+    "first_name": "Jane",
+    "last_name": "Smith",
+    "role_type": "tech_officer",
+    "role_name": "Water_Utility_Office_Staff",
+    "profile_photo_url": null,
+    "telegram_username": null,
+    "email_notifications_enabled": 1,
+    "is_active": 1,
+    "created_at": "2025-11-08 11:46:55",
+    "updated_at": "2025-11-08 11:46:55",
+    "last_login_at": null
+  }
+]
+```
+
+- **No Content Response (204 No Content):**
+```json
+// Empty response body
+```
+
+- **Error Response (401 Unauthorized):**
+Returned when no valid authentication token is provided.
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+- **Error Response (403 Forbidden):**
+Returned when the authenticated user is not an admin.
+```json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+
+- **Error Response (500 Internal Server Error):**
+```json
+{
+  "error": "Database connection failed"
+}
+```
+```json
+{
+  "error": "Failed to retrieve operators"
+}
+```
+
+
+**POST `/operator-registrations`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters:** None
+
+* **Request Body:**
+
+```json
+{
+  "firstName": "Mario",
+  "lastName": "Rossi",
+  "username": "SuperMario",
+  "email": "mario.rossi@gmail.com",
+  "password": "securePassword123",
+  "role_id": 2
+}
+```
+
+* **Success Response (201 Created):**
+```json
+{
+  "message": "Operator created successfully",
+  "userId": "XPbEc2V01QhOQm6YRNlYNo57aQl1"
+}
+```
+
+* **Error Response (400 Bad Request):**
+```json
+{
+  "error": "Invalid request data"
+}
+```
+
+* **Error Response (401 Unauthorized):**
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+* **Error Response (403 Forbidden):**
+```json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+
+* **Error Response (409 Conflict):**
+```json
+{
+  "error": "User already registered"
+}
+```
+
+* **Error Response (422 Unprocessable Entity):**
+```json
+{
+  "error": "Invalid role data, cannot assign admin or citizen"
+}
+```
+
+```json
+{
+  "error": "Email or username already in use"
+}
+```
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server error"
+}
+```
+
+
+
+**PATCH `/operators/:operatorId/roles`**
+
+Updates the roles assigned to an internal operator.
+Only accessible as an `ADMIN`
+
+* **Request Headers:**
+
+``` http
+Authorization: Bearer <firebase-token>
+```
+* **Request Parameters**
+
+  -   **operatorId**: integer
+
+* **Request Body:**
+
+``` json
+{
+  "roles_id": [1, 2, 3]
+}
+```
+
+* **Field Usage Notes**
+
+  The list of roles ids will replace the current roles for the operator
+
+* **Success Response (200 OK)**
+
+``` json
+{
+  "message": "Roles successfully updated"
+}
+```
+
+* **Error Response (400 Bad Request)**
+
+``` json
+{
+  "error": "Changing roles is not allowed to roles that are not of type tech officer"
+}
+
+{
+  "error": "This internal officer has reports for some roles",
+  "conflicting_roles": [4, 7]
+}
+```
+
+* **Error Response (401 Unauthorized)**
+
+``` json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+* **Error Response (403 Forbidden)**
+
+``` json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+
+* **Error Response (500 Internal Server Error)**
+
+``` json
+{
+  "error": "Internal server error"
+}
+```
+
+## Categories
+
+**GET `/categories`**
+
+Returns the list of all available categories.
+
+---
+
+### Request Headers
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+- **Request Parameters:** None
+- **Success Response (200 OK)**
+```json
+[
+  {
+    "id": 1,
+    "name": "Water Supply",
+    "description": "Issues related to water supply and pipelines",
+    "is_active": 1,
+    "created_at": "2025-11-08 11:46:55",
+    "updated_at": "2025-11-08 11:46:55"
+  },
+  {
+    "id": 2,
+    "name": "Road Maintenance",
+    "description": "Road damage and maintenance issues",
+    "is_active": 1,
+    "created_at": "2025-11-08 11:46:55",
+    "updated_at": "2025-11-08 11:46:55"
+  }
+]
+```
+- **No Content Response (204 No Content)**
+```json
+// Empty response body
+```
+- **Error Response (400 Bad Request):**
+```json
+{
+  "error": "Invalid request data"
+}
+```
+
+- **Error Response (401 Unauthorized):**
+Returned when no valid authentication token is provided.
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+**GET `/categories/:categoryId/operators`**
+
+* **Request Headers:**
+
+```http
+Authorization: Bearer <firebase-token>
+```
+
+- **Request Parameters:** categoryId: Integer
+
+- **Success Response (200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "firebase_uid": "uid_operator1",
+    "email": "operator1@example.com",
+    "username": "operator_user1",
+    "first_name": "John",
+    "last_name": "Amber",
+    "role_type": "tech_officer",
+    "role_name": "Water_Utility_Office_Staff",
+    "profile_photo_url": null,
+    "telegram_username": null,
+    "email_notifications_enabled": 1,
+    "is_active": 1,
+    "created_at": "2025-11-08 11:46:55",
+    "updated_at": "2025-11-08 11:46:55",
+    "last_login_at": null
+  },
+  {
+    "id": 2,
+    "firebase_uid": "uid_operator2",
+    "email": "operator2@example.com",
+    "username": "operator_user2",
+    "first_name": "Jane",
+    "last_name": "Smith",
+    "role_type": "tech_officer",
+    "role_name": "Water_Utility_Office_Staff",
+    "profile_photo_url": null,
+    "telegram_username": null,
+    "email_notifications_enabled": 1,
+    "is_active": 1,
+    "created_at": "2025-11-08 11:46:55",
+    "updated_at": "2025-11-08 11:46:55",
+    "last_login_at": null
+  }
+]
+```
+
+- **No Content Response (204 No Content):**
+```json
+// Empty response body
+```
+
+- **Error Response (400 Bad Request):**
+```json
+{
+  "error": "Invalid request data"
+}
+```
+
+- **Error Response (401 Unauthorized):**
+Returned when no valid authentication token is provided.
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+- **Error Response (403 Forbidden):**
+Returned when the authenticated user is not an admin.
+```json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+
+- **Error Response (500 Internal Server Error):**
+```json
+{
+  "error": "Database connection failed"
+}
+```
+
+## Public Relations Officer
+
+**PATCH `/pub_relations/reports/:reportId`**
+
+Patches the status of a report optionally attaching a rejection note
 
 * **Request Headers:**
 
@@ -1474,7 +1552,6 @@ Authorization: Bearer <firebase-token>
 ```
 
 * **Request Parameters:**
-
   - reportId: integer
 
 * **Request Body:**
@@ -1549,6 +1626,68 @@ Authorization: Bearer <firebase-token>
   "error": "Internal server error"
 }
 ```
+## User
+
+**GET /users/:firebaseUid**
+
+Retrieves a user by their Firebase UID.
+
+* **Request Headers:**
+```http
+Authorization: Bearer <firebase-token>
+```
+
+* **Request Parameters**
+  - firebaseUid: String 
+
+* **Success Response (200 OK):**
+```json
+{
+  "id": 1,
+  "firebase_uid": "uid_example",
+  "email": "user@example.com",
+  "username": "example_user",
+  "first_name": "John",
+  "last_name": "Doe",
+  "profile_photo_url": null,
+  "telegram_username": null,
+  "email_notifications_enabled": 1,
+  "is_active": 1,
+  "created_at": "2025-11-08 11:46:55",
+  "updated_at": "2025-11-08 11:46:55"
+}
+```
+---
+
+* **Error Response (401 Unauthorized):**
+
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+---
+
+* **Error Response (404 Not Found):**
+
+```json
+{
+  "error": "User not found"
+}
+```
+
+---
+
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server error"
+}
+```
+
+---
 
 **PATCH `/users/{userId}`**
 
@@ -1608,7 +1747,6 @@ This endpoint accepts `multipart/form-data`.
   "message": "User information updated"
 }
 ```
-
 ---
 
 * **Error Response (400 Bad Request):**

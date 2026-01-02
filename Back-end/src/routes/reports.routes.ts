@@ -292,7 +292,7 @@ router.post("/reports",
             }
             return res.status(500).json({ error: "Internal server error" });
         }
-    });
+});
 
 async function rollbackCloundinaryImages(url: string) {
     try {
