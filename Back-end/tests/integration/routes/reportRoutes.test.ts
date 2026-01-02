@@ -1,5 +1,5 @@
 import request from "supertest";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, MockInstance } from "vitest";
 import { makeTestApp } from "../../setup/tests_util.js";
 import reportsRouter from "../../../src/routes/reports.routes.js";
 import ReportDAO from "../../../src/dao/ReportDAO.js";
@@ -12,16 +12,23 @@ import { ReportStatus } from "../../../src/models/reportStatus.js";
 import { CompleteReportDTO } from "../../../src/dto/ReportWithPhotosDTO.js";
 import CommentDAO from "../../../src/dao/CommentDAO.js";
 import { GetCommentDTO } from "../../../src/dto/CommentDTO.js";
+import NotificationDAO from "../../../src/dao/NotificationDAO.js";
+import { Notification } from "../../../src/models/notification.js";
+import { ROLES } from "../../../src/models/userRoles.js";
+import UserDAO from "../../../src/dao/UserDAO.js";
+import { afterEach } from "node:test";
+import { CreateNotificationDTO } from "../../../src/dto/NotificationDTO.js";
 
 
-const mockTechOfficer = { id: 10, roles: [{ role_name: "tech_officer", role_type: "tech_officer" }] };
-const mockExternalMaintainer = { id: 14, roles: [{ role_name: "external_maintainer", role_type: "external_maintainer" }] };
-const mockCitizen = { id: 1, roles: [{ role_name: "Citizen", role_type: "citizen" }] };
+
+const mockTechOfficer = { id: 10, roles: ["tech_officer"], role_type: ROLES.TECH_OFFICER };
+const mockExternalMaintainer = { id: 14, roles: ["external_maintainer"], role_type: ROLES.EXT_MAINTAINER };
+const mockCitizen = { id: 1, roles: ["Citizen"], role_type: ROLES.CITIZEN };
 
 vi.mock("../../../src/middlewares/verifyFirebaseToken.js", () => ({
     verifyFirebaseToken: (roles: string[]) => (req: any, _res: any, next: any) => {
-        // Determine user based on route or default to tech officer
-        if (req.path?.includes("ext_maintainer")) {
+        // Determine user based on routes 
+        if (req.path?.includes("ext_maintainer") || req.path?.includes("internal-comments")) {
             req.user = mockExternalMaintainer;
         } else if (req.path?.includes("tech_officer")) {
             req.user = mockTechOfficer;
@@ -53,6 +60,11 @@ vi.mock("fs/promises", async () => {
         unlink: vi.fn().mockResolvedValue(undefined),
     };
 });
+vi.mock("../../../src/realtime/realtimeGateway", () => ({
+    getRealtimeGateway: () => ({
+        notifyUser: vi.fn()
+    })
+}));
 
 
 let app: any;
@@ -162,6 +174,17 @@ describe("Report Routes Integration Tests", () => {
                 ordering: 1,
             },
         ],
+    };
+    const mockNotification: Notification = {
+        id: 1,
+        user_id: mockTechOfficer.id,
+        type: 'status_update',
+        report_id: 1,
+        title: "Notification",
+        is_read: 0,
+        created_at: new Date().toISOString(),
+        comment_id: null,
+        message: null
     };
 
     describe("GET /reports/map/accepted", () => {
@@ -346,9 +369,12 @@ describe("Report Routes Integration Tests", () => {
             timestamp: new Date().toISOString(),
         };
 
-        it("creates a comment and returns 201", async () => {
-            vi.spyOn(CommentDAO.prototype, "createComment")
-                .mockResolvedValueOnce(mockComment);
+        it("creates a comment and a notification then returns 201", async () => {
+            vi.spyOn(CommentDAO.prototype, "createComment").mockResolvedValueOnce(mockComment);
+            //Mock the assigned report
+            vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReports[1])
+            let spyNotification = vi.spyOn(NotificationDAO.prototype, "createNotification").mockResolvedValue(mockNotification);
+
 
             const res = await request(app)
                 .post(`/reports/${reportId}/internal-comments`)
@@ -360,11 +386,12 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ comment: mockComment });
 
             expect(CommentDAO.prototype.createComment).toHaveBeenCalledWith({
-                user_id: mockCitizen.id,
+                user_id: mockExternalMaintainer.id,
                 report_id: reportId,
                 type: "private",
                 text: "Internal note",
             });
+            expect(spyNotification).toHaveBeenCalled();
         });
 
         it("returns 400 when validation fails (missing text)", async () => {
@@ -415,9 +442,12 @@ describe("Report Routes Integration Tests", () => {
             timestamp: new Date().toISOString(),
         };
 
-        it("creates a public comment and returns 201", async () => {
+        it("creates a public comment and a notification then returns 201", async () => {
             vi.spyOn(CommentDAO.prototype, "createComment")
                 .mockResolvedValueOnce(mockComment);
+            vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReports[1])
+            let spyNotification = vi.spyOn(NotificationDAO.prototype, "createNotification").mockResolvedValue(mockNotification);
+
 
             const res = await request(app)
                 .post(`/reports/${reportId}/external-comments`)
@@ -434,6 +464,8 @@ describe("Report Routes Integration Tests", () => {
                 type: "public",
                 text: "Public comment",
             });
+
+            expect(spyNotification).toHaveBeenCalled();
         });
 
         it("returns 400 when validation fails (missing text)", async () => {
@@ -559,6 +591,18 @@ describe("Report Routes Integration Tests", () => {
 
     describe("PATCH /pub_relations/reports/:reportId", () => {
 
+        let createNotificationSpy: MockInstance<(data: CreateNotificationDTO) => Promise<Notification>>;
+        //Mocking of the notification creation
+        beforeEach(() => {
+            createNotificationSpy = vi
+                .spyOn(NotificationDAO.prototype, "createNotification")
+                .mockResolvedValue(mockNotification);
+        });
+
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
         describe("Validation errors", () => {
             it("should return 400 if status is missing", async () => {
                 const res = await request(app)
@@ -656,10 +700,19 @@ describe("Report Routes Integration Tests", () => {
                 error: "You are not allowed to change status of a form which is not in the pending approval status",
             });
         });
-        it("should assign operator and return 200 ", async () => {
+        it("should assign operator, emit a notification and return 200 ", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReports[0]);
             vi.spyOn(OperatorDAO.prototype, "getAssigneeId").mockResolvedValue(99);
-
+            vi.spyOn(UserDAO.prototype, "findUserById").mockResolvedValue({
+                firebase_uid: "uid",
+                id: 0,
+                email: "",
+                username: "",
+                first_name: "",
+                last_name: "",
+                role_type: ROLES.CITIZEN,
+                roles: []
+            })
             const updateSpy = vi
                 .spyOn(ReportDAO.prototype, "updateReportStatusAndAssign")
                 .mockResolvedValue({ changes: 1 });
@@ -671,13 +724,14 @@ describe("Report Routes Integration Tests", () => {
             expect(res.status).toBe(200);
             expect(updateSpy).toHaveBeenCalledWith(
                 1,            // reportId
-                "assigned",   // status
+                ReportStatus.Assigned,   // status
                 mockCitizen.id,       // reviewerId from mocked req.user
                 null,         // note is null for assigned
                 undefined,    // categoryId
                 99            // assigneeId
             );
             expect(res.body).toEqual({ message: "Report status updated successfully" });
+            expect(createNotificationSpy).toHaveBeenCalled()
         });
         it("should assign a specific operator and return 200 ", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(mockReports[0]);
@@ -907,7 +961,7 @@ describe("Report Routes Integration Tests", () => {
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
-    
+
     describe("PATCH /ext_maintainer/reports/:reportId", () => {
 
         const baseReport: Report = {
@@ -943,7 +997,7 @@ describe("Report Routes Integration Tests", () => {
         it("should return 403 if status is not allowed", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue({
                 ...baseReport,
-                status: ReportStatus.Resolved   // ❌ invalid for update
+                status: ReportStatus.Resolved
             });
 
             const res = await request(app)
@@ -956,7 +1010,7 @@ describe("Report Routes Integration Tests", () => {
         it("should return 403 if report is not assigned to this external maintainer", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue({
                 ...baseReport,
-                external_user: 999  // ❌ not this user
+                external_user: 999
             });
 
             const res = await request(app)
@@ -966,8 +1020,9 @@ describe("Report Routes Integration Tests", () => {
             expect(res.status).toBe(403);
         });
 
-        it("should update the status successfully", async () => {
+        it("should update the status successfully and create the notification ", async () => {
             vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(baseReport);
+            let spyNotification = vi.spyOn(NotificationDAO.prototype, "createNotification").mockResolvedValue(mockNotification);
 
             const spyUpdate = vi
                 .spyOn(ReportDAO.prototype, "updateReportStatus")
@@ -982,6 +1037,7 @@ describe("Report Routes Integration Tests", () => {
             });
 
             expect(spyUpdate).toHaveBeenCalledWith(1, ReportStatus.InProgress);
+            expect(spyNotification).toHaveBeenCalled();
         });
 
         it("should return 500 on internal server error", async () => {

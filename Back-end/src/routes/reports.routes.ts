@@ -286,7 +286,7 @@ router.post("/reports",
 
         }
         catch (error) {
-            console.log(error);
+            console.error(error);
             for (const url of uploadedUrls) {
                 await rollbackCloundinaryImages(url)
             }
@@ -412,7 +412,7 @@ router.patch("/ext_maintainer/reports/:reportId",
             });
 
         } catch (error) {
-            console.log(error);
+            console.error(error);
             return res.status(500).json({ error: "Internal server error" });
         }
     }

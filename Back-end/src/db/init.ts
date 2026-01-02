@@ -53,6 +53,7 @@ export const seedDefaultData = async (): Promise<void> => {
     await seedDefaultReports();
     await seedDefaultComments();
     await seedDefaultPhotos();
+    await seedDefaultNotifications();
     logger.info("Default data seeded successfully");
   } catch (error) {
     logger.error({ error }, "Failed to seed default data");
@@ -826,6 +827,68 @@ export const seedDefaultComments = async (): Promise<void> => {
     console.error("Failed to seed default comments", error);
   }
 };
+
+/**
+ * Seed default notifications (for E2E tests)
+ */
+export const seedDefaultNotifications = async (): Promise<void> => {
+  try {
+    const notifications = [
+      {
+        id: 1,
+        user_id: 1,
+        type: "status_update",
+        report_id: 1,
+        comment_id: null,
+        title: "Report status updated",
+        message: "Your report status has been updated",
+        is_read: 0,
+      },
+      {
+        id: 2,
+        user_id: 10,
+        type: "report_assigned",
+        report_id: 3,
+        comment_id: null,
+        title: "Report assigned",
+        message: "A report has been assigned to you",
+        is_read: 0,
+      },
+    ];
+
+    for (const notification of notifications) {
+      const existing = await getOne<{ id: number }>(
+        "SELECT id FROM notifications WHERE id = ?",
+        [notification.id]
+      );
+
+      if (!existing) {
+        await runQuery(
+          `
+          INSERT INTO notifications
+          (id, user_id, type, report_id, comment_id, title, message, is_read)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          [
+            notification.id,
+            notification.user_id,
+            notification.type,
+            notification.report_id,
+            notification.comment_id,
+            notification.title,
+            notification.message,
+            notification.is_read,
+          ]
+        );
+      }
+    }
+
+    logger.info("Default notifications seeded successfully");
+  } catch (error) {
+    logger.error({ error }, "Failed to seed default notifications");
+  }
+};
+
 
 
 
