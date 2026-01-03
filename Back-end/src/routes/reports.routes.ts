@@ -69,14 +69,17 @@ router.get("/reports/:reportId",
 
             const user = (req as Request & { user: User }).user;
 
-            await notificationDAO.markByReportAsRead(user.id, reportId,
-                [
-                    NotificationType.StatusUpdate,
-                    NotificationType.ReportAssigned,
-                    NotificationType.ReportRejected,
-                    NotificationType.ReportReviewed
-                ]
-            );
+            //Mark as read if the user is logged in
+            if (user && user.id) {
+                await notificationDAO.markByReportAsRead(user.id, reportId,
+                    [
+                        NotificationType.StatusUpdate,
+                        NotificationType.ReportAssigned,
+                        NotificationType.ReportRejected,
+                        NotificationType.ReportReviewed
+                    ]
+                );
+            }
 
             return res.status(200).json({ report });
 
@@ -84,6 +87,7 @@ router.get("/reports/:reportId",
             if (error instanceof Error && error.message === "Report not found") {
                 return res.status(404).json({ error: "Report not found" });
             }
+            console.error(error);
             return res.status(500).json({ error: "Internal server error" });
         }
     }
