@@ -186,7 +186,7 @@ The `notifications` table stores system-generated notifications for users relate
 | ----------- | ---------------------------- | --------------------------------------------------------------------------- |
 | id          | INTEGER PK                   | Primary key                                                                 |
 | user_id     | INTEGER FK → users(id)       | User who receives the notification                                          |
-| type        | TEXT                         | Notification type (e.g. `comment_on_created_report`, `status_update`)       |
+| type        | TEXT                         | Notification type (e.g. `internal_comment_on_report`, `status_update`)       |
 | report_id   | INTEGER FK → reports(id)     | Report the notification refers to                                           |
 | comment_id  | INTEGER FK → comments(id)    | Related comment (nullable, for comment-based notifications)                 |
 | title       | TEXT                         | Short notification title                                                    |

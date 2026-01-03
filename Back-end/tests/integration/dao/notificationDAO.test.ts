@@ -3,6 +3,7 @@ import NotificationDAO from "../../../src/dao/NotificationDAO.js";
 import * as db from "../../../src/config/database.js";
 import type { Notification } from "../../../src/models/notification.js";
 import type { NotificationWithRelationsDTO } from "../../../src/dto/NotificationDTO.js";
+import { NotificationType } from "../../../src/models/NotificationType.js";
 
 describe("NotificationDAO Unit Test Suite", () => {
     let dao: NotificationDAO;
@@ -22,7 +23,7 @@ describe("NotificationDAO Unit Test Suite", () => {
     describe("createNotification", () => {
         const createData = {
             user_id: 1,
-            type: 'comment_on_created_report',
+            type: 'internal_comment_on_report',
             report_id: 10,
             comment_id: 5,
             title: "New comment",
@@ -40,7 +41,7 @@ describe("NotificationDAO Unit Test Suite", () => {
             const mockNotification: Notification = {
                 id: insertedID,
                 user_id: createData.user_id,
-                type: 'comment_on_created_report',
+                type: NotificationType.InternalCommentOnReport,
                 report_id: createData.report_id,
                 comment_id: createData.comment_id,
                 title: createData.title,
@@ -95,7 +96,7 @@ describe("NotificationDAO Unit Test Suite", () => {
             const mockNotification: Notification = {
                 id: notificationId,
                 user_id: 1,
-                type: 'comment_on_created_report',
+                type: NotificationType.InternalCommentOnReport,
                 report_id: 10,
                 comment_id: null,
                 title: "Test",

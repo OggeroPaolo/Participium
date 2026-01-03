@@ -178,7 +178,7 @@ router.post("/reports/:reportId/internal-comments",
                     user_id: recipientId,
                     report_id: Number(req.params.reportId),
                     comment_id: createdComment.id,
-                    type: NotificationType.CommentOnAssignedReport,
+                    type: NotificationType.ExternalCommentOnReport,
                     title: 'A new comment has arrived',
                 };
 
@@ -218,7 +218,7 @@ router.post("/reports/:reportId/external-comments",
                     user_id: recipientId,
                     report_id: Number(req.params.reportId),
                     comment_id: createdComment.id,
-                    type: NotificationType.CommentOnCreatedReport,
+                    type: NotificationType.InternalCommentOnReport,
                     title: 'A new comment has arrived',
                 };
             
