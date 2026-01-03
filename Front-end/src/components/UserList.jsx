@@ -6,14 +6,21 @@ import {
   Modal,
   Button,
   Form,
+  ButtonGroup,
 } from "react-bootstrap";
-import { getInternalUsers, getUserRoles, updateRole } from "../API/API";
+import {
+  getInternalUsers,
+  getUserRoles,
+  updateRole,
+  getExternalMaintainers,
+} from "../API/API";
 import { useState, useEffect } from "react";
 import AlertBlock from "./AlertBlock";
 import PropTypes from "prop-types";
 
 function UserList() {
   const [users, setUsers] = useState([]);
+  const [externalUsers, setExternalUsers] = useState([]);
   const [loadingDone, setLoadingDone] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [roleList, setRoleList] = useState([]);
@@ -21,6 +28,9 @@ function UserList() {
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
   const [isSaving, setIsSaving] = useState(false);
+
+  // list navigation
+  const [activeView, setActiveView] = useState("internal");
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -33,10 +43,19 @@ function UserList() {
   }, []);
 
   useEffect(() => {
+    const loadExternals = async () => {
+      const userList = await getExternalMaintainers();
+      setExternalUsers(userList);
+      setLoadingDone(true);
+    };
+
+    loadExternals();
+  }, []);
+
+  useEffect(() => {
     const loadRoles = async () => {
       const roles = await getUserRoles();
       setRoleList(roles);
-      console.log(roles);
       setLoadingDone(true);
     };
 
@@ -119,6 +138,9 @@ function UserList() {
 
   const noRole = selectedRoles.length === 0;
 
+  // helpers for list navigation
+  const displayedUsers = activeView === "internal" ? users : externalUsers;
+
   return (
     <>
       <AlertBlock
@@ -127,9 +149,36 @@ function UserList() {
       />
 
       <Container fluid className='p-3 mt-3 body-font'>
-        <h3 className='mb-4'>
-          <b>List of registered internal users</b>
-        </h3>
+        <div className='d-flex justify-content-between align-items-center mb-4'>
+          <div>
+            <h3 className='mb-2'>
+              <b>User management</b>
+            </h3>
+            <h6 className='text-muted'>
+              Viewing {activeView === "internal" ? "internal" : "external"}{" "}
+              users
+            </h6>
+          </div>
+
+          <ButtonGroup aria-label='User type switch'>
+            <Button
+              variant={
+                activeView === "internal" ? "primary" : "outline-primary"
+              }
+              onClick={() => setActiveView("internal")}
+            >
+              <i className='bi bi-people me-2' /> Internal
+            </Button>
+            <Button
+              variant={
+                activeView === "external" ? "primary" : "outline-primary"
+              }
+              onClick={() => setActiveView("external")}
+            >
+              <i className='bi bi-person-badge me-2' /> External
+            </Button>
+          </ButtonGroup>
+        </div>
 
         {!loadingDone && (
           <div className='text-center mt-5'>
@@ -139,22 +188,25 @@ function UserList() {
           </div>
         )}
 
-        {users.length !== 0 && (
+        {displayedUsers.length !== 0 && (
           <div className='d-flex flex-column gap-3'>
-            {users.map((u) => (
+            {displayedUsers.map((u) => (
               <UserCard
                 key={u.email}
                 user={u}
                 formatRole={formatRole}
-                onClick={() => {
-                  if (u.role_type === "tech_officer") handleOpenModal(u);
-                }}
+                onClick={
+                  activeView === "internal" && u.role_type === "tech_officer"
+                    ? () => handleOpenModal(u)
+                    : undefined
+                }
+                userType={activeView}
               />
             ))}
           </div>
         )}
 
-        {users.length === 0 && loadingDone && (
+        {displayedUsers.length === 0 && loadingDone && (
           <Card className='mt-5 shadow-sm'>
             <Card.Body className='text-center py-5'>
               <i
@@ -162,7 +214,8 @@ function UserList() {
                 style={{ fontSize: "3rem", color: "#ccc" }}
               ></i>
               <p className='mt-3 mb-0 text-muted'>
-                No internal users registered yet
+                No {activeView === "internal" ? "internal" : "external"} users
+                registered yet
               </p>
             </Card.Body>
           </Card>
@@ -228,11 +281,16 @@ function UserList() {
   );
 }
 
-function UserCard({ user, onClick, formatRole }) {
+function UserCard({ user, onClick, formatRole, userType }) {
+  const isClickable =
+    userType === "internal" && user.role_type === "tech_officer";
+
   return (
     <Card
-      className='shadow-sm user-list-card'
-      role={user.role_type === "tech_officer" ? "button" : undefined}
+      className={`shadow-sm user-list-card ${
+        isClickable ? "clickable-card" : ""
+      }`}
+      role={isClickable ? "button" : undefined}
       onClick={onClick}
     >
       <Card.Body>
@@ -240,7 +298,9 @@ function UserCard({ user, onClick, formatRole }) {
           <Col xs={12} md={8}>
             <h5 className='mb-2'>
               <b>
-                {user.first_name} {user.last_name}
+                {userType === "internal" &&
+                  user.first_name + " " + user.last_name}
+                {userType === "external" && user.fullName}
               </b>
             </h5>
 
@@ -258,11 +318,18 @@ function UserCard({ user, onClick, formatRole }) {
             md={4}
             className='d-flex flex-column align-items-end mt-2 mt-md-0'
           >
-            {user.roles.map((role) => (
-              <span key={role} className='badge bg-primary mb-1'>
-                {formatRole(role)}
-              </span>
-            ))}
+            {userType === "internal" &&
+              user.roles.map((role) => (
+                <span key={role} className='badge bg-primary mb-1'>
+                  {formatRole(role)}
+                </span>
+              ))}
+            {userType === "external" &&
+              user.roles.map((role) => (
+                <span key={role.role_name} className='badge bg-primary mb-1'>
+                  {formatRole(role.role_name)}
+                </span>
+              ))}
           </Col>
         </Row>
       </Card.Body>
@@ -332,15 +399,17 @@ RoleCheckboxList.propTypes = {
 
 UserCard.propTypes = {
   user: PropTypes.shape({
-    first_name: PropTypes.string.isRequired,
-    last_name: PropTypes.string.isRequired,
+    first_name: PropTypes.string,
+    last_name: PropTypes.string,
+    fullName: PropTypes.string,
     username: PropTypes.string.isRequired,
     email: PropTypes.string.isRequired,
-    role_type: PropTypes.string.isRequired,
+    role_type: PropTypes.string,
     roles: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   onClick: PropTypes.func,
   formatRole: PropTypes.func.isRequired,
+  userType: PropTypes.string,
 };
 
 UserInfo.propTypes = {

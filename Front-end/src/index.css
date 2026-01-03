@@ -296,6 +296,23 @@ html {
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
 }
 
+.user-list-card {
+  border: 1px solid #e5e5e5;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.clickable-card {
+  border-left: solid transparent;
+  border-left-width: 6px !important;
+}
+
+.clickable-card:hover {
+  border-left-color: #0350b5;
+  box-shadow: 0 0.5rem 1rem rgba(13, 110, 253, 0.15);
+  transform: translateY(-2px);
+  cursor: pointer;
+}
+
 /* Mobile styles */
 @media (max-width: 991px) {
   .cit-desktop-layout {
