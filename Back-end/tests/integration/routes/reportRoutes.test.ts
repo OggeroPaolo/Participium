@@ -16,8 +16,10 @@ import NotificationDAO from "../../../src/dao/NotificationDAO.js";
 import { Notification } from "../../../src/models/notification.js";
 import { ROLES } from "../../../src/models/userRoles.js";
 import UserDAO from "../../../src/dao/UserDAO.js";
-import { afterEach } from "node:test";
+import { afterEach} from "node:test";
 import { CreateNotificationDTO } from "../../../src/dto/NotificationDTO.js";
+import { NotificationType } from "../../../src/models/NotificationType.js";
+import router from "../../../src/routes/reports.routes.js";
 
 
 
@@ -178,7 +180,7 @@ describe("Report Routes Integration Tests", () => {
     const mockNotification: Notification = {
         id: 1,
         user_id: mockTechOfficer.id,
-        type: 'status_update',
+        type: NotificationType.StatusUpdate,
         report_id: 1,
         title: "Notification",
         is_read: 0,
@@ -232,22 +234,54 @@ describe("Report Routes Integration Tests", () => {
         });
     });
     describe("GET /reports/:reportId", () => {
-
         it("should return 200 with report data if report exists", async () => {
             vi.spyOn(ReportDAO.prototype, "getCompleteReportById")
                 .mockResolvedValue(mockCompleteReport);
-
+            vi.spyOn(NotificationDAO.prototype, "markByReportAsRead").mockResolvedValue(undefined);
             const res = await request(app).get("/reports/1");
             expect(res.status).toBe(200);
             expect(res.body).toEqual({ report: mockCompleteReport });
         });
 
+        it("should return 200 and mark notifications as read for logged in user", async () => {
+            vi.spyOn(ReportDAO.prototype, "getCompleteReportById")
+                .mockResolvedValue(mockCompleteReport);
+            const markAsReadSpy = vi.spyOn(NotificationDAO.prototype, "markByReportAsRead")
+                .mockResolvedValue(undefined);
+
+            // Create a test app with injected user middleware
+            const express = require("express");
+            const testApp = express();
+
+            // Mock user middleware
+            testApp.use((req: any, res: any, next: any) => {
+                req.user = { id: mockCitizen.id, username: "testuser", email: "test@example.com" };
+                next();
+            });
+
+            // Import and use your router (adjust the import path as needed)
+            testApp.use(router);
+
+            const res = await request(testApp).get("/reports/1");
+
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({ report: mockCompleteReport });
+            expect(markAsReadSpy).toHaveBeenCalledWith(
+                mockCitizen.id,
+                1,
+                [
+                    NotificationType.StatusUpdate,
+                    NotificationType.ReportAssigned,
+                    NotificationType.ReportRejected,
+                    NotificationType.ReportReviewed
+                ]
+            );
+        });
+
         it("should return 404 if report does not exist", async () => {
             vi.spyOn(ReportDAO.prototype, "getCompleteReportById")
                 .mockRejectedValue(new Error("Report not found"));
-
             const res = await request(app).get("/reports/999");
-
             expect(res.status).toBe(404);
             expect(res.body).toEqual({ error: "Report not found" });
         });
@@ -255,13 +289,12 @@ describe("Report Routes Integration Tests", () => {
         it("should return 500 if DAO throws an unexpected error", async () => {
             vi.spyOn(ReportDAO.prototype, "getCompleteReportById")
                 .mockRejectedValue(new Error("DB failure"));
-
             const res = await request(app).get("/reports/1");
-
             expect(res.status).toBe(500);
             expect(res.body).toEqual({ error: "Internal server error" });
         });
     });
+
     describe("GET /tech_officer/reports", () => {
         it("should return 200 with reports assigned to the tech officer", async () => {
 
@@ -1083,12 +1116,13 @@ describe("Report Routes Integration Tests", () => {
             ];
 
             vi.spyOn(CommentDAO.prototype, "getCommentsByReportIdAndType").mockResolvedValue(mockComments);
-
+            const spyNotification = vi.spyOn(NotificationDAO.prototype, "markByReportAsRead").mockResolvedValue(undefined);
             const res = await request(app)
                 .get(`/report/${reportId}/internal-comments`)
 
             expect(res.status).toBe(200);
             expect(res.body).toEqual({ comments: mockComments });
+            expect(spyNotification).toHaveBeenCalled();
         });
 
         it("should return 204 if no comments exist", async () => {
@@ -1141,10 +1175,8 @@ describe("Report Routes Integration Tests", () => {
                 },
             ];
 
-            vi.spyOn(
-                CommentDAO.prototype,
-                "getCommentsByReportIdAndType"
-            ).mockResolvedValue(mockComments);
+            vi.spyOn(CommentDAO.prototype, "getCommentsByReportIdAndType").mockResolvedValue(mockComments);
+            const spyNotification = vi.spyOn(NotificationDAO.prototype, "markByReportAsRead").mockResolvedValue(undefined)
 
             const res = await request(app)
                 .get(`/report/${reportId}/external-comments`);
@@ -1155,6 +1187,7 @@ describe("Report Routes Integration Tests", () => {
             expect(
                 CommentDAO.prototype.getCommentsByReportIdAndType
             ).toHaveBeenCalledWith(reportId, "public");
+            expect(spyNotification).toHaveBeenCalled();
         });
 
         it("should return 204 if no comments exist", async () => {

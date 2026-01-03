@@ -263,4 +263,49 @@ describe("NotificationDAO Unit Test Suite", () => {
             expect(result).toBe(0);
         });
     });
+
+    // ------------------------------
+    // markByReportAsRead
+    // ------------------------------
+    describe("markByReportAsRead", () => {
+        it("marks notifications as read for a report without type filter", async () => {
+            vi.spyOn(db, "Update").mockResolvedValueOnce({ changes: 2 });
+            await expect(dao.markByReportAsRead(1, 100)).resolves.toBeUndefined();
+            expect(db.Update).toHaveBeenCalledWith(
+                expect.stringContaining("UPDATE notifications"),
+                [1, 100]
+            );
+        });
+
+        it("marks notifications as read for a report with type filter", async () => {
+            vi.spyOn(db, "Update").mockResolvedValueOnce({ changes: 1 });
+            await expect(
+                dao.markByReportAsRead(1, 100, ["StatusUpdate", "ReportAssigned"])
+            ).resolves.toBeUndefined();
+            expect(db.Update).toHaveBeenCalledWith(
+                expect.stringContaining("AND type IN (?, ?)"),
+                [1, 100, "StatusUpdate", "ReportAssigned"]
+            );
+        });
+
+        it("marks notifications as read with single type", async () => {
+            vi.spyOn(db, "Update").mockResolvedValueOnce({ changes: 1 });
+            await expect(
+                dao.markByReportAsRead(1, 100, ["StatusUpdate"])
+            ).resolves.toBeUndefined();
+            expect(db.Update).toHaveBeenCalledWith(
+                expect.stringContaining("AND type IN (?)"),
+                [1, 100, "StatusUpdate"]
+            );
+        });
+
+        it("ignores empty types array", async () => {
+            vi.spyOn(db, "Update").mockResolvedValueOnce({ changes: 0 });
+            await expect(dao.markByReportAsRead(1, 100, [])).resolves.toBeUndefined();
+            expect(db.Update).toHaveBeenCalledWith(
+                expect.not.stringContaining("AND type IN"),
+                [1, 100]
+            );
+        });
+    });
 });

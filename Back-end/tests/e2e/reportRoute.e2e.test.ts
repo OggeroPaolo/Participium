@@ -134,7 +134,6 @@ describe("Reports E2E", () => {
         ...cleaned
       } = report;
 
-      // Compare only the desired fields
       expect(cleaned).toEqual(expectedReport);
     });
 

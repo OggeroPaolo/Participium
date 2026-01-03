@@ -743,7 +743,7 @@ Example: `/external-maintainers?companyId=3&categoryId=2`
 
 ---
 
-### Success Response (200 OK)
+* **Success Response (200 OK)**
 ```json
 {
   "id": 12,
@@ -756,11 +756,11 @@ Example: `/external-maintainers?companyId=3&categoryId=2`
   "companyName": "HydroTech Ltd"
 }
 ```
-### No Content Response (204 No Content)
+* **No Content Response (204 No Content)**
 ```json
 // empty response
 ```
-###  Error Response (400 Bad Request)
+* **Error Response (400 Bad Request)**
 ```json
 {
   "errors": [
@@ -769,20 +769,20 @@ Example: `/external-maintainers?companyId=3&categoryId=2`
   ]
 }
 ```
-### Error Response (401 Unauthorized):
+* **Error Response (401 Unauthorized):**
 ```json
 {
   "error": "Unauthorized: missing or invalid token"
 }
 ```
 
-### Error Response (403 Forbidden):
+* **Error Response (403 Forbidden):**
 ```json
 {
   "error": "Forbidden: insufficient permissions"
 }
 ```
-### Error Response (500 Internal Server Error):
+* **Error Response (500 Internal Server Error):**
 
 ```json
 {
