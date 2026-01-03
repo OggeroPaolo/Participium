@@ -124,8 +124,8 @@ CREATE TABLE IF NOT EXISTS notifications (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,
   type TEXT NOT NULL CHECK(type IN (
-    'comment_on_created_report',
-    'comment_on_assigned_report', 
+    'internal_comment_on_report',
+    'external_comment_on_report', 
     'status_update',
     'report_assigned',
     'report_reviewed',

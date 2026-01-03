@@ -26,6 +26,7 @@ import type { CreateCommentDTO } from "../dto/CommentDTO.js";
 
 import NotificationDAO from "../dao/NotificationDAO.js";
 import type { CreateNotificationDTO } from "../dto/NotificationDTO.js";
+import { NotificationType } from "../models/NotificationType.js";
 
 
 const router = Router();
@@ -177,7 +178,7 @@ router.post("/reports/:reportId/internal-comments",
                     user_id: recipientId,
                     report_id: Number(req.params.reportId),
                     comment_id: createdComment.id,
-                    type: 'comment_on_assigned_report',
+                    type: NotificationType.ExternalCommentOnReport,
                     title: 'A new comment has arrived',
                 };
 
@@ -217,7 +218,7 @@ router.post("/reports/:reportId/external-comments",
                     user_id: recipientId,
                     report_id: Number(req.params.reportId),
                     comment_id: createdComment.id,
-                    type: 'comment_on_created_report',
+                    type: NotificationType.InternalCommentOnReport,
                     title: 'A new comment has arrived',
                 };
             
@@ -400,7 +401,7 @@ router.patch("/ext_maintainer/reports/:reportId",
                 const notification: CreateNotificationDTO = {
                     user_id: recipientId,
                     report_id: Number(req.params.reportId),
-                    type: 'status_update',
+                    type: NotificationType.StatusUpdate,
                     title: `The status of your report "${report.title}" was set to ${status}`
                 };
             
@@ -494,7 +495,7 @@ router.patch("/pub_relations/reports/:reportId",
                 const notification: CreateNotificationDTO = {
                     user_id: recipientId,
                     report_id: Number(req.params.reportId),
-                    type: 'status_update',
+                    type: NotificationType.StatusUpdate,
                     title: `The status of your report "${report.title}" was set to ${status}`
                 };
             

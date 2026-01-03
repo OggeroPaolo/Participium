@@ -1,7 +1,9 @@
+import type { NotificationType } from "./NotificationType.js";
+
 export interface Notification {
     id: number;
     user_id: number;
-    type: 'comment_on_created_report' | 'comment_on_assigned_report' | 'status_update' | 'report_assigned' | 'report_reviewed' | 'report_rejected';
+    type: NotificationType;
     report_id: number;
     comment_id: number | null;
     title: string;
