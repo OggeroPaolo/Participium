@@ -2,9 +2,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import CityMap from "./CityMap";
 import { getApprovedReports } from "../API/API";
 
-import {  Container, Col, Row, Card, Form, InputGroup , Modal, Button } from "react-bootstrap";
-
-
+import { Card, Form, InputGroup, Modal, Button } from "react-bootstrap";
 
 import { useNavigate } from "react-router";
 import useUserStore from "../store/userStore.js";
@@ -17,18 +15,27 @@ function CitHomepage(props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAddress, setSelectedAddress] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [userReports, setUserReports] = useState([]);
+  const [showUserReports, setShowUserReports] = useState(false);
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
   const reportRefs = useRef({});
   const navigate = useNavigate();
 
-  const { isAuthenticated } = useUserStore();
+  const { user, isAuthenticated } = useUserStore();
   const [showWelcomeModal, setShowWelcomeModal] = useState(true);
 
   useEffect(() => {
     const loadReports = async () => {
       const reportList = await getApprovedReports();
       setReports(reportList);
+
+      if (isAuthenticated) {
+        const myReports = reportList.filter(
+          (r) => r.reporterUsername === user.username
+        );
+        setUserReports(myReports);
+      }
     };
     loadReports();
   }, []);
@@ -82,7 +89,7 @@ function CitHomepage(props) {
     setSelectedAddress(address);
     setSearchQuery(address);
     setShowDropdown(false);
-    
+
     // Scroll to the selected report in the list
     if (reportRefs.current[reportId]) {
       reportRefs.current[reportId].scrollIntoView({
@@ -108,29 +115,47 @@ function CitHomepage(props) {
     setShowDropdown(false);
   };
 
+  // visualization of user reports helper
+  const firstUserReportIndex = useMemo(() => {
+    if (!isAuthenticated || userReports.length === 0) return -1;
+
+    const firstUserReportId = userReports[0].id;
+
+    return reports.findIndex((r) => r.id === firstUserReportId);
+  }, [reports, userReports, isAuthenticated]);
+
   return (
     <div className='cit-homepage-wrapper body-font'>
       <div className='cit-desktop-layout'>
         {/* Desktop sidebar - hidden on mobile */}
 
-        <div className="d-none d-lg-block cit-reports-section">
-          <h5 className="cit-reports-header">Reports Overview</h5>
-          
+        <div className='d-none d-lg-block cit-reports-section'>
+          <h5 className='cit-reports-header'>Reports Overview</h5>
+
           {/* Search bar with dropdown */}
-          <Form.Group className="mb-3 mt-3" style={{ position: "relative" }}>
+          <Form.Group className='mb-3 mt-3' style={{ position: "relative" }}>
             <InputGroup>
-              <InputGroup.Text style={{ backgroundColor: "#0350b5", color: "white", borderColor: "#0350b5" }}>
-                <i className="bi bi-search"></i>
+              <InputGroup.Text
+                style={{
+                  backgroundColor: "#0350b5",
+                  color: "white",
+                  borderColor: "#0350b5",
+                }}
+              >
+                <i className='bi bi-search'></i>
               </InputGroup.Text>
               <div style={{ position: "relative", flex: 1 }}>
                 <Form.Control
                   ref={searchInputRef}
-                  type="text"
-                  placeholder="Search by address..."
+                  type='text'
+                  placeholder='Search by address...'
                   value={searchQuery}
                   onChange={handleSearchChange}
                   onFocus={() => {
-                    if (searchQuery.trim().length > 0 && reportSuggestions.length > 0) {
+                    if (
+                      searchQuery.trim().length > 0 &&
+                      reportSuggestions.length > 0
+                    ) {
                       setShowDropdown(true);
                     }
                   }}
@@ -139,10 +164,15 @@ function CitHomepage(props) {
               </div>
               {searchQuery && (
                 <InputGroup.Text
-                  role="button"
+                  role='button'
                   tabIndex={0}
-                  aria-label="Clear search"
-                  style={{ cursor: "pointer", backgroundColor: "#0350b5", color: "white", borderColor: "#0350b5" }}
+                  aria-label='Clear search'
+                  style={{
+                    cursor: "pointer",
+                    backgroundColor: "#0350b5",
+                    color: "white",
+                    borderColor: "#0350b5",
+                  }}
                   onClick={handleClearSearch}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -151,7 +181,7 @@ function CitHomepage(props) {
                     }
                   }}
                 >
-                  <i className="bi bi-x"></i>
+                  <i className='bi bi-x'></i>
                 </InputGroup.Text>
               )}
             </InputGroup>
@@ -177,10 +207,12 @@ function CitHomepage(props) {
                 {reportSuggestions.map((report, index) => (
                   <div
                     key={report.id}
-                    role="button"
+                    role='button'
                     tabIndex={0}
                     aria-label={`Select report: ${report.title}`}
-                    onClick={() => handleSelectReport(report.id, report.address)}
+                    onClick={() =>
+                      handleSelectReport(report.id, report.address)
+                    }
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
@@ -190,7 +222,10 @@ function CitHomepage(props) {
                     style={{
                       padding: "10px 15px",
                       cursor: "pointer",
-                      borderBottom: index < reportSuggestions.length - 1 ? "1px solid #f0f0f0" : "none",
+                      borderBottom:
+                        index < reportSuggestions.length - 1
+                          ? "1px solid #f0f0f0"
+                          : "none",
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.backgroundColor = "#f8f9fa";
@@ -209,7 +244,7 @@ function CitHomepage(props) {
                       {report.title}
                     </div>
                     <div style={{ fontSize: "0.875rem", color: "#6c757d" }}>
-                      <i className="bi bi-geo-alt-fill text-danger me-2"></i>
+                      <i className='bi bi-geo-alt-fill text-danger me-2'></i>
                       {report.address}
                     </div>
                   </div>
@@ -218,19 +253,54 @@ function CitHomepage(props) {
             )}
           </Form.Group>
 
+          {isAuthenticated && (
+            <Form.Check
+              type='switch'
+              id='filter-my-reports'
+              label='Show only my reports'
+              checked={showUserReports}
+              onChange={(e) => setShowUserReports(e.target.checked)}
+              className='mt-2 mb-3'
+            />
+          )}
 
-          {reports.length !== 0 && (
+          {isAuthenticated &&
+            userReports.length > 0 &&
+            firstUserReportIndex >= 2 && (
+              <Button
+                size='sm'
+                variant='outline-secondary'
+                className='mb-2'
+                onClick={() => {
+                  const first = userReports[0];
+                  if (reportRefs.current[first.id]) {
+                    reportRefs.current[first.id].scrollIntoView({
+                      behavior: "smooth",
+                      block: "center",
+                    });
+                  }
+                }}
+              >
+                <i className='bi bi-person-check me-1' /> Jump to my reports
+              </Button>
+            )}
+
+          {(showUserReports ? userReports : reports) !== 0 && (
             <>
-              {reports.map((r) => {
+              {(showUserReports ? userReports : reports).map((r) => {
                 return (
                   <Card
                     key={r.id}
                     ref={(el) => (reportRefs.current[r.id] = el)}
-                    role="button"
+                    role='button'
                     tabIndex={0}
                     aria-label={`Select report: ${r.title}`}
                     className={`mt-2 shadow-sm report-card ${
                       selectedReportID === r.id ? "selected" : ""
+                    } ${
+                      isAuthenticated && r.reporterUsername === user.username
+                        ? "my-report"
+                        : ""
                     }`}
                     onClick={() => handleReportClick(r.id)}
                     onDoubleClick={() => navigate(`/reports/${r.id}`)}
@@ -265,7 +335,7 @@ function CitHomepage(props) {
             </>
           )}
 
-          {reports.length === 0 && (
+          {(showUserReports ? userReports : reports).length === 0 && (
             <Card className='m-3 shadow-sm'>
               <Card.Body className='text-center py-5'>
                 <i
@@ -297,9 +367,9 @@ function CitHomepage(props) {
           {showMapOverlay && (
             <div
               className='cit-map-overlay'
-              role="button"
+              role='button'
               tabIndex={0}
-              aria-label="Close map overlay"
+              aria-label='Close map overlay'
               onClick={() => setShowMapOverlay(false)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -336,9 +406,9 @@ function CitHomepage(props) {
         <>
           <div
             className='d-lg-none cit-mobile-overlay-backdrop'
-            role="button"
+            role='button'
             tabIndex={0}
-            aria-label="Close report list"
+            aria-label='Close report list'
             onClick={() => setShowReportList(false)}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
@@ -359,19 +429,28 @@ function CitHomepage(props) {
             </div>
 
             {/* Search bar for mobile */}
-            <Form.Group className="mb-3" style={{ position: "relative" }}>
+            <Form.Group className='mb-3' style={{ position: "relative" }}>
               <InputGroup>
-                <InputGroup.Text style={{ backgroundColor: "#0350b5", color: "white", borderColor: "#0350b5" }}>
-                  <i className="bi bi-search"></i>
+                <InputGroup.Text
+                  style={{
+                    backgroundColor: "#0350b5",
+                    color: "white",
+                    borderColor: "#0350b5",
+                  }}
+                >
+                  <i className='bi bi-search'></i>
                 </InputGroup.Text>
                 <div style={{ position: "relative", flex: 1 }}>
                   <Form.Control
-                    type="text"
-                    placeholder="Search by address..."
+                    type='text'
+                    placeholder='Search by address...'
                     value={searchQuery}
                     onChange={handleSearchChange}
                     onFocus={() => {
-                      if (searchQuery.trim().length > 0 && reportSuggestions.length > 0) {
+                      if (
+                        searchQuery.trim().length > 0 &&
+                        reportSuggestions.length > 0
+                      ) {
                         setShowDropdown(true);
                       }
                     }}
@@ -380,10 +459,15 @@ function CitHomepage(props) {
                 </div>
                 {searchQuery && (
                   <InputGroup.Text
-                    role="button"
+                    role='button'
                     tabIndex={0}
-                    aria-label="Clear search"
-                    style={{ cursor: "pointer", backgroundColor: "#0350b5", color: "white", borderColor: "#0350b5" }}
+                    aria-label='Clear search'
+                    style={{
+                      cursor: "pointer",
+                      backgroundColor: "#0350b5",
+                      color: "white",
+                      borderColor: "#0350b5",
+                    }}
                     onClick={handleClearSearch}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
@@ -392,7 +476,7 @@ function CitHomepage(props) {
                       }
                     }}
                   >
-                    <i className="bi bi-x"></i>
+                    <i className='bi bi-x'></i>
                   </InputGroup.Text>
                 )}
               </InputGroup>
@@ -417,7 +501,7 @@ function CitHomepage(props) {
                   {reportSuggestions.map((report, index) => (
                     <div
                       key={report.id}
-                      role="button"
+                      role='button'
                       tabIndex={0}
                       aria-label={`Select report: ${report.title}`}
                       onClick={() => {
@@ -434,7 +518,10 @@ function CitHomepage(props) {
                       style={{
                         padding: "10px 15px",
                         cursor: "pointer",
-                        borderBottom: index < reportSuggestions.length - 1 ? "1px solid #f0f0f0" : "none",
+                        borderBottom:
+                          index < reportSuggestions.length - 1
+                            ? "1px solid #f0f0f0"
+                            : "none",
                       }}
                       onMouseEnter={(e) => {
                         e.target.style.backgroundColor = "#f8f9fa";
@@ -453,7 +540,7 @@ function CitHomepage(props) {
                         {report.title}
                       </div>
                       <div style={{ fontSize: "0.875rem", color: "#6c757d" }}>
-                        <i className="bi bi-geo-alt-fill text-danger me-2"></i>
+                        <i className='bi bi-geo-alt-fill text-danger me-2'></i>
                         {report.address}
                       </div>
                     </div>
@@ -462,17 +549,21 @@ function CitHomepage(props) {
               )}
             </Form.Group>
 
-            {reports.length !== 0 && (
+            {(showUserReports ? userReports : reports).length !== 0 && (
               <>
-                {reports.map((r) => {
+                {(showUserReports ? userReports : reports).map((r) => {
                   return (
                     <Card
                       key={r.id}
-                      role="button"
+                      role='button'
                       tabIndex={0}
                       aria-label={`Select report: ${r.title}`}
                       className={`mt-2 shadow-sm report-card ${
                         selectedReportID === r.id ? "selected" : ""
+                      } ${
+                        isAuthenticated && r.reporterUsername === user.username
+                          ? "my-report"
+                          : ""
                       }`}
                       onClick={() => {
                         handleReportClick(r.id);
@@ -511,7 +602,7 @@ function CitHomepage(props) {
               </>
             )}
 
-            {reports.length === 0 && (
+            {(showUserReports ? userReports : reports).length === 0 && (
               <Card className='m-3 shadow-sm'>
                 <Card.Body className='text-center py-5'>
                   <i

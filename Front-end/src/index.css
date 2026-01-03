@@ -338,6 +338,11 @@ html {
   max-height: 800px;
 }
 
+.report-card.my-report {
+  border-left: 4px solid #0350b5;
+  background-color: #f8faff;
+}
+
 /* --------------*/
 /* Mobile styles */
 @media (max-width: 991px) {
