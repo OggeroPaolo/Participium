@@ -461,7 +461,7 @@ router.patch("/pub_relations/reports/:reportId",
             let { status, note, categoryId, officerId } = req.body;
 
             // if status to be changed is not rejected set note to null so it won't be changed in the sql query
-            if (status != "rejected") {
+            if (status != ReportStatus.Rejected) {
                 note = null;
             }
 

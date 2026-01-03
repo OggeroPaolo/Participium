@@ -497,7 +497,7 @@ export const seedDefaultReports = async (): Promise<void> => {
       {
         title: "Damaged Bollard",
         description: "A bollard was cracked in an accident and needs repair",
-        user_id: users[1]?.id ?? firstUser.id,
+        user_id: users[0]?.id ?? firstUser.id,
         category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
         address: "Corso Stati Uniti 65, 10129 Torino",
         position_lat: 45.06555,
@@ -505,7 +505,7 @@ export const seedDefaultReports = async (): Promise<void> => {
         status: "assigned",
         reviewed_by: 3,
         assigned_to: 10,
-        external_user: 14
+        external_user: 13
       },
       {
         title: "Wooden Bench with Missing Boards",
