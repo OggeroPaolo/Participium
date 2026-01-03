@@ -46,10 +46,10 @@ function ReportInfo() {
 
   // comments
   useEffect(() => {
-    if (!report) return;
+    if (!report || !user) return;
 
     const loadComments = async () => {
-      if (user.id === report.user?.id) {
+      if (user?.id === report.user?.id) {
         const userComments = await getCommentsExternal(report.id);
         setComments(userComments);
       }
@@ -156,14 +156,14 @@ function ReportInfo() {
         </Row>
       )}
 
-      {user.id === report.user?.id && (
+      {user?.id === report.user?.id && (
         <Row className='justify-content-center mt-3 mb-3'>
           <Col xs={12} md={11}>
             <Card className='shadow-sm comments-card'>
               <Card.Body>
                 <CommentsTab
                   comments={comments}
-                  userId={user.id}
+                  userId={user?.id}
                   newComment={newComment}
                   setNewComment={setNewComment}
                   writeComment={writeComment}
