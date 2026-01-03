@@ -566,7 +566,7 @@ async function createExternalComment(reportId, comment) {
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.error?.[0] || "Failed to post comment");
+    throw new Error(errorData.error || "Failed to post comment");
   }
 
   return await response.json();

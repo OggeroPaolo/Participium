@@ -4,6 +4,8 @@ import {
   getAssignedReports,
   getCategories,
   getCommentsInternal,
+  getCommentsExternal,
+  createExternalComment,
   getReport,
   createComment,
   getExternalMaintainers,
@@ -154,6 +156,8 @@ function TechAssignedReports() {
   const [comments, setComments] = useState([]);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [newComment, setNewComment] = useState("");
+  const [citizenComments, setCitizenComments] = useState([]);
+  const [newCommentExt, setNewCommentExt] = useState("");
 
   // string formatter for status
   // can be pending_approval, assigned, in_progress, suspended, rejected, resolved
@@ -226,10 +230,12 @@ function TechAssignedReports() {
       // Fetch complete report details including photos
       const completeReport = await getReport(report.id);
       const internalComments = await getCommentsInternal(report.id);
+      const externalComments = await getCommentsExternal(report.id);
 
       const reportData = completeReport.report || completeReport;
       setCompleteReportData(reportData);
       setComments(internalComments);
+      setCitizenComments(externalComments);
     } catch (error) {
       console.error("Failed to load complete report:", error);
       setAlert({
@@ -407,6 +413,34 @@ function TechAssignedReports() {
     }
   };
 
+  const writeCommentExternal = async (e) => {
+    e.preventDefault();
+
+    if (!newCommentExt.trim()) return;
+
+    setIsSubmittingComment(true);
+
+    try {
+      await createExternalComment(completeReportData.id, newCommentExt);
+
+      // clear textarea
+      setNewCommentExt("");
+
+      // reload comments
+      const newComments = await getCommentsExternal(completeReportData.id);
+      setCitizenComments(newComments);
+    } catch (error) {
+      setAlert({
+        show: true,
+        message: error.message,
+        variant: "danger",
+      });
+      handleCloseModal();
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
   const fetchExternalMaintainers = useCallback(
     async (categoryId, activeRef) => {
       try {
@@ -471,6 +505,7 @@ function TechAssignedReports() {
   }, [showModal, completeReportData, userId, assignedReportOwnerId]);
 
   const getCategoryBadge = (category) => {
+    // prettier-ignore
     const colors = {
       "Water Supply – Drinking Water": "primary", // Blue - Water
       "Architectural Barriers": "secondary", // Gray - Infrastructure
@@ -517,12 +552,16 @@ function TechAssignedReports() {
         statusColumns={statusColumns}
         formatAddress={formatAddress}
         comments={comments}
+        citizenComments={citizenComments}
         userId={userId}
         modalPage={modalPage}
         setModalPage={setModalPage}
         newComment={newComment}
+        newCommentExt={newCommentExt}
         setNewComment={setNewComment}
+        setNewCommentExt={setNewCommentExt}
         writeComment={writeComment}
+        writeCommentExternal={writeCommentExternal}
         isSubmittingComment={isSubmittingComment}
         // assegnazione esterni
         canAssignExternal={canAssignExternal}
@@ -658,12 +697,16 @@ function TechReportModal({
   statusColumns,
   formatAddress,
   comments,
+  citizenComments,
   userId,
   modalPage,
   setModalPage,
   newComment,
+  newCommentExt,
   setNewComment,
+  setNewCommentExt,
   writeComment,
+  writeCommentExternal,
   isSubmittingComment,
   canAssignExternal,
   reportCategoryName,
@@ -700,7 +743,15 @@ function TechReportModal({
             className={`modal-tab ${modalPage === "comments" ? "active" : ""}`}
             onClick={() => setModalPage("comments")}
           >
-            Comments
+            Internal Comments
+          </button>
+          <button
+            className={`modal-tab ${
+              modalPage === "citizenChat" ? "active" : ""
+            }`}
+            onClick={() => setModalPage("citizenChat")}
+          >
+            Citizen Chat
           </button>
         </div>
       </Modal.Header>
@@ -760,6 +811,17 @@ function TechReportModal({
                 newComment={newComment}
                 setNewComment={setNewComment}
                 writeComment={writeComment}
+                isSubmittingComment={isSubmittingComment}
+              />
+            )}
+
+            {modalPage === "citizenChat" && (
+              <TechReportCommentsTab
+                comments={citizenComments}
+                userId={userId}
+                newComment={newCommentExt}
+                setNewComment={setNewCommentExt}
+                writeComment={writeCommentExternal}
                 isSubmittingComment={isSubmittingComment}
               />
             )}
@@ -1159,14 +1221,31 @@ TechReportModal.propTypes = {
       text: PropTypes.string,
     })
   ).isRequired,
+  citizenComments: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+      user_id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+      role_name: PropTypes.string,
+      first_name: PropTypes.string,
+      last_name: PropTypes.string,
+      timestamp: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.instanceOf(Date),
+      ]),
+      text: PropTypes.string,
+    })
+  ).isRequired,
   userId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
 
-  modalPage: PropTypes.oneOf(["info", "comments"]).isRequired,
+  modalPage: PropTypes.oneOf(["info", "comments", "citizenChat"]).isRequired,
   setModalPage: PropTypes.func.isRequired,
 
   newComment: PropTypes.string.isRequired,
   setNewComment: PropTypes.func.isRequired,
   writeComment: PropTypes.func.isRequired,
+  newCommentExt: PropTypes.string.isRequired,
+  setNewCommentExt: PropTypes.func.isRequired,
+  writeCommentExternal: PropTypes.func.isRequired,
   isSubmittingComment: PropTypes.bool.isRequired,
 
   canAssignExternal: PropTypes.bool.isRequired,
@@ -1252,7 +1331,7 @@ TechReportInfoTab.propTypes = {
   }).isRequired,
 
   mapRef: PropTypes.shape({ current: PropTypes.any }),
-  modalPage: PropTypes.oneOf(["info", "comments"]).isRequired,
+  modalPage: PropTypes.oneOf(["info", "comments", "citizenChat"]).isRequired,
 
   statusColumns: PropTypes.objectOf(PropTypes.string).isRequired,
   formatAddress: PropTypes.func.isRequired,

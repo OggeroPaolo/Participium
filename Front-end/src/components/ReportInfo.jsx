@@ -16,6 +16,7 @@ import {
 } from "react-bootstrap";
 import PropTypes from "prop-types";
 import useUserStore from "../store/userStore";
+import AlertBlock from "./AlertBlock";
 
 function ReportInfo() {
   const { rid } = useParams();
@@ -25,6 +26,7 @@ function ReportInfo() {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
 
   useEffect(() => {
     const loadReport = async () => {
@@ -87,94 +89,101 @@ function ReportInfo() {
   };
 
   return (
-    <Container fluid className='mt-4 body-font report-info-container'>
-      {/* report info */}
-      <h2 className='mb-4 text-center'>
-        <b>{report.title}</b>
-      </h2>
+    <>
+      <Container fluid className='mt-4 body-font report-info-container'>
+        {/* report info */}
+        <h2 className='mb-4 text-center'>
+          <b>{report.title}</b>
+        </h2>
 
-      {!loadingDone && (
-        <div className='text-center mt-5'>
-          <div className='spinner-border text-primary' role='status'>
-            <span className='visually-hidden'>Loading...</span>
+        {!loadingDone && (
+          <div className='text-center mt-5'>
+            <div className='spinner-border text-primary' role='status'>
+              <span className='visually-hidden'>Loading...</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {loadingDone && (
-        <Row className='p-4 justify-content-center'>
-          <Col xs={12} md={5} className='mb-3 mb-md-0'>
-            <Card className='bg-light border-0 shadow-sm'>
-              <Carousel interval={null}>
-                {report.photos.map((img, idx) => {
-                  return (
-                    <Carousel.Item key={idx}>
-                      <div className='car-img-box'>
-                        <img src={img.url}></img>
-                      </div>
-                    </Carousel.Item>
-                  );
-                })}
-              </Carousel>
-            </Card>
-          </Col>
-          <Col xs={12} md={6} className='ps-md-3 ms-md-4'>
-            <p>
-              <i className='bi bi-geo-alt-fill text-danger me-2'></i>{" "}
-              <b>Address:</b> {report.address}
-            </p>
-            <p>
-              <i className='bi bi-person-fill me-2'></i> <b>Reported by:</b>{" "}
-              {report.is_anonymous ? "Anonymous" : report.user.complete_name}
-            </p>
-            <p>
-              {" "}
-              <i className='bi bi-tag-fill me-2 text-primary'></i>
-              <b>Category:</b> {report.category.name}
-            </p>
-            <p>
-              <i className='bi bi-calendar-event-fill text-success me-2'></i>{" "}
-              <b>Created on:</b> {Date(report.created_at).slice(0, 15)}
-            </p>
-            <p>
-              <i className='bi bi-chat-left-fill text-warning me-2'></i>{" "}
-              <b>Status:</b> {stringFormatter(report.status)}
-            </p>
-            <h6 className='fw-bold mb-2'>Description</h6>
-            <Card className='p-3 bg-light border-0'>
-              <p className='mb-0'>{report.description}</p>
-            </Card>
-            {report.note && (
-              <>
-                <h6 className='fw-bold mb-2 mt-3'>Reviewer notes</h6>
-                <Card className='p-3 bg-light border-0'>
-                  <p className='mb-0'>{report.note}</p>
-                </Card>
-              </>
-            )}
-          </Col>
-        </Row>
-      )}
+        {loadingDone && (
+          <Row className='p-4 justify-content-center'>
+            <Col xs={12} md={5} className='mb-3 mb-md-0'>
+              <Card className='bg-light border-0 shadow-sm'>
+                <Carousel interval={null}>
+                  {report.photos.map((img, idx) => {
+                    return (
+                      <Carousel.Item key={idx}>
+                        <div className='car-img-box'>
+                          <img src={img.url}></img>
+                        </div>
+                      </Carousel.Item>
+                    );
+                  })}
+                </Carousel>
+              </Card>
+            </Col>
+            <Col xs={12} md={6} className='ps-md-3 ms-md-4'>
+              <p>
+                <i className='bi bi-geo-alt-fill text-danger me-2'></i>{" "}
+                <b>Address:</b> {report.address}
+              </p>
+              <p>
+                <i className='bi bi-person-fill me-2'></i> <b>Reported by:</b>{" "}
+                {report.is_anonymous ? "Anonymous" : report.user.complete_name}
+              </p>
+              <p>
+                {" "}
+                <i className='bi bi-tag-fill me-2 text-primary'></i>
+                <b>Category:</b> {report.category.name}
+              </p>
+              <p>
+                <i className='bi bi-calendar-event-fill text-success me-2'></i>{" "}
+                <b>Created on:</b> {Date(report.created_at).slice(0, 15)}
+              </p>
+              <p>
+                <i className='bi bi-chat-left-fill text-warning me-2'></i>{" "}
+                <b>Status:</b> {stringFormatter(report.status)}
+              </p>
+              <h6 className='fw-bold mb-2'>Description</h6>
+              <Card className='p-3 bg-light border-0'>
+                <p className='mb-0'>{report.description}</p>
+              </Card>
+              {report.note && (
+                <>
+                  <h6 className='fw-bold mb-2 mt-3'>Reviewer notes</h6>
+                  <Card className='p-3 bg-light border-0'>
+                    <p className='mb-0'>{report.note}</p>
+                  </Card>
+                </>
+              )}
+            </Col>
+          </Row>
+        )}
 
-      {user?.id === report.user?.id && (
-        <Row className='justify-content-center mt-3 mb-3'>
-          <Col xs={12} md={11}>
-            <Card className='shadow-sm comments-card'>
-              <Card.Body>
-                <CommentsTab
-                  comments={comments}
-                  userId={user?.id}
-                  newComment={newComment}
-                  setNewComment={setNewComment}
-                  writeComment={writeComment}
-                  isSubmittingComment={isSubmittingComment}
-                />
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      )}
-    </Container>
+        {user?.id === report.user?.id && (
+          <Row className='justify-content-center mt-3 mb-3'>
+            <Col xs={12} md={11}>
+              <Card className='shadow-sm comments-card'>
+                <Card.Body>
+                  <CommentsTab
+                    comments={comments}
+                    userId={user?.id}
+                    newComment={newComment}
+                    setNewComment={setNewComment}
+                    writeComment={writeComment}
+                    isSubmittingComment={isSubmittingComment}
+                  />
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        )}
+      </Container>
+
+      <AlertBlock
+        alert={alert}
+        onClose={() => setAlert({ ...alert, show: false })}
+      />
+    </>
   );
 }
 
