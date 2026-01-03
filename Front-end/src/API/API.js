@@ -500,9 +500,60 @@ async function getCommentsInternal(reportId) {
   }
 }
 
+// Get external comments for a report (citizen and technical officer)
+async function getCommentsExternal(reportId) {
+  try {
+    const response = await fetch(
+      `${URI}/report/${reportId}/external-comments`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `${await getBearerToken()}`,
+        },
+      }
+    );
+
+    if (response.status === 204) {
+      return [];
+    }
+
+    if (response.ok) {
+      const externalComments = await response.json();
+      return Array.isArray(externalComments.comments)
+        ? externalComments.comments
+        : [];
+    } else {
+      throw new Error("Failed to fetch external comments");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
 // Create a new comment
 async function createComment(reportId, comment) {
   const response = await fetch(`${URI}/reports/${reportId}/internal-comments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${await getBearerToken()}`,
+    },
+    body: JSON.stringify({
+      text: comment,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error?.[0] || "Failed to post comment");
+  }
+
+  return await response.json();
+}
+
+// Create a new external comment
+async function createExternalComment(reportId, comment) {
+  const response = await fetch(`${URI}/reports/${reportId}/external-comments`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -650,7 +701,9 @@ export {
   getExternalMaintainers,
   assignExternalMaintainer,
   getCommentsInternal,
+  getCommentsExternal,
   createComment,
+  createExternalComment,
   verifyEmail,
   resendCode,
   modifyUserInfo,

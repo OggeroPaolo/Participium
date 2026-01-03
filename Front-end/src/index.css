@@ -313,6 +313,32 @@ html {
   cursor: pointer;
 }
 
+.scrollable-comments {
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.scrollable-comments::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-comments::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.scrollable-comments::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.comments-card {
+  display: flex;
+  flex-direction: column;
+  max-height: 800px;
+}
+
+/* --------------*/
 /* Mobile styles */
 @media (max-width: 991px) {
   .cit-desktop-layout {
