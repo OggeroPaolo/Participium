@@ -130,5 +130,31 @@ export default class NotificationDAO {
         const result = await getOne<{ count: number }>(sql, [userId]);
         return result?.count ?? 0;
     }
+
+    async markByReportAsRead(
+        userId: number,
+        reportId: number,
+        types?: string[]
+    ): Promise<void> {
+        let sql = `
+        UPDATE notifications
+        SET is_read = 1
+        WHERE user_id = ?
+        AND report_id = ?
+        AND is_read = 0
+        `;
+
+        const params: any[] = [userId, reportId];
+
+        if (types && types.length > 0) {
+            const placeholders = types.map(() => '?').join(', ');
+            sql += ` AND type IN (${placeholders})`;
+            params.push(...types);
+        }
+
+        await Update(sql, params);
+    }
+
+
 }
 

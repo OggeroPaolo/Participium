@@ -67,6 +67,17 @@ router.get("/reports/:reportId",
             const reportId = Number(req.params.reportId);
             const report = await reportDAO.getCompleteReportById(reportId);
 
+            const user = (req as Request & { user: User }).user;
+
+            await notificationDAO.markByReportAsRead(user.id, reportId,
+                [
+                    NotificationType.StatusUpdate,
+                    NotificationType.ReportAssigned,
+                    NotificationType.ReportRejected,
+                    NotificationType.ReportReviewed
+                ]
+            );
+
             return res.status(200).json({ report });
 
         } catch (error: any) {
@@ -221,7 +232,7 @@ router.post("/reports/:reportId/external-comments",
                     type: NotificationType.InternalCommentOnReport,
                     title: 'A new comment has arrived',
                 };
-            
+
                 await notificationDAO.createNotification(notification);
             }
 
@@ -293,7 +304,7 @@ router.post("/reports",
             }
             return res.status(500).json({ error: "Internal server error" });
         }
-});
+    });
 
 async function rollbackCloundinaryImages(url: string) {
     try {
@@ -404,7 +415,7 @@ router.patch("/ext_maintainer/reports/:reportId",
                     type: NotificationType.StatusUpdate,
                     title: `The status of your report "${report.title}" was set to ${status}`
                 };
-            
+
                 await notificationDAO.createNotification(notification);
             }
 
@@ -498,7 +509,7 @@ router.patch("/pub_relations/reports/:reportId",
                     type: NotificationType.StatusUpdate,
                     title: `The status of your report "${report.title}" was set to ${status}`
                 };
-            
+
                 await notificationDAO.createNotification(notification);
             }
 
@@ -540,10 +551,17 @@ router.get("/report/:reportId/internal-comments",
         try {
             const reportId = Number(req.params.reportId);
             const comments = await commentDAO.getCommentsByReportIdAndType(reportId, 'private');
+            const user = (req as Request & { user: User }).user;
 
             if (Array.isArray(comments) && comments.length === 0) {
                 return res.status(204).send();
             }
+
+            await notificationDAO.markByReportAsRead(user.id, reportId,
+                [
+                    NotificationType.InternalCommentOnReport
+                ]
+            );
 
             return res.status(200).json({ comments });
 
@@ -562,10 +580,17 @@ router.get("/report/:reportId/external-comments",
         try {
             const reportId = Number(req.params.reportId);
             const comments = await commentDAO.getCommentsByReportIdAndType(reportId, 'public');
+            const user = (req as Request & { user: User }).user;
 
             if (Array.isArray(comments) && comments.length === 0) {
                 return res.status(204).send();
             }
+
+            await notificationDAO.markByReportAsRead(user.id, reportId,
+                [
+                    NotificationType.ExternalCommentOnReport
+                ]
+            );
 
             return res.status(200).json({ comments });
 
