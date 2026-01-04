@@ -2,10 +2,11 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import CityMap from "./CityMap";
 import { getApprovedReports } from "../API/API";
 
-import { Card, Form, InputGroup, Modal, Button } from "react-bootstrap";
+import { Card, Form, InputGroup, Button } from "react-bootstrap";
 
 import { useNavigate } from "react-router";
 import useUserStore from "../store/userStore.js";
+import WelcomeModal from "./HomeComponents/WelcomeModal.jsx";
 
 function CitHomepage(props) {
   const [reports, setReports] = useState([]);
@@ -23,7 +24,12 @@ function CitHomepage(props) {
   const navigate = useNavigate();
 
   const { user, isAuthenticated } = useUserStore();
+
+  // handle welcome modal based on login
   const [showWelcomeModal, setShowWelcomeModal] = useState(true);
+  useEffect(() => {
+    if (isAuthenticated) setShowWelcomeModal(false);
+  }, []);
 
   useEffect(() => {
     const loadReports = async () => {
@@ -359,8 +365,8 @@ function CitHomepage(props) {
             center={[45.0703, 7.6869]}
             zoom={13}
             approvedReports={reports}
-            showUserReports = {showUserReports}
-            userReports = {userReports}
+            showUserReports={showUserReports}
+            userReports={userReports}
             selectedReportID={selectedReportID}
             onMarkerSelect={handleReportClick}
           />
@@ -620,38 +626,10 @@ function CitHomepage(props) {
       )}
 
       {/* welcome popup */}
-      <Modal
-        show={showWelcomeModal}
-        onHide={() => setShowWelcomeModal(false)}
-        centered
-      >
-        <Modal.Header closeButton className='border-0 pb-0'></Modal.Header>
-
-        <Modal.Title className='fw-bold text-center'>
-          Welcome to Participium
-        </Modal.Title>
-        <Modal.Body className='text-center px-4'>
-          <p className='lead mb-3'>Your city, your voice.</p>
-
-          <p className='text-muted mb-4'>
-            Explore civic reports across the city, follow ongoing issues, and
-            help improve your community.
-          </p>
-
-          <div className='text-muted '>
-            Log in to create new reports and actively participate.
-          </div>
-        </Modal.Body>
-
-        <Modal.Footer className='justify-content-center gap-2 pb-4'>
-          <Button
-            className='confirm-button px-4'
-            onClick={() => setShowWelcomeModal(false)}
-          >
-            Start Exploring
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      <WelcomeModal
+        showWelcomeModal={showWelcomeModal}
+        setShowWelcomeModal={setShowWelcomeModal}
+      />
     </div>
   );
 }

@@ -215,6 +215,7 @@ function ExtAssignedReports() {
   }, [completeReportData, modalPage, showModal]);
 
   const getCategoryBadge = (category) => {
+    // prettier-ignore
     const colors = {
       "Water Supply – Drinking Water": "primary", // Blue - Water
       "Architectural Barriers": "secondary", // Gray - Infrastructure
@@ -617,7 +618,11 @@ function ExtAssignedReports() {
                               </div>
 
                               <small className='text-muted'>
-                                {new Date(c.timestamp).toLocaleString()}
+                                {(() => {
+                                  const d = new Date(c.timestamp);
+                                  d.setHours(d.getHours() + 1);
+                                  return d.toLocaleString("it-IT");
+                                })()}
                               </small>
                             </div>
 
