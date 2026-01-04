@@ -73,10 +73,7 @@ router.get("/reports/:reportId",
             if (user && user.id) {
                 await notificationDAO.markByReportAsRead(user.id, reportId,
                     [
-                        NotificationType.StatusUpdate,
-                        NotificationType.ReportAssigned,
-                        NotificationType.ReportRejected,
-                        NotificationType.ReportReviewed
+                        NotificationType.StatusUpdate
                     ]
                 );
             }

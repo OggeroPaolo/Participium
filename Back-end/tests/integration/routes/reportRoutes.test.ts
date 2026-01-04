@@ -270,10 +270,7 @@ describe("Report Routes Integration Tests", () => {
                 mockCitizen.id,
                 1,
                 [
-                    NotificationType.StatusUpdate,
-                    NotificationType.ReportAssigned,
-                    NotificationType.ReportRejected,
-                    NotificationType.ReportReviewed
+                    NotificationType.StatusUpdate
                 ]
             );
         });
