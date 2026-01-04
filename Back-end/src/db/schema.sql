@@ -126,10 +126,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   type TEXT NOT NULL CHECK(type IN (
     'internal_comment_on_report',
     'external_comment_on_report', 
-    'status_update',
-    'report_assigned',
-    'report_reviewed',
-    'report_rejected'
+    'status_update'
   )),
   report_id INTEGER NOT NULL,
   comment_id INTEGER NULL,
