@@ -1792,6 +1792,105 @@ This endpoint accepts `multipart/form-data`.
 
 ---
 ### Notificaitons
+
+**GET `/notifications`**
+
+Retrieve a the list of **notifications**, optionally filtered by `includeRead`.
+
+---
+
+* **Request Headers**
+```http
+Authorization: Bearer <firebase-token>
+```
+
+Allowed roles: TECH_OFFICER, PUB_RELATIONS, EXT_MAINTAINER, CITIZEN
+
+---
+
+**Query Parameters (Optional)**
+- includeRead 
+Example: `/notifications?includeRead=false`
+
+---
+
+* **Success Response (200 OK)**
+```json
+{
+  "notifications": [
+    {
+      "id": 42,
+      "user_id": 7,
+      "type": "status_update",
+      "report_id": 15,
+      "comment_id": null,
+      "title": "The status of your report \"Buche in Via Verdi\" was set to in_progress",
+      "message": null,
+      "is_read": 0,
+      "created_at": "2026-01-04T16:55:12.000Z",
+      "report": {
+        "id": 15,
+        "title": "Buche in Via Verdi",
+        "status": "in_progress"
+      },
+      "comment": null
+    },
+    {
+      "id": 41,
+      "user_id": 7,
+      "type": "comment_on_created_report",
+      "report_id": 12,
+      "comment_id": 103,
+      "title": "A new comment has arrived",
+      "message": "The external maintainer replied to your report.",
+      "is_read": 0,
+      "created_at": "2026-01-04T15:20:00.000Z",
+      "report": {
+        "id": 12,
+        "title": "Streetlight out of order in Piazza",
+        "status": "assigned"
+      },
+      "comment": {
+        "id": 103,
+        "text": "We are planning the intervention for next week.",
+        "timestamp": "2026-01-04T15:19:30.000Z",
+        "user": {
+          "username": "tech_officer1",
+          "first_name": "Marco",
+          "last_name": "Rossi"
+        }
+      }
+    }
+  ]
+}
+```
+* **No Content Response (204 No Content)**
+```json
+// empty response
+```
+
+* **Error Response (401 Unauthorized):**
+```json
+{
+  "error": "Unauthorized: missing or invalid token"
+}
+```
+
+* **Error Response (403 Forbidden):**
+```json
+{
+  "error": "Forbidden: insufficient permissions"
+}
+```
+* **Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Internal server error"
+}
+```
+---
+
 **PATCH `/notifications/{notificationId}/set-read`**
 
 Sets the notification as read given the notificationId only if the notificaiton belongs to the user calling the api

@@ -51,4 +51,41 @@ router.patch("/notifications/:notificationId/set-read",
     }
 );
 
+// GET /notifications
+router.get(
+  "/notifications",
+  verifyFirebaseToken([
+    ROLES.TECH_OFFICER,
+    ROLES.EXT_MAINTAINER,
+    ROLES.CITIZEN,
+    ROLES.PUB_RELATIONS
+  ]),
+  async (req: Request, res: Response) => {
+    try {
+      const user = (req as Request & { user: User }).user;
+
+      // default: include anche quelle lette
+      const includeReadParam = req.query.includeRead as string | undefined;
+      const includeRead =
+        includeReadParam === undefined
+          ? true
+          : includeReadParam === "true" || includeReadParam === "1";
+
+      const notifications = await notificationDAO.getNotificationsByUserId(
+        user.id,
+        includeRead
+      );
+
+      if (!notifications.length) {
+        return res.status(204).send();
+      }
+
+      return res.status(200).json({ notifications });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
 export default router;
