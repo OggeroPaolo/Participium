@@ -4,10 +4,14 @@ import { Container } from "react-bootstrap";
 import yellowbull from "../assets/yellowbull.png";
 import { Nav } from "react-bootstrap";
 import NotificationBell from "./NotificationBell.jsx";
+import WelcomeModal from "./HomeComponents/WelcomeModal.jsx";
+import { useState } from "react";
 
 function Header(props) {
   const expand = "sm";
   const { user, isAuthenticated } = props;
+
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   const displayName =
     user?.username || user?.first_name || user?.email || "User";
@@ -68,6 +72,14 @@ function Header(props) {
                       >
                         <i className='bi bi-person-circle fs-5'></i>
                       </Nav.Link>
+                      <Nav.Link
+                        role='button'
+                        className='nav-icon-link'
+                        title='Info'
+                        onClick={() => setShowWelcomeModal(true)}
+                      >
+                        <i className='bi bi-question-circle fs-5'></i>
+                      </Nav.Link>
                     </>
                   )}
 
@@ -101,6 +113,14 @@ function Header(props) {
                 <>
                   <Nav.Link href='/login'>Login</Nav.Link>
                   <Nav.Link href='/signup'>Signup</Nav.Link>
+                  <Nav.Link
+                    role='button'
+                    className='nav-icon-link'
+                    title='Info'
+                    onClick={() => setShowWelcomeModal(true)}
+                  >
+                    <i className='bi bi-question-circle fs-5 ms-2'></i>
+                  </Nav.Link>
                 </>
               )}
             </Nav>
@@ -108,6 +128,10 @@ function Header(props) {
         </Container>
       </Navbar>
       <Outlet />
+      <WelcomeModal
+        showWelcomeModal={showWelcomeModal}
+        setShowWelcomeModal={setShowWelcomeModal}
+      />
     </>
   );
 }
