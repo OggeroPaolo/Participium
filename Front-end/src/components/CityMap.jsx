@@ -25,6 +25,8 @@ function CityMap({
   center = [45.0703, 7.6869],
   zoom = 13,
   approvedReports,
+  showUserReports,
+  userReports,
   selectedReportID,
   onMarkerSelect,
   isAuthenticated,
@@ -33,6 +35,7 @@ function CityMap({
   const mapInstanceRef = useRef(null);
   const currentMarkerRef = useRef(null);
   const clusterGroupRef = useRef(null);
+  const cityBorderRef = useRef(null);
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -317,6 +320,8 @@ function CityMap({
           },
         }).addTo(mapInstanceRef.current);
 
+        cityBorderRef.current = layer;
+
         mapInstanceRef.current.fitBounds(layer.getBounds()); //maybe should take the pan to fit the boundary away
       } catch (err) {
         console.error("Failed loading GeoJSON", err);
@@ -326,9 +331,12 @@ function CityMap({
     loadGeoJSON();
   }, []);
 
-  // add reports to cluster
+  // Determine which list to use based on the switch state
+  const reportsToDisplay = showUserReports ? userReports : approvedReports;
+
+  // Update the cluster whenever the active list changes
   useEffect(() => {
-    if (!approvedReports || !clusterGroupRef.current) return;
+    if (!reportsToDisplay || !clusterGroupRef.current) return;
 
     const clusterGroup = clusterGroupRef.current;
 
@@ -336,10 +344,17 @@ function CityMap({
     clusterGroup.clearLayers();
     markersRef.current = {};
 
-    approvedReports.forEach((report) =>
+    reportsToDisplay.forEach((report) =>
       addReportMarkerToCluster(clusterGroup, report)
     );
-  }, [approvedReports]);
+
+    if (cityBorderRef.current && mapInstanceRef.current) {
+      mapInstanceRef.current.fitBounds(cityBorderRef.current.getBounds());
+    }
+
+
+    // Add reportsToDisplay to the dependency array
+  }, [reportsToDisplay]);
 
   // highlight / un-highlight markers when selectedReportID changes
   useEffect(() => {
@@ -418,6 +433,18 @@ CityMap.propTypes = {
   center: PropTypes.arrayOf(PropTypes.number), // [lat, lng]
   zoom: PropTypes.number,
   approvedReports: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      title: PropTypes.string,
+      reporterName: PropTypes.string,
+      position: PropTypes.shape({
+        lat: PropTypes.number,
+        lng: PropTypes.number,
+      }),
+    })
+  ),
+  showUserReports: PropTypes.bool,
+  userReports: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
       title: PropTypes.string,

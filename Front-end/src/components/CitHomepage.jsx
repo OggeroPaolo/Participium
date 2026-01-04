@@ -359,6 +359,8 @@ function CitHomepage(props) {
             center={[45.0703, 7.6869]}
             zoom={13}
             approvedReports={reports}
+            showUserReports = {showUserReports}
+            userReports = {userReports}
             selectedReportID={selectedReportID}
             onMarkerSelect={handleReportClick}
           />
