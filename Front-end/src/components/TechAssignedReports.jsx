@@ -1102,7 +1102,11 @@ function TechReportCommentsTab({
                   </div>
 
                   <small className='text-muted'>
-                    {new Date(c.timestamp).toLocaleString()}
+                    {(() => {
+                      const d = new Date(c.timestamp);
+                      d.setHours(d.getHours() + 1);
+                      return d.toLocaleString("it-IT");
+                    })()}
                   </small>
                 </div>
 
