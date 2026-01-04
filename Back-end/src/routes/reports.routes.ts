@@ -67,10 +67,10 @@ router.get("/reports/:reportId",
             const reportId = Number(req.params.reportId);
             const report = await reportDAO.getCompleteReportById(reportId);
 
-            const user = (req as Request & { user: User }).user;
+            const user = req.user;
 
             //Mark as read if the user is logged in
-            if (user && user.id) {
+            if (user?.id) {
                 await notificationDAO.markByReportAsRead(user.id, reportId,
                     [
                         NotificationType.StatusUpdate
@@ -95,7 +95,7 @@ router.get("/ext_maintainer/reports",
     verifyFirebaseToken([ROLES.EXT_MAINTAINER]),
     async (req: Request, res: Response) => {
         try {
-            const user = (req as Request & { user: User }).user;
+            const user = req.user!;
             const filters: ReportFilters = { externalUser: user.id };
 
             const reports = await reportDAO.getReportsByFilters(filters);
@@ -119,7 +119,7 @@ router.get("/tech_officer/reports",
     verifyFirebaseToken([ROLES.TECH_OFFICER]),
     async (req: Request, res: Response) => {
         try {
-            const user = (req as Request & { user: User }).user;
+            const user = req.user!;
             const filters: ReportFilters = { officerId: user.id };
 
             const reports = await reportDAO.getReportsByFilters(filters);
@@ -171,7 +171,7 @@ router.post("/reports/:reportId/internal-comments",
     verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]),
     async (req: Request, res: Response) => {
         try {
-            const user = (req as Request & { user: User }).user;
+            const user = req.user!;
 
             const data: CreateCommentDTO = {
                 user_id: Number(user.id),
@@ -211,7 +211,7 @@ router.post("/reports/:reportId/external-comments",
     verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.CITIZEN]),
     async (req: Request, res: Response) => {
         try {
-            const user = (req as Request & { user: User }).user;
+            const user = req.user!;
 
             const data: CreateCommentDTO = {
                 user_id: Number(user.id),
@@ -280,7 +280,7 @@ router.post("/reports",
                 await unlink(newPath);
             }
 
-            const user = (req as Request & { user: User }).user;
+            const user = req.user!;
 
             const data: CreateReportDTO = {
                 user_id: Number(user.id),
@@ -336,7 +336,7 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
         try {
 
             const reportId = Number(req.params.reportId);
-            const user = (req as Request & { user: User }).user;
+            const user = req.user!;
             let { externalMaintainerId } = req.body
 
             // get report info to check the current status
@@ -465,7 +465,7 @@ router.patch("/pub_relations/reports/:reportId",
             // category is always optional (probably not needed to set it to null but i dont know)
             // categoryId = categoryId? categoryId : null;
             const reportId = Number(req.params.reportId);
-            const user = (req as Request & { user: User }).user;
+            const user = req.user!;
 
             // get report info to check the current status
             const report = await reportDAO.getReportById(reportId);
@@ -552,7 +552,7 @@ router.get("/report/:reportId/internal-comments",
         try {
             const reportId = Number(req.params.reportId);
             const comments = await commentDAO.getCommentsByReportIdAndType(reportId, 'private');
-            const user = (req as Request & { user: User }).user;
+            const user = req.user!;
 
             if (Array.isArray(comments) && comments.length === 0) {
                 return res.status(204).send();
@@ -581,7 +581,7 @@ router.get("/report/:reportId/external-comments",
         try {
             const reportId = Number(req.params.reportId);
             const comments = await commentDAO.getCommentsByReportIdAndType(reportId, 'public');
-            const user = (req as Request & { user: User }).user;
+            const user = req.user!;
 
             if (Array.isArray(comments) && comments.length === 0) {
                 return res.status(204).send();

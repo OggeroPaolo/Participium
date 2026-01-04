@@ -32,7 +32,7 @@ export function verifyFirebaseToken(allowedRoles: string[]) {
             }
 
             // Attach user to request for downstream use
-            (req as any).user = user;
+            req.user = user;
 
             next();
         } catch (error) {
