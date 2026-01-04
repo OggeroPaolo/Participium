@@ -280,11 +280,11 @@ describe("NotificationDAO Unit Test Suite", () => {
         it("marks notifications as read for a report with type filter", async () => {
             vi.spyOn(db, "Update").mockResolvedValueOnce({ changes: 1 });
             await expect(
-                dao.markByReportAsRead(1, 100, ["StatusUpdate", "ReportAssigned"])
+                dao.markByReportAsRead(1, 100, ["StatusUpdate", "StatusUpdate"])
             ).resolves.toBeUndefined();
             expect(db.Update).toHaveBeenCalledWith(
                 expect.stringContaining("AND type IN (?, ?)"),
-                [1, 100, "StatusUpdate", "ReportAssigned"]
+                [1, 100, "StatusUpdate", "StatusUpdate"]
             );
         });
 

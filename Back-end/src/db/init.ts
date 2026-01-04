@@ -847,7 +847,7 @@ export const seedDefaultNotifications = async (): Promise<void> => {
       {
         id: 2,
         user_id: 10,
-        type: "report_assigned",
+        type: "status_update",
         report_id: 3,
         comment_id: null,
         title: "Report assigned",
