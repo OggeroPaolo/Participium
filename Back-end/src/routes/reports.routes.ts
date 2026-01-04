@@ -7,8 +7,7 @@ import { type CreateReportDTO } from "../dto/CreateReportDTO.js";
 import type { ReportMap } from "../models/reportMap.js";
 import OperatorDAO from "../dao/OperatorDAO.js";
 import { ROLES } from "../models/userRoles.js";
-import type { User } from "../models/user.js"
-import { validateAssignExternalMaintainer, validateCreateReport, validateExternalMaintainerUpdateStatus, validateReportId, validateGetReports, validateCreateComment } from "../middlewares/reportValidation.js";
+import { validateAssignExternalMaintainer, validateCreateReport, validateUpdateStatus, validateReportId, validateGetReports, validateCreateComment } from "../middlewares/reportValidation.js";
 import { upload } from "../config/multer.js";
 import cloudinary from "../config/cloudinary.js";
 import { unlink } from "node:fs/promises";
@@ -27,6 +26,7 @@ import type { CreateCommentDTO } from "../dto/CommentDTO.js";
 import NotificationDAO from "../dao/NotificationDAO.js";
 import type { CreateNotificationDTO } from "../dto/NotificationDTO.js";
 import { NotificationType } from "../models/NotificationType.js";
+import { authorizeReportStatusUpdate } from "../middlewares/authorizeReportStatusUpdate.js";
 
 
 const router = Router();
@@ -380,24 +380,15 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
 
 // Permits to an external maintainer to update the status of a report assigned to him
 router.patch("/ext_maintainer/reports/:reportId",
-    validateExternalMaintainerUpdateStatus,
+    validateUpdateStatus,
     verifyFirebaseToken([ROLES.EXT_MAINTAINER]),
+    authorizeReportStatusUpdate,
     async (req: Request, res: Response) => {
         try {
             const reportId = Number(req.params.reportId);
-            const user = (req as Request & { user: User }).user;
             let { status } = req.body
-
-            const report = await reportDAO.getReportById(reportId);
-            if (!report) return res.status(404).json({ error: "Report not found" });
-
-            if (report.status !== ReportStatus.Assigned &&
-                report.status !== ReportStatus.InProgress &&
-                report.status !== ReportStatus.Suspended) {
-                return res.status(403).json({
-                    error: `You are not allowed to change status of a report not in assigned/in_progress/suspended state`
-                });
-            }
+            const report = req.authorizedReport!;
+            const user = req.user!
 
             if (report.external_user !== user.id) {
                 return res.status(403).json({
@@ -407,11 +398,51 @@ router.patch("/ext_maintainer/reports/:reportId",
 
             await reportDAO.updateReportStatus(reportId, status)
 
-            const recipientId = report?.user_id;
-
-            if (recipientId != null) {
+            if (report.user_id != null) {
                 const notification: CreateNotificationDTO = {
-                    user_id: recipientId,
+                    user_id: report.user_id,
+                    report_id: Number(req.params.reportId),
+                    type: NotificationType.StatusUpdate,
+                    title: `The status of your report "${report.title}" was set to ${status}`
+                };
+
+                await notificationDAO.createNotification(notification);
+            }
+
+            return res.status(200).json({
+                message: "Report status updated successfully"
+            });
+
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
+
+// Permits to a tech officer to update the status of a report assigned to him
+router.patch("/tech_officer/reports/:reportId",
+    validateUpdateStatus,
+    verifyFirebaseToken([ROLES.TECH_OFFICER]),
+    authorizeReportStatusUpdate,
+    async (req: Request, res: Response) => {
+        try {
+            const reportId = Number(req.params.reportId);
+            let { status } = req.body
+            const report = req.authorizedReport!;
+            const user = req.user!
+
+            if (report.external_user !== user.id) {
+                return res.status(403).json({
+                    error: `You are not allowed to change status of a report that is not assigned to you`
+                });
+            }
+
+            await reportDAO.updateReportStatus(reportId, status)
+
+            if (report.user_id != null) {
+                const notification: CreateNotificationDTO = {
+                    user_id: report.user_id,
                     report_id: Number(req.params.reportId),
                     type: NotificationType.StatusUpdate,
                     title: `The status of your report "${report.title}" was set to ${status}`

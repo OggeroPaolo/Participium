@@ -80,7 +80,7 @@ export const validateAssignExternalMaintainer = [
     }
 ];
 
-export const validateExternalMaintainerUpdateStatus = [
+export const validateUpdateStatus = [
     param("reportId").isInt().withMessage("Report ID must be a valid integer"),
     body("status").isIn(["in_progress", "resolved", "suspended"]).withMessage("Status must be one of: in_progress, resolved, suspended"),
     (req: Request, res: Response, next: NextFunction) => {
