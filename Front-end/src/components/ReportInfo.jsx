@@ -159,7 +159,7 @@ function ReportInfo() {
           </Row>
         )}
 
-        {user?.id === report.user?.id && (
+        {user?.id === report.user?.id && report.status !== "rejected" && (
           <Row className='justify-content-center mt-3 mb-3'>
             <Col xs={12} md={11}>
               <Card className='shadow-sm comments-card'>
@@ -171,6 +171,7 @@ function ReportInfo() {
                     setNewComment={setNewComment}
                     writeComment={writeComment}
                     isSubmittingComment={isSubmittingComment}
+                    status={report.status}
                   />
                 </Card.Body>
               </Card>
@@ -194,6 +195,7 @@ function CommentsTab({
   setNewComment,
   writeComment,
   isSubmittingComment,
+  status,
 }) {
   const commentsEndRef = useRef(null);
 
@@ -209,7 +211,10 @@ function CommentsTab({
 
       <div className='comments-list scrollable-comments'>
         {comments.length === 0 ? (
-          <p className='text-muted'>No comments yet, start the conversation!</p>
+          <p className='text-muted'>
+            No comments yet
+            {status === "resolved" ? "." : ", start the conversation!"}
+          </p>
         ) : (
           <>
             {comments.map((c) => (
@@ -258,36 +263,47 @@ function CommentsTab({
         )}
       </div>
 
-      <Form className='comment-input pt-3' onSubmit={writeComment}>
-        <Form.Group className='mb-3'>
-          <Form.Control
-            as='textarea'
-            rows={2}
-            placeholder='Write a comment'
-            onChange={(e) => setNewComment(e.target.value)}
-            value={newComment}
-          />
-        </Form.Group>
+      {status !== "resolved" && (
+        <Form className='comment-input pt-3' onSubmit={writeComment}>
+          <Form.Group className='mb-3'>
+            <Form.Control
+              as='textarea'
+              rows={2}
+              placeholder='Write a comment'
+              onChange={(e) => setNewComment(e.target.value)}
+              value={newComment}
+            />
+          </Form.Group>
 
-        <hr />
+          <hr />
 
-        <div className='d-flex justify-content-end'>
-          <Button
-            className='confirm-button'
-            type='submit'
-            disabled={isSubmittingComment}
-          >
-            {isSubmittingComment ? (
-              <>
-                <span className='spinner-border spinner-border-sm me-2' />{" "}
-                Posting...
-              </>
-            ) : (
-              "Post comment"
-            )}
-          </Button>
-        </div>
-      </Form>
+          <div className='d-flex justify-content-end'>
+            <Button
+              className='confirm-button'
+              type='submit'
+              disabled={isSubmittingComment}
+            >
+              {isSubmittingComment ? (
+                <>
+                  <span className='spinner-border spinner-border-sm me-2' />{" "}
+                  Posting...
+                </>
+              ) : (
+                "Post comment"
+              )}
+            </Button>
+          </div>
+        </Form>
+      )}
+
+      {status === "resolved" && (
+        <Container className='m-3 ms-0 ps-0'>
+          <small className='text-muted'>
+            This report is resolved, chat messages functionalities are not
+            anymore available.
+          </small>
+        </Container>
+      )}
     </>
   );
 }
@@ -312,6 +328,7 @@ CommentsTab.propTypes = {
   setNewComment: PropTypes.func.isRequired,
   writeComment: PropTypes.func.isRequired,
   isSubmittingComment: PropTypes.bool.isRequired,
+  status: PropTypes.string.isRequired,
 };
 
 export default ReportInfo;
