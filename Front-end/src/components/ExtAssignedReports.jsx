@@ -298,6 +298,8 @@ function ExtAssignedReports() {
     }
   }, [comments, modalPage]);
 
+  const statusChanged = selectedStatus !== completeReportData?.status;
+
   return (
     <Container className='py-4 body-font assigned-reports-container'>
       <h2 className='mb-4 fw-bold'>Assigned Reports Review</h2>
@@ -530,7 +532,7 @@ function ExtAssignedReports() {
                       >
                         <option
                           key='0'
-                          value={statusColumns[completeReportData.status]}
+                          value={completeReportData.status}
                         >
                           {statusColumns[completeReportData.status]}
                         </option>
@@ -560,7 +562,7 @@ function ExtAssignedReports() {
                         "Resolved" && (
                         <Button
                           type='submit'
-                          disabled={isSubmitting}
+                          disabled={!statusChanged || isSubmitting}
                           className='confirm-button'
                         >
                           {isSubmitting ? (

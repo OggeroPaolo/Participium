@@ -1024,16 +1024,16 @@ function TechReportInfoTab({
           onChange={(e) => setSelectedStatus(e.target.value)}
           disabled={statusColumns[completeReportData.status] === "Resolved"}
         >
-          <option key='0' value={statusColumns[completeReportData.status]}>
+          <option key='0' value={completeReportData.status}>
             {statusColumns[completeReportData.status]}
           </option>
           {Object.keys(statusColumns).map(
             (s) =>
-              statusColumns[completeReportData.status] !== statusColumns[s] && (
+    statusColumns[completeReportData.status] !== statusColumns[s] && (
                 <option key={s} value={s}>
-                  {statusColumns[s]}
-                </option>
-              )
+        {statusColumns[s]}
+      </option>
+    )
           )}
         </Form.Select>
       </div>
@@ -1130,13 +1130,13 @@ function TechReportInfoTab({
           </div>
 
           {statusChanged && (
-            <Form.Text className='text-muted'>Status will be updated</Form.Text>
+            <Form.Text className='text-danger'>Status will be updated</Form.Text>
           )}
 
           {statusChanged && maintainerChanged && <p></p>}
 
           {maintainerChanged && (
-            <Form.Text className='text-muted'>
+            <Form.Text className='text-danger'>
               External maintainer will be reassigned
             </Form.Text>
           )}
