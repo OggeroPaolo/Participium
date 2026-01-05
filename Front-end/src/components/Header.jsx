@@ -83,8 +83,6 @@ function Header(props) {
                     </>
                   )}
 
-                  <NotificationBell />
-
                   {user?.role_type === "tech_officer" && (
                     <>
                       <Nav.Link href='/tech-assigned-reports'>
@@ -104,6 +102,8 @@ function Header(props) {
                       <Nav.Link href='/review-reports'>Review reports</Nav.Link>
                     </>
                   )}
+
+                  <NotificationBell />
 
                   <Nav.Link href='#' onClick={handleLogout}>
                     Logout

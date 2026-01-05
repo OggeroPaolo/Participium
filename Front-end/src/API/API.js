@@ -727,7 +727,6 @@ export {
   getAssignedReports,
   getExternalAssignedReports,
   updateStatus,
-  updateTechOfficerStatus,
   getExternalMaintainers,
   assignExternalMaintainer,
   getCommentsInternal,
