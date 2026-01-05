@@ -27,6 +27,7 @@ function UserList() {
   const [user, setUser] = useState(null);
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
+  const [alertRoleUpdate, setAlertRoleUpdate] = useState({ show: false, message: "", variant: "", key: 0 });
   const [isSaving, setIsSaving] = useState(false);
 
   // list navigation
@@ -64,35 +65,42 @@ function UserList() {
 
   // handle update of role
   const updateUserRole = async (e) => {
-    e.preventDefault();
+    if (!noRole) {
+      setAlertRoleUpdate(prev => ({ message: "", variant: "", show: false, key: Date.now() }));
+      e.preventDefault();
 
-    if (selectedRoles.length === 0) {
-      setAlert({
-        show: true,
-        message: "A user must have at least one role.",
-        variant: "danger",
-      });
-      return;
-    }
+      if (selectedRoles.length === 0) {
+        setAlert({
+          show: true,
+          message: "A user must have at least one role.",
+          variant: "danger",
+        });
+        return;
+      }
 
-    setIsSaving(true);
+      setIsSaving(true);
 
-    try {
-      await updateRole(user.id, selectedRoles);
+      try {
+        await updateRole(user.id, selectedRoles);
 
-      // reload users
-      const userList = await getInternalUsers();
-      setUsers(userList);
+        // reload users
+        const userList = await getInternalUsers();
+        setUsers(userList);
 
-      handleCloseModal();
-    } catch (error) {
-      setAlert({
-        show: true,
-        message: error.message || "Failed to update roles",
-        variant: "danger",
-      });
-    } finally {
-      setIsSaving(false);
+        handleCloseModal();
+      } catch (error) {
+        setTimeout(() => {
+          setAlertRoleUpdate({
+            show: true,
+            message: error.message || "Failed to update roles",
+            variant: "danger",
+            key: Date.now()
+          })
+        }, 150)
+        setSelectedRoles(user.roles.map((r) => roleList.find((role) => role.name === r)?.id).filter(Boolean));
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -118,6 +126,7 @@ function UserList() {
   };
 
   const handleCloseModal = () => {
+    setAlertRoleUpdate(prev => ({ message: "", variant: "", show: false, key: Date.now() }));
     setShowModal(false);
     setUser(null);
     setSelectedRoles([]);
@@ -126,9 +135,9 @@ function UserList() {
   // helpers to manage role changes
   const userRoleIds = user
     ? user.roles
-        .map((roleName) => roleList.find((r) => r.name === roleName)?.id)
-        .filter(Boolean)
-        .sort()
+      .map((roleName) => roleList.find((r) => r.name === roleName)?.id)
+      .filter(Boolean)
+      .sort()
     : [];
 
   const selectedRolesIds = [...selectedRoles].sort();
@@ -232,6 +241,11 @@ function UserList() {
           <Modal.Title>Edit technical officer roles</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          <AlertBlock
+            key={alertRoleUpdate.key}
+            alert={alertRoleUpdate}
+            onClose={() => setAlert({ ...alertRoleUpdate, show: false })}
+          />
           {/* role loading is done but GET failed */}
           {roleList.length === 0 && (
             <div className='text-center py-5'>
@@ -287,9 +301,8 @@ function UserCard({ user, onClick, formatRole, userType }) {
 
   return (
     <Card
-      className={`shadow-sm user-list-card ${
-        isClickable ? "clickable-card" : ""
-      }`}
+      className={`shadow-sm user-list-card ${isClickable ? "clickable-card" : ""
+        }`}
       role={isClickable ? "button" : undefined}
       onClick={onClick}
     >

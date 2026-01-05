@@ -419,7 +419,7 @@ function CityMap({
       map.panTo(marker.getLatLng());
       marker.openPopup();
     });
-  }, [selectedReportID]);
+  }, [selectedReportID, reportsToDisplay]);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
