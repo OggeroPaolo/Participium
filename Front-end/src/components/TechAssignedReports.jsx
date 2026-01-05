@@ -971,9 +971,7 @@ function TechReportInfoTab({
 
       <div className='mb-3 mt-2'>
         <strong>Reported by:</strong>{" "}
-        {completeReportData.is_anonymous
-          ? "Anonymous"
-          : completeReportData.user?.username ||
+        {completeReportData.user?.username ||
             completeReportData.user?.complete_name ||
             "Unknown"}
       </div>

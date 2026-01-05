@@ -634,9 +634,7 @@ function ReviewContent({
 
       <div className='mb-3'>
         <strong>Reported by:</strong>{' '}
-        {completeReportData.is_anonymous
-          ? 'Anonymous'
-          : completeReportData.user?.username ||
+        {completeReportData.user?.username ||
           completeReportData.user?.complete_name ||
           'Unknown'}
       </div>
