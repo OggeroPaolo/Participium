@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { Dropdown, Badge, Nav, Spinner } from "react-bootstrap";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import useNotificationStore from "../store/notificationStore";
+import useUserStore from "../store/userStore";
 import { markNotificationRead } from "../API/API";
 
 function NotificationBell() {
@@ -12,7 +13,9 @@ function NotificationBell() {
   const markNotificationAsRead = useNotificationStore(
     (state) => state.markNotificationAsRead
   );
+  const userRole = useUserStore((state) => state.user?.role_type);
   const navigate = useNavigate();
+  const location = useLocation();
   const [pendingNotificationId, setPendingNotificationId] = useState(null);
 
   const latestNotifications = useMemo(
@@ -25,10 +28,34 @@ function NotificationBell() {
     [notifications]
   );
 
-  const handleNotificationClick = async (notification) => {
+  const getDestinationForNotification = (notification) => {
     if (!notification?.reportId) {
+      return null;
+    }
+
+    const reportId = notification.reportId;
+
+    switch (userRole) {
+      case "tech_officer":
+        return `/tech-assigned-reports?reportId=${reportId}`;
+      case "external_maintainer":
+        return `/ext-assigned-reports?reportId=${reportId}`;
+      case "pub_relations":
+      case "admin":
+        return `/review-reports?reportId=${reportId}`;
+      default:
+        return `/reports/${reportId}`;
+    }
+  };
+
+  const handleNotificationClick = async (notification) => {
+    const destination = getDestinationForNotification(notification);
+    if (!destination) {
       return;
     }
+
+    const isSameLocation =
+      location.pathname + location.search === destination;
 
     setPendingNotificationId(notification.id);
     try {
@@ -40,7 +67,12 @@ function NotificationBell() {
       console.error("Failed to mark notification as read:", error);
     } finally {
       setPendingNotificationId(null);
-      navigate(`/reports/${notification.reportId}`);
+      if (isSameLocation) {
+        navigate(destination, { replace: true });
+        window.location.reload();
+      } else {
+        navigate(destination);
+      }
     }
   };
 

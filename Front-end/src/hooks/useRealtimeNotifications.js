@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
-import { API_BASE_URL, getNotifications } from '../API/API';
+import { API_BASE_URL, getNotifications, normalizeNotification } from '../API/API';
 import { getBearerToken } from '../firebaseService';
 import useUserStore from '../store/userStore';
 import useNotificationStore from '../store/notificationStore';
@@ -79,9 +79,19 @@ export function useRealtimeNotifications() {
           }
         });
 
-        socket.on('notifications:new', (notification) => {
-          if (notification && typeof notification === 'object') {
-            addNotification(notification);
+        socket.on('notifications:new', (eventPayload) => {
+          if (!eventPayload || typeof eventPayload !== 'object') {
+            return;
+          }
+
+          const maybeNotification =
+            eventPayload.notification && typeof eventPayload.notification === 'object'
+              ? eventPayload.notification
+              : eventPayload;
+
+          const normalized = normalizeNotification(maybeNotification);
+          if (normalized) {
+            addNotification(normalized);
           }
         });
 

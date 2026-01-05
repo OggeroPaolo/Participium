@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useLocation, useNavigate } from "react-router";
 import useUserStore from "../store/userStore";
 import {
   getExternalAssignedReports,
@@ -26,6 +27,8 @@ function ExtAssignedReports() {
   const userId = user.id;
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [completeReportData, setCompleteReportData] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -79,10 +82,20 @@ function ExtAssignedReports() {
   const maxReportsAvailable =
     reportCounts.length > 0 ? Math.max(...reportCounts) : 0;
 
+  const [pendingReportId, setPendingReportId] = useState(null);
+
   useEffect(() => {
     loadReports();
     loadCategories();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const reportIdParam = params.get("reportId");
+    if (reportIdParam) {
+      setPendingReportId(reportIdParam);
+    }
+  }, [location.search]);
 
   const loadCategories = async () => {
     try {
@@ -134,6 +147,24 @@ function ExtAssignedReports() {
       setIsLoadingReportDetails(false);
     }
   };
+
+  useEffect(() => {
+    if (!pendingReportId) return;
+
+    handleReportClick({ id: Number(pendingReportId) });
+
+    const params = new URLSearchParams(location.search);
+    params.delete("reportId");
+    navigate(
+      {
+        pathname: location.pathname,
+        search: params.toString() ? `?${params.toString()}` : "",
+      },
+      { replace: true }
+    );
+
+    setPendingReportId(null);
+  }, [pendingReportId, handleReportClick, location.pathname, location.search, navigate]);
 
   const handleCloseModal = () => {
     setShowModal(false);

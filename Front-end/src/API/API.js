@@ -830,6 +830,7 @@ export {
   createExternalComment,
   getNotifications,
   markNotificationRead,
+  normalizeNotification,
   verifyEmail,
   resendCode,
   modifyUserInfo,
