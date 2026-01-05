@@ -61,7 +61,7 @@ function ReportCreation() {
     };
 
     try {
-      if (attributes.photos[0].size === 0) {
+      if (!attributes.photos || attributes.photos.length === 0) {
         throw new Error("Please upload at least one photo.");
       }
 
