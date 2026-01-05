@@ -559,6 +559,101 @@ async function getCommentsExternal(reportId) {
   }
 }
 
+function normalizeNotification(notification) {
+  if (!notification || typeof notification !== "object") {
+    return null;
+  }
+
+  const normalizedIsReadValue =
+    notification.is_read ?? notification.isRead ?? 0;
+
+  return {
+    id: notification.id,
+    userId: notification.user_id ?? notification.userId ?? null,
+    type: notification.type ?? null,
+    reportId: notification.report_id ?? notification.reportId ?? null,
+    commentId: notification.comment_id ?? notification.commentId ?? null,
+    title: notification.title ?? null,
+    message: notification.message ?? null,
+    createdAt: notification.createdAt ?? notification.created_at ?? null,
+    isRead: Boolean(normalizedIsReadValue),
+    report: notification.report ?? null,
+    comment: notification.comment ?? null,
+    raw: notification,
+  };
+}
+
+async function getNotifications(options = {}) {
+  const { includeRead = true } = options;
+
+  const params = new URLSearchParams();
+  if (!includeRead) {
+    params.append("includeRead", "false");
+  }
+
+  const query = params.toString() ? `?${params.toString()}` : "";
+
+  try {
+    const response = await fetch(`${URI}/notifications${query}`, {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return [];
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || errorData.errors?.[0] || "Failed to load notifications"
+      );
+    }
+
+    const payload = await response.json();
+    const notifications = Array.isArray(payload?.notifications)
+      ? payload.notifications
+      : [];
+
+    return notifications
+      .map(normalizeNotification)
+      .filter((notification) => notification !== null);
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
+async function markNotificationRead(notificationId) {
+  if (!notificationId) {
+    throw new Error("Notification id is required");
+  }
+
+  try {
+    const response = await fetch(
+      `${URI}/notifications/${notificationId}/set-read`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `${await getBearerToken()}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error ||
+          errorData.errors?.[0] ||
+          "Failed to mark notification as read"
+      );
+    }
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
 // Create a new comment
 async function createComment(reportId, comment) {
   const response = await fetch(`${URI}/reports/${reportId}/internal-comments`, {
@@ -733,6 +828,8 @@ export {
   getCommentsExternal,
   createComment,
   createExternalComment,
+  getNotifications,
+  markNotificationRead,
   verifyEmail,
   resendCode,
   modifyUserInfo,

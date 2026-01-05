@@ -1474,6 +1474,35 @@ html {
   border-top: 1px solid rgba(3, 80, 181, 0.1);
 }
 
+.notification-item {
+  transition: background-color 0.2s ease;
+}
+
+.notification-item.notification-unread {
+  background-color: rgba(3, 80, 181, 0.08);
+}
+
+.notification-title,
+.notification-message {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.notification-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notification-message {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* ============================================
    COMPREHENSIVE RESPONSIVE STYLES
    ============================================ */

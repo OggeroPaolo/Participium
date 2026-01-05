@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
-import { API_BASE_URL } from '../API/API';
+import { API_BASE_URL, getNotifications } from '../API/API';
 import { getBearerToken } from '../firebaseService';
 import useUserStore from '../store/userStore';
 import useNotificationStore from '../store/notificationStore';
@@ -25,8 +25,24 @@ export function useRealtimeNotifications() {
   useEffect(() => {
     let isDisposed = false;
 
+    const loadNotifications = async () => {
+      if (!isAuthenticated || !userUid) {
+        replaceNotifications([]);
+        return;
+      }
+
+      try {
+        const notifications = await getNotifications({ includeRead: true });
+        if (!isDisposed) {
+          replaceNotifications(notifications);
+        }
+      } catch (error) {
+        console.error('Failed to load notifications:', error);
+      }
+    };
+
     const connect = async () => {
-    if (!isAuthenticated || !userUid) {
+      if (!isAuthenticated || !userUid) {
         return;
       }
 
@@ -83,6 +99,7 @@ export function useRealtimeNotifications() {
       }
     };
 
+    loadNotifications();
     connect();
 
     return () => {
