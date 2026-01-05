@@ -10,7 +10,7 @@ import {
   createComment,
   getExternalMaintainers,
   assignExternalMaintainer,
-  updateTechOfficerStatus,
+  updateStatusTechOfficer,
 } from "../API/API";
 import {
   Container,
@@ -48,11 +48,9 @@ function TechAssignedReports() {
   const [isLoadingMaintainers, setIsLoadingMaintainers] = useState(false);
   const [maintainersError, setMaintainersError] = useState("");
   const [assigningExternal, setAssigningExternal] = useState(false);
-  const assignableStatuses = new Set(["assigned", "in_progress", "suspended"]);
-
   const [selectedStatus, setSelectedStatus] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const assignableStatuses = new Set(["assigned", "in_progress", "suspended"]);
 
   // --- HELPERS ---
   const getAssignedReportOwnerId = () => {
@@ -71,8 +69,8 @@ function TechAssignedReports() {
     const ownerId = getAssignedReportOwnerId();
     return Boolean(
       completeReportData &&
-      assignableStatuses.has(completeReportData.status) &&
-      ownerId === userId
+        assignableStatuses.has(completeReportData.status) &&
+        ownerId === userId
     );
   };
 
@@ -260,7 +258,6 @@ function TechAssignedReports() {
     setSelectedExternalMaintainer(null);
     setMaintainersError("");
     setAssigningExternal(false);
-    setSelectedStatus("");
 
     // Clean up map
     if (mapInstanceRef.current) {
@@ -270,32 +267,6 @@ function TechAssignedReports() {
 
     setModalPage("info");
   };
-
-  const handleSetStatus = async () => {
-    if (!selectedStatus) return;
-
-    setIsSubmitting(true);
-    try {
-      await updateTechOfficerStatus(completeReportData.id, selectedStatus);
-
-      setAlert({
-        show: true,
-        message: "Status updated successfully",
-        variant: "success",
-      });
-
-      const reloadedReports = await getAssignedReports();
-      setReports(reloadedReports);
-
-      const refreshed = await getReport(completeReportData.id);
-      setCompleteReportData(refreshed.report || refreshed);
-    } catch (error) {
-      setAlert({ show: true, message: error.message, variant: "danger" });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
 
   const handleImageClick = (imageUrl) => {
     setSelectedImage(imageUrl);
@@ -552,7 +523,30 @@ function TechAssignedReports() {
     return colors[category] || "secondary";
   };
 
+  // set status
+  const handleSetStatus = async () => {
+    setIsSubmitting(true);
 
+    console.log(selectedStatus);
+
+    try {
+      await updateStatusTechOfficer(completeReportData.id, selectedStatus);
+
+      setAlert({
+        show: true,
+        message: "Status updated successfully",
+        variant: "success",
+      });
+
+      const reloadedReports = await getAssignedReports();
+      setReports(reloadedReports);
+      handleCloseModal();
+    } catch (error) {
+      setAlert({ show: true, message: error.message, variant: "danger" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     if (completeReportData?.status) {
@@ -795,8 +789,9 @@ function TechReportModal({
             Internal Comments
           </button>
           <button
-            className={`modal-tab ${modalPage === "citizenChat" ? "active" : ""
-              }`}
+            className={`modal-tab ${
+              modalPage === "citizenChat" ? "active" : ""
+            }`}
             onClick={() => setModalPage("citizenChat")}
           >
             Citizen Chat
@@ -849,8 +844,9 @@ function TechReportModal({
                 handleAssignExternalMaintainer={handleAssignExternalMaintainer}
                 handleImageClick={handleImageClick}
                 onClose={onClose}
-                selectedStatus={selectedStatus}
                 handleSetStatus={handleSetStatus}
+                selectedStatus={selectedStatus}
+                setSelectedStatus={setSelectedStatus}
                 isSubmitting={isSubmitting}
               />
             )}
@@ -905,8 +901,9 @@ function TechReportInfoTab({
   handleAssignExternalMaintainer,
   handleImageClick,
   onClose,
-  selectedStatus,
   handleSetStatus,
+  selectedStatus,
+  setSelectedStatus,
   isSubmitting,
 }) {
   const getMaintainerSelectOption = () => {
@@ -975,8 +972,8 @@ function TechReportInfoTab({
       <div className='mb-3 mt-2'>
         <strong>Reported by:</strong>{" "}
         {completeReportData.user?.username ||
-          completeReportData.user?.complete_name ||
-          "Unknown"}
+            completeReportData.user?.complete_name ||
+            "Unknown"}
       </div>
 
       <div className='mb-3'>
@@ -1014,7 +1011,31 @@ function TechReportInfoTab({
       </div>
 
       <div className='mb-3'>
-        <strong>Status:</strong> {statusColumns[completeReportData.status]}
+        <strong>Status:</strong>{" "}
+        <Form.Select
+          name='status'
+          required
+          style={{
+            display: "inline-block",
+            width: "auto",
+            padding: "0.25rem 2rem 0.25rem 0.5rem",
+            fontSize: "0.9rem",
+          }}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+          disabled={statusColumns[completeReportData.status] === "Resolved"}
+        >
+          <option key='0' value={statusColumns[completeReportData.status]}>
+            {statusColumns[completeReportData.status]}
+          </option>
+          {Object.keys(statusColumns).map(
+            (s) =>
+              statusColumns[completeReportData.status] !== statusColumns[s] && (
+                <option key={s} value={s}>
+                  {statusColumns[s]}
+                </option>
+              )
+          )}
+        </Form.Select>
       </div>
 
       {currentExternalMaintainerId && (

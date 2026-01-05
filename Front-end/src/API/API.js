@@ -437,7 +437,7 @@ async function updateStatus(reportId, status) {
 }
 
 // Update status of a report (tech officer only)
-async function updateTechOfficerStatus(reportId, status) {
+async function updateStatusTechOfficer(reportId, status) {
   try {
     const body = {
       status: status,
@@ -737,5 +737,5 @@ export {
   resendCode,
   modifyUserInfo,
   updateRole,
-  updateTechOfficerStatus,
+  updateStatusTechOfficer,
 };
