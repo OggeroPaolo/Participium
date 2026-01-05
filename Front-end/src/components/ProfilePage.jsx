@@ -1,11 +1,7 @@
 import { useEffect, useState, useActionState } from "react";
 import useUserStore from "../store/userStore.js";
 import { Badge, Form, Row, Col, Card, Button } from "react-bootstrap";
-import {
-  modifyUserInfo,
-  getApprovedReports,
-  getCategories,
-} from "../API/API.js";
+import { modifyUserInfo, getApprovedReports, getReport } from "../API/API.js";
 import avatarPlaceholder from "../assets/avatar_placeholder.png";
 import { useNavigate } from "react-router";
 import AlertBlock from "./AlertBlock";
@@ -19,7 +15,6 @@ function ProfilePage() {
     user.email_notifications_enabled
   );
   const [reports, setReports] = useState([]);
-  const [categoryMap, setCategoryMap] = useState({});
   const [editProfile, setEditProfile] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
   const [profilePic, setProfilePic] = useState(
@@ -32,6 +27,7 @@ function ProfilePage() {
   const [telegramUsername, setTelegramUsername] = useState(
     user.telegram_username ?? ""
   );
+  const [lockSwitch, setLockSwitch] = useState(!editProfile);
 
   const totalPages = Math.ceil(reports.length / REPORTS_PER_PAGE);
   const paginatedReports = reports.slice(
@@ -49,8 +45,6 @@ function ProfilePage() {
       telegram_username: telegramUsername,
       email_notifications_enabled: enableNotifications,
     };
-
-    console.log("form function is called", attributes);
 
     try {
       await modifyUserInfo(attributes, profilePic, user.id);
@@ -71,34 +65,28 @@ function ProfilePage() {
   }
 
   useEffect(() => {
+    // load filtered reports, then add details
     const loadReports = async () => {
       try {
-        const myReports = await getApprovedReports();
-        myReports.filter((report) => report.user_id === user.id);
-        setReports(myReports);
+        if (!user) throw new Error("No user present");
+
+        const allReports = await getApprovedReports();
+        // filter by username
+        const myReports = allReports.filter(
+          (report) => report.reporterUsername === user.username
+        );
+
+        const detailedArray = await Promise.all(
+          myReports.map((report) => getReport(report.id))
+        );
+        setReports(detailedArray);
       } catch (error) {
         console.error("Error fetching reports:", error);
       }
     };
 
-    const loadCategories = async () => {
-      try {
-        const categoryList = await getCategories();
-
-        // Create a map for quick lookup: category_id -> category_name
-        const map = {};
-        categoryList.forEach((cat) => {
-          map[cat.id] = cat.name;
-        });
-        setCategoryMap(map);
-      } catch (error) {
-        console.error("Failed to load categories:", error);
-      }
-    };
-
     loadReports();
-    loadCategories();
-  }, []);
+  }, [user]);
 
   const getCategoryBadge = (category) => {
     // prettier-ignore
@@ -114,6 +102,28 @@ function ProfilePage() {
       "Other": "secondary", // Gray - Misc (grouped with infrastructure)
     };
     return colors[category] || "secondary";
+  };
+
+  // string formatter for status
+  // can be pending_approval, assigned, in_progress, suspended, rejected, resolved
+  // consider here only assigned, in_progess, suspended, resolved
+  const statusColumns = {
+    assigned: "Assigned",
+    in_progress: "In Progress",
+    suspended: "Suspended",
+    resolved: "Resolved",
+  };
+
+  const getStatusBadge = (status) => {
+    // prettier-ignore
+    const colors = {
+    assigned: "secondary",  
+    in_progress: "primary",  
+    suspended: "warning",   
+    resolved: "success",    
+  };
+
+    return colors[status] || "secondary";
   };
 
   const formatAddress = (report) => {
@@ -146,6 +156,15 @@ function ProfilePage() {
     };
     reader.readAsDataURL(file);
   };
+
+  // set switch correctly after profile update
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      setLockSwitch(!editProfile);
+    });
+
+    return () => cancelAnimationFrame(id);
+  }, [editProfile]);
 
   return (
     <>
@@ -262,7 +281,7 @@ function ProfilePage() {
                     label={<strong>Enable email notifications</strong>}
                     checked={enableNotifications}
                     onChange={(e) => setEnableNotifications(e.target.checked)}
-                    disabled={!editProfile}
+                    disabled={lockSwitch}
                   />
                   <Form.Text className='text-muted'>
                     Updates on your reports will be sent to your email.
@@ -315,12 +334,15 @@ function ProfilePage() {
                           {formatAddress(report)}
                         </div>
 
-                        <Badge
-                          bg={getCategoryBadge(categoryMap[report.category_id])}
-                        >
-                          {categoryMap[report.category_id] ||
-                            `Category ${report.category_id}`}
-                        </Badge>
+                        <div className='d-flex flex-column gap-1 align-items-start mt-3'>
+                          <Badge bg={getStatusBadge(report.status)}>
+                            {statusColumns[report.status]}
+                          </Badge>
+
+                          <Badge bg={getCategoryBadge(report.category.name)}>
+                            {report.category.name}
+                          </Badge>
+                        </div>
                       </Card.Body>
                     </Card>
                   </Col>
