@@ -28,6 +28,7 @@ function CityMap({
   selectedReportID,
   onMarkerSelect,
   isAuthenticated,
+  onZoomChange,
 }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -277,6 +278,14 @@ function CityMap({
     // Click handler for map
     mapInstance.on("click", handleMapClick);
 
+    const handleZoomEnd = () => {
+      if (typeof onZoomChange === "function") {
+        onZoomChange(mapInstance.getZoom());
+      }
+    };
+
+    mapInstance.on("zoomend", handleZoomEnd);
+
     mapInstanceRef.current = mapInstance;
 
     // Ensure proper rendering
@@ -288,7 +297,8 @@ function CityMap({
 
     return () => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
+        mapInstance.off("zoomend", handleZoomEnd);
+        mapInstance.remove();
         mapInstanceRef.current = null;
       }
       clusterGroupRef.current = null;
@@ -296,7 +306,38 @@ function CityMap({
       selectedLayerRef?.current?.clearLayers?.();
       currentMarkerRef.current = null;
     };
-  }, [centerLat, centerLng, zoom]);
+  }, []); // intentionally run once; center/zoom updates handled in other effects
+
+  // Keep map zoom in sync when controlled value changes
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    if (typeof zoom !== "number") return;
+
+    const map = mapInstanceRef.current;
+    const currentZoom = map.getZoom();
+    if (Math.abs(currentZoom - zoom) < 0.0001) return;
+
+    map.setZoom(zoom);
+  }, [zoom]);
+
+  // Pan map when center prop changes without affecting current zoom level
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    if (centerLat == null || centerLng == null) return;
+
+    const map = mapInstanceRef.current;
+    const nextCenter = L.latLng(centerLat, centerLng);
+    const currentCenter = map.getCenter();
+
+    if (
+      Number(currentCenter.lat.toFixed(6)) === Number(nextCenter.lat.toFixed(6)) &&
+      Number(currentCenter.lng.toFixed(6)) === Number(nextCenter.lng.toFixed(6))
+    ) {
+      return;
+    }
+
+    map.setView(nextCenter, map.getZoom(), { animate: true });
+  }, [centerLat, centerLng]);
 
   //add city border to map
   useEffect(() => {
@@ -431,6 +472,7 @@ CityMap.propTypes = {
   selectedReportID: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onMarkerSelect: PropTypes.func,
   isAuthenticated: PropTypes.bool,
+  onZoomChange: PropTypes.func,
 };
 
 export default CityMap;
