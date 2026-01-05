@@ -5,6 +5,7 @@ import registrationsRoutes from "./registrations.routes.js";
 import rolesRoutes from "./roles.routes.js";
 import CategoriesRoutes from "./categories.routes.js";
 import ReportsRoutes from "./reports.routes.js";
+import NotificationsRoutes from "./notifications.routes.js";
 const router = Router();
 
 // Mount route modules
@@ -14,5 +15,6 @@ router.use(OperatorRoutes);
 router.use(rolesRoutes);
 router.use(CategoriesRoutes);
 router.use(ReportsRoutes);
+router.use(NotificationsRoutes);
 
 export default router;

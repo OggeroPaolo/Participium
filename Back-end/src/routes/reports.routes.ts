@@ -26,6 +26,7 @@ import type { CreateCommentDTO } from "../dto/CommentDTO.js";
 import NotificationDAO from "../dao/NotificationDAO.js";
 import type { CreateNotificationDTO } from "../dto/NotificationDTO.js";
 import { NotificationType } from "../models/NotificationType.js";
+import { notificationService } from "../services/notificationService.js";
 import { authorizeReportStatusUpdate } from "../middlewares/authorizeReportStatusUpdate.js";
 
 
@@ -192,9 +193,10 @@ router.post("/reports/:reportId/internal-comments",
                     comment_id: createdComment.id,
                     type: NotificationType.ExternalCommentOnReport,
                     title: 'A new comment has arrived',
+                    message: createdComment.text?.slice(0, 200) ?? undefined,
                 };
 
-                await notificationDAO.createNotification(notification);
+                await notificationService.createAndDispatch(notification);
             }
 
             return res.status(201).json({ comment: createdComment });
@@ -232,9 +234,10 @@ router.post("/reports/:reportId/external-comments",
                     comment_id: createdComment.id,
                     type: NotificationType.InternalCommentOnReport,
                     title: 'A new comment has arrived',
+                    message: createdComment.text?.slice(0, 200) ?? undefined,
                 };
 
-                await notificationDAO.createNotification(notification);
+                await notificationService.createAndDispatch(notification);
             }
 
             return res.status(201).json({ comment: createdComment });
@@ -403,10 +406,11 @@ router.patch("/ext_maintainer/reports/:reportId",
                     user_id: report.user_id,
                     report_id: Number(req.params.reportId),
                     type: NotificationType.StatusUpdate,
-                    title: `The status of your report "${report.title}" was set to ${status}`
+                    title: `The status of your report "${report.title}" was set to ${status}`,
+                    message: `Current status: ${status}`,
                 };
 
-                await notificationDAO.createNotification(notification);
+                await notificationService.createAndDispatch(notification);
             }
 
             return res.status(200).json({
@@ -445,10 +449,11 @@ router.patch("/tech_officer/reports/:reportId",
                     user_id: report.user_id,
                     report_id: Number(req.params.reportId),
                     type: NotificationType.StatusUpdate,
-                    title: `The status of your report "${report.title}" was set to ${status}`
+                    title: `The status of your report "${report.title}" was set to ${status}`,
+                    message: `Current status: ${status}`,
                 };
 
-                await notificationDAO.createNotification(notification);
+                await notificationService.createAndDispatch(notification);
             }
 
             return res.status(200).json({
@@ -539,31 +544,11 @@ router.patch("/pub_relations/reports/:reportId",
                     user_id: recipientId,
                     report_id: Number(req.params.reportId),
                     type: NotificationType.StatusUpdate,
-                    title: `The status of your report "${report.title}" was set to ${status}`
+                    title: `The status of your report "${report.title}" was set to ${status}`,
+                    message: note ?? `Current status: ${status}`,
                 };
 
-                await notificationDAO.createNotification(notification);
-            }
-
-            if (status === ReportStatus.Assigned) {
-                try {
-                    const reportOwner = await userDAO.findUserById(report.user_id);
-                    if (reportOwner?.firebase_uid) {
-                        getRealtimeGateway().notifyUser(reportOwner.firebase_uid, {
-                            type: "report.accepted",
-                            title: "Report approved",
-                            message: `Your report "${report.title}" has been approved and assigned for action.`,
-                            metadata: {
-                                reportId,
-                                status,
-                                categoryId: categoryIdFinal,
-                                assignedOfficerId: assigneeId ?? null
-                            }
-                        });
-                    }
-                } catch (notifyError) {
-                    logger.warn({ notifyError, reportId }, "Failed to emit realtime report notification");
-                }
+                await notificationService.createAndDispatch(notification);
             }
 
             return res.status(200).json({

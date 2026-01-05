@@ -7,7 +7,13 @@ const useNotificationStore = create((set) => ({
 
   addNotification: (notification) =>
     set((state) => ({
-      notifications: [notification, ...state.notifications].slice(0, 50),
+      notifications: [
+        {
+          ...notification,
+          isRead: Boolean(notification.isRead),
+        },
+        ...state.notifications,
+      ].slice(0, 50),
       lastEvent: notification,
     })),
 
@@ -26,6 +32,15 @@ const useNotificationStore = create((set) => ({
     set({
       isRealtimeConnected: isConnected,
     }),
+
+  markNotificationAsRead: (notificationId) =>
+    set((state) => ({
+      notifications: state.notifications.map((notification) =>
+        notification.id === notificationId
+          ? { ...notification, isRead: true }
+          : notification
+      ),
+    })),
 }));
 
 export default useNotificationStore;

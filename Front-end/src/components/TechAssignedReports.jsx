@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router";
 import useUserStore from "../store/userStore";
 import {
   getAssignedReports,
@@ -31,6 +32,8 @@ function TechAssignedReports() {
   const userId = user.id;
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [completeReportData, setCompleteReportData] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -51,6 +54,9 @@ function TechAssignedReports() {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const assignableStatuses = new Set(["assigned", "in_progress", "suspended"]);
+  const [pendingReportId, setPendingReportId] = useState(null);
+
+
 
   // --- HELPERS ---
   const getAssignedReportOwnerId = () => {
@@ -195,6 +201,14 @@ function TechAssignedReports() {
     loadCategories();
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const reportIdParam = params.get("reportId");
+    if (reportIdParam) {
+      setPendingReportId(reportIdParam);
+    }
+  }, [location.search]);
+
   const loadCategories = async () => {
     try {
       const categoryList = await getCategories();
@@ -250,6 +264,30 @@ function TechAssignedReports() {
       setIsLoadingReportDetails(false);
     }
   };
+
+  useEffect(() => {
+    if (!pendingReportId) return;
+
+    handleReportClick({ id: Number(pendingReportId) });
+
+    const params = new URLSearchParams(location.search);
+    params.delete("reportId");
+    navigate(
+      {
+        pathname: location.pathname,
+        search: params.toString() ? `?${params.toString()}` : "",
+      },
+      { replace: true }
+    );
+
+    setPendingReportId(null);
+  }, [
+    pendingReportId,
+    handleReportClick,
+    location.pathname,
+    location.search,
+    navigate,
+  ]);
 
   const handleCloseModal = () => {
     setShowModal(false);
