@@ -16,7 +16,7 @@ import NotificationDAO from "../../../src/dao/NotificationDAO.js";
 import { Notification } from "../../../src/models/notification.js";
 import { ROLES } from "../../../src/models/userRoles.js";
 import UserDAO from "../../../src/dao/UserDAO.js";
-import { afterEach} from "node:test";
+import { afterEach } from "node:test";
 import { CreateNotificationDTO } from "../../../src/dto/NotificationDTO.js";
 import { NotificationType } from "../../../src/models/NotificationType.js";
 import router from "../../../src/routes/reports.routes.js";
@@ -987,6 +987,93 @@ describe("Report Routes Integration Tests", () => {
                 .patch("/tech_officer/reports/1/assign_external")
                 .send({ externalMaintainerId: 7 });
 
+            expect(res.status).toBe(500);
+            expect(res.body).toEqual({ error: "Internal server error" });
+        });
+    });
+
+    describe("PATCH /tech_officer/reports/:reportId", () => {
+        const baseReport: Report = {
+            id: 1,
+            user_id: 10,
+            category_id: 3,
+            title: "Title",
+            description: "Desc",
+            address: "Address",
+            position_lat: 1,
+            position_lng: 2,
+            created_at: "date",
+            updated_at: "date",
+            status: ReportStatus.Assigned,
+            external_user: null,
+            reviewed_by: null,
+            reviewed_at: null,
+            assigned_to: mockTechOfficer.id,
+            note: null,
+        };
+
+        it("should return 404 if report does not exist", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(undefined);
+            const res = await request(app)
+                .patch("/tech_officer/reports/1")
+                .send({ status: ReportStatus.InProgress });
+            expect(res.status).toBe(404);
+            expect(res.body).toEqual({ error: "Report not found" });
+        });
+
+        it("should return 403 if status is not allowed", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue({
+                ...baseReport,
+                status: ReportStatus.Resolved
+            });
+            const res = await request(app)
+                .patch("/tech_officer/reports/1")
+                .send({ status: ReportStatus.InProgress });
+            expect(res.status).toBe(403);
+        });
+
+        it("should return 403 if report is not assigned to this tech officer", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue({
+                ...baseReport,
+                assigned_to: 999
+            });
+            const res = await request(app)
+                .patch("/tech_officer/reports/1")
+                .send({ status: ReportStatus.InProgress });
+            expect(res.status).toBe(403);
+            expect(res.body).toEqual({
+                error: "You are not allowed to change status of a report that is not assigned to you"
+            });
+        });
+
+        it("should update the status successfully and create the notification", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById").mockResolvedValue(baseReport);
+            const spyNotification = vi.spyOn(NotificationDAO.prototype, "createNotification").mockResolvedValue(mockNotification);
+            const spyUpdate = vi
+                .spyOn(ReportDAO.prototype, "updateReportStatus")
+                .mockResolvedValue({ changes: 1 });
+            const res = await request(app)
+                .patch("/tech_officer/reports/1")
+                .send({ status: ReportStatus.InProgress });
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({
+                message: "Report status updated successfully"
+            });
+            expect(spyUpdate).toHaveBeenCalledWith(1, ReportStatus.InProgress);
+            expect(spyNotification).toHaveBeenCalledWith({
+                user_id: baseReport.user_id,
+                report_id: 1,
+                type: NotificationType.StatusUpdate,
+                title: `The status of your report "${baseReport.title}" was set to ${ReportStatus.InProgress}`
+            });
+        });
+
+        it("should return 500 on internal server error", async () => {
+            vi.spyOn(ReportDAO.prototype, "getReportById")
+                .mockRejectedValue(new Error("DB fail"));
+            const res = await request(app)
+                .patch("/tech_officer/reports/1")
+                .send({ status: ReportStatus.InProgress });
             expect(res.status).toBe(500);
             expect(res.body).toEqual({ error: "Internal server error" });
         });

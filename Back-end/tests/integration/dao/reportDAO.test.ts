@@ -3,6 +3,7 @@ import ReportDao from "../../../src/dao/ReportDAO.js";
 import * as db from "../../../src/config/database.js";
 import type { Report } from "../../../src/models/report.js";
 import { ReportStatus } from "../../../src/models/reportStatus.js";
+import { CreateReportDTO } from "../../../src/dto/CreateReportDTO.js";
 
 describe("ReportDao", () => {
     let dao: ReportDao;
@@ -23,8 +24,8 @@ describe("ReportDao", () => {
         reviewed_by: undefined,
         reviewed_at: undefined,
         note: undefined,
-        position_lat: 40.0,
-        position_lng: -70.0,
+        position_lat: 40,
+        position_lng: -70,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         address: "123 Main St",
@@ -44,8 +45,8 @@ describe("ReportDao", () => {
                     reviewed_by: undefined,
                     reviewed_at: undefined,
                     note: undefined,
-                    position_lat: 40.0,
-                    position_lng: -70.0,
+                    position_lat: 40,
+                    position_lng: -70,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
                 }];
@@ -118,8 +119,8 @@ describe("ReportDao", () => {
                     first_name: "John",
                     last_name: "Doe",
                     username: "jdoe",
-                    position_lat: 45.0,
-                    position_lng: 7.0
+                    position_lat: 45,
+                    position_lng: 7
                 },
                 {
                     id: 2,
@@ -127,8 +128,8 @@ describe("ReportDao", () => {
                     first_name: "Jane",
                     last_name: "Smith",
                     username: "jsmith",
-                    position_lat: 46.0,
-                    position_lng: 8.0
+                    position_lat: 46,
+                    position_lng: 8
                 }
             ];
 
@@ -277,8 +278,8 @@ describe("ReportDao", () => {
             reviewed_at: null,
             note: null,
             is_anonymous: 0,
-            position_lat: 41.0,
-            position_lng: 12.0,
+            position_lat: 41,
+            position_lng: 12,
             created_at: "2025-01-01T00:00:00.000Z",
             updated_at: "2025-01-02T00:00:00.000Z",
 
@@ -425,8 +426,8 @@ describe("ReportDao", () => {
             category_id: 5,
             title: "New report",
             description: "A new test report",
-            position_lat: 40.0,
-            position_lng: 7.0,
+            position_lat: 40,
+            position_lng: 7,
             is_anonymous: false,
             address: "456 Another St",
             photos: ["a.jpg", "b.jpg", "c.jpg"]
@@ -516,7 +517,7 @@ describe("ReportDao", () => {
         });
 
         it("should create a report with anonymous set to true", async () => {
-            const dto = {
+            const dto: CreateReportDTO = {
                 user_id: 1,
                 category_id: 2,
                 title: "Test",
@@ -524,7 +525,8 @@ describe("ReportDao", () => {
                 position_lat: 10,
                 position_lng: 20,
                 is_anonymous: true,
-                photos: []
+                photos: [],
+                address: ""
             };
 
             const updateSpy = vi.spyOn(db, "Update").mockResolvedValue({ changes: 1, lastID: 1 });

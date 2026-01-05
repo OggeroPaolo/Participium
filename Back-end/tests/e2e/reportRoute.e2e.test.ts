@@ -594,5 +594,56 @@ describe("Reports E2E", () => {
 
   });
 
+  describe("PATCH /tech_officer/reports/:reportId - E2E", () => {
+    it("should return 404 if report does not exist", async () => {
+      const res = await request(app)
+        .patch("/tech_officer/reports/99999")
+        .send({ status: ReportStatus.InProgress });
+
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: "Report not found" });
+    });
+
+    it("should return 403 if status transition is not allowed", async () => {
+      //Report with ID 1 is in 'pending_approval' status
+      const res = await request(app)
+        .patch("/tech_officer/reports/1")
+        .send({ status: ReportStatus.InProgress });
+
+      expect(res.status).toBe(403);
+    });
+
+    it("should return 403 if report is not assigned to this tech officer", async () => {
+      // Report 8 is assigned to a different tech officer
+      const res = await request(app)
+        .patch("/tech_officer/reports/8")
+        .send({ status: ReportStatus.InProgress });
+
+      expect(res.status).toBe(403);
+      expect(res.body).toEqual({
+        error: "You are not allowed to change status of a report that is not assigned to you"
+      });
+    });
+
+    it("should update the status successfully", async () => {
+      // Report 3 is assigned to the tech officer with status InProgress
+      const res = await request(app)
+        .patch("/tech_officer/reports/4")
+        .send({ status: ReportStatus.Resolved });
+      console.log(res.body);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        message: "Report status updated successfully"
+      })
+    });
+
+    it("should return 400 for invalid status", async () => {
+      const res = await request(app)
+        .patch("/tech_officer/reports/3")
+        .send({ status: "INVALID_STATUS" });
+
+      expect(res.status).toBe(400);
+    });
+  });
 
 });

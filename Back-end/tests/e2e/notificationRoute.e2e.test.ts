@@ -10,7 +10,6 @@ import { ROLES } from "../../src/models/userRoles.js";
 // Mock Firebase middleware
 // ---------------------------
 const mockCitizen = { id: 1, role_type: ROLES.CITIZEN, roles: [ROLES.CITIZEN] };
-
 vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
   verifyFirebaseToken: (_roles: string[]) => (req: any, _res: any, next: any) => {
     req.user = mockCitizen;
@@ -20,7 +19,6 @@ vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
 
 describe("Notification (E2E)", () => {
   let app: Express;
-
   const existingNotificationId = 1; // seeded notification for Citizen
   const otherUserNotificationId = 2; // seeded notification for Tech officer
 
@@ -32,6 +30,79 @@ describe("Notification (E2E)", () => {
   afterEach(async () => {
     await resetTestDB();
     vi.restoreAllMocks();
+  });
+
+  describe("GET /notifications", () => {
+    it("should return all notifications for the user (including read by default)", async () => {
+      const res = await request(app).get("/notifications");
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty("notifications");
+      expect(Array.isArray(res.body.notifications)).toBe(true);
+      expect(res.body.notifications.length).toBeGreaterThan(0);
+      // Verify all notifications belong to the logged-in user
+      res.body.notifications.forEach((notif: any) => {
+        expect(notif.user_id).toBe(mockCitizen.id);
+      });
+    });
+
+    it("should return only unread notifications when includeRead=false", async () => {
+      const res = await request(app).get("/notifications?includeRead=false");
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty("notifications");
+      // Verify all returned notifications are unread
+      res.body.notifications.forEach((notif: any) => {
+        expect(notif.is_read).toBe(0);
+      });
+    });
+
+    it("should return only unread notifications when includeRead=false", async () => {
+      const res = await request(app).get("/notifications?includeRead=false");
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty("notifications");
+      res.body.notifications.forEach((notif: any) => {
+        expect(notif.is_read).toBe(0);
+      });
+    });
+
+    it("should return all notifications when includeRead=true", async () => {
+      const res = await request(app).get("/notifications?includeRead=true");
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty("notifications");
+      expect(Array.isArray(res.body.notifications)).toBe(true);
+    });
+
+    it("should return all notifications when includeRead=1", async () => {
+      const res = await request(app).get("/notifications?includeRead=1");
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty("notifications");
+      expect(Array.isArray(res.body.notifications)).toBe(true);
+    });
+
+    it("should return 204 if user has no notifications", async () => {
+      // Mock a user with no notifications
+      vi.spyOn(NotificationDAO.prototype, "getNotificationsByUserId")
+        .mockResolvedValueOnce([]);
+
+      const res = await request(app).get("/notifications");
+
+      expect(res.status).toBe(204);
+      expect(res.body).toEqual({});
+    });
+
+    it("should return 500 if DAO throws an error", async () => {
+      vi.spyOn(NotificationDAO.prototype, "getNotificationsByUserId")
+        .mockRejectedValueOnce(new Error("DB failure"));
+
+      const res = await request(app).get("/notifications");
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: "Internal server error" });
+    });
   });
 
   describe("PATCH /notifications/:notificationId/set-read", () => {
