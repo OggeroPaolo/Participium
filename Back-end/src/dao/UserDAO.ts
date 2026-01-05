@@ -86,26 +86,49 @@ class UserDAO {
 
     async updateUserInfo(
         userId: number,
-        telegram_username?: string,
-        email_notifications_enabled?: boolean,
-        uploadedUrl?: string
+        telegram_username?: string | null,
+        email_notifications_enabled?: boolean | null,
+        uploadedUrl?: string | null
     ) {
+        // Build dynamic query based on what fields are provided
+        const updates: string[] = [];
+        const params: any[] = [];
+
+        // Handle telegram_username: undefined = don't update, null = set to null, string = update
+        if (telegram_username !== undefined) {
+            updates.push("telegram_username = ?");
+            params.push(telegram_username);
+        }
+
+        // Handle email_notifications_enabled: undefined = don't update, null/boolean = update
+        if (email_notifications_enabled !== undefined) {
+            updates.push("email_notifications_enabled = ?");
+            params.push(email_notifications_enabled ? 1 : 0);
+        }
+
+        // Handle profile_photo_url: undefined = don't update, null = set to null, string = update
+        if (uploadedUrl !== undefined) {
+            updates.push("profile_photo_url = ?");
+            params.push(uploadedUrl);
+        }
+
+        // Always update the timestamp
+        updates.push("updated_at = CURRENT_TIMESTAMP");
+
+        if (updates.length === 1) {
+            // Only timestamp update, no actual changes
+            return;
+        }
+
         const query = `
             UPDATE users
-            SET
-                telegram_username = COALESCE(?, telegram_username),
-                email_notifications_enabled = COALESCE(?, email_notifications_enabled),
-                profile_photo_url = COALESCE(?, profile_photo_url),
-                updated_at = CURRENT_TIMESTAMP
+            SET ${updates.join(", ")}
             WHERE id = ?;
         `;
 
-        const result = await Update(query, [
-            telegram_username,
-            email_notifications_enabled,
-            uploadedUrl,
-            userId
-        ]);
+        params.push(userId);
+
+        const result = await Update(query, params);
 
         if (result.changes === 0) {
             throw new Error("User not found or no changes made");

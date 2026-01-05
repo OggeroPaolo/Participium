@@ -48,8 +48,10 @@ function CitHomepage(props) {
       setReports(reportList);
 
       if (isAuthenticated) {
+        // Filter reports by username (non-empty username means non-anonymous)
+        // Anonymous reports won't be filtered here, but that's acceptable for privacy
         const myReports = reportList.filter(
-          (r) => r.reporterUsername === user.username
+          (r) => r.reporterUsername && r.reporterUsername === user.username
         );
         setUserReports(myReports);
       }
@@ -367,7 +369,9 @@ function CitHomepage(props) {
                     className={`mt-2 shadow-sm report-card ${
                       selectedReportID === r.id ? "selected" : ""
                     } ${
-                      isAuthenticated && r.reporterUsername === user.username
+                      isAuthenticated && 
+                      r.reporterUsername && 
+                      r.reporterUsername === user.username
                         ? "my-report"
                         : ""
                     }`}
@@ -632,11 +636,13 @@ function CitHomepage(props) {
                       aria-label={`Select report: ${r.title}`}
                       className={`mt-2 shadow-sm report-card ${
                         selectedReportID === r.id ? "selected" : ""
-                      } ${
-                        isAuthenticated && r.reporterUsername === user.username
-                          ? "my-report"
-                          : ""
-                      }`}
+                    } ${
+                      isAuthenticated && 
+                      r.reporterUsername && 
+                      r.reporterUsername === user.username
+                        ? "my-report"
+                        : ""
+                    }`}
                       onClick={() => {
                         handleReportClick(r.id);
                         setShowReportList(false);

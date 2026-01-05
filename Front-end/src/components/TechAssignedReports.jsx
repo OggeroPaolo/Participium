@@ -10,6 +10,7 @@ import {
   createComment,
   getExternalMaintainers,
   assignExternalMaintainer,
+  updateTechOfficerStatus,
 } from "../API/API";
 import {
   Container,
@@ -47,6 +48,8 @@ function TechAssignedReports() {
   const [isLoadingMaintainers, setIsLoadingMaintainers] = useState(false);
   const [maintainersError, setMaintainersError] = useState("");
   const [assigningExternal, setAssigningExternal] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [isSubmittingStatus, setIsSubmittingStatus] = useState(false);
   const assignableStatuses = new Set(["assigned", "in_progress", "suspended"]);
 
   // --- HELPERS ---
@@ -255,6 +258,7 @@ function TechAssignedReports() {
     setSelectedExternalMaintainer(null);
     setMaintainersError("");
     setAssigningExternal(false);
+    setSelectedStatus("");
 
     // Clean up map
     if (mapInstanceRef.current) {
@@ -263,6 +267,47 @@ function TechAssignedReports() {
     }
 
     setModalPage("info");
+  };
+
+  const handleSetStatus = async (e) => {
+    e.preventDefault();
+
+    if (!selectedStatus) {
+      setAlert({
+        show: true,
+        message: "Please select a status",
+        variant: "warning",
+      });
+      return;
+    }
+
+    setIsSubmittingStatus(true);
+
+    try {
+      await updateTechOfficerStatus(completeReportData.id, selectedStatus);
+
+      setAlert({
+        show: true,
+        message: "Status updated successfully",
+        variant: "success",
+      });
+
+      // Reload reports list
+      const reloadedReports = await getAssignedReports();
+      setReports(reloadedReports);
+
+      // Reload report details
+      const completeReport = await getReport(completeReportData.id);
+      const reportData = completeReport.report || completeReport;
+      setCompleteReportData(reportData);
+
+      setSelectedStatus("");
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      setAlert({ show: true, message: error.message, variant: "danger" });
+    } finally {
+      setIsSubmittingStatus(false);
+    }
   };
 
   const handleImageClick = (imageUrl) => {
@@ -801,6 +846,13 @@ function TechReportModal({
                 handleAssignExternalMaintainer={handleAssignExternalMaintainer}
                 handleImageClick={handleImageClick}
                 onClose={onClose}
+                assignedReportOwnerId={assignedReportOwnerId}
+                userId={userId}
+                assignableStatuses={assignableStatuses}
+                selectedStatus={selectedStatus}
+                setSelectedStatus={setSelectedStatus}
+                isSubmittingStatus={isSubmittingStatus}
+                handleSetStatus={handleSetStatus}
               />
             )}
 
@@ -854,6 +906,13 @@ function TechReportInfoTab({
   handleAssignExternalMaintainer,
   handleImageClick,
   onClose,
+  assignedReportOwnerId,
+  userId,
+  assignableStatuses,
+  selectedStatus,
+  setSelectedStatus,
+  isSubmittingStatus,
+  handleSetStatus,
 }) {
   const getMaintainerSelectOption = () => {
     if (isLoadingMaintainers) {
@@ -941,9 +1000,61 @@ function TechReportInfoTab({
         <strong>Category:</strong> {completeReportData.category.name}
       </div>
 
-      <div className='mb-3'>
-        <strong>Status:</strong> {statusColumns[completeReportData.status]}
-      </div>
+      {assignedReportOwnerId === userId && assignableStatuses.has(completeReportData.status) && (
+        <Form onSubmit={handleSetStatus} className='mb-3 tech-status-update-form'>
+          <div className='mb-3'>
+            <strong>Status:</strong>{" "}
+            <Form.Select
+              name='status'
+              required
+              className='d-inline-block w-auto'
+              style={{
+                display: "inline-block",
+                width: "auto",
+                padding: "0.25rem 2rem 0.25rem 0.5rem",
+                fontSize: "0.9rem",
+              }}
+              value={selectedStatus || completeReportData.status}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+            >
+              <option value={completeReportData.status}>
+                {statusColumns[completeReportData.status]}
+              </option>
+              {Object.keys(statusColumns).map(
+                (s) =>
+                  s !== completeReportData.status && (
+                    <option key={s} value={s}>
+                      {statusColumns[s]}
+                    </option>
+                  )
+              )}
+            </Form.Select>
+          </div>
+
+          <div className='d-flex justify-content-end gap-2 mt-2'>
+            <Button
+              type='submit'
+              disabled={isSubmittingStatus || !selectedStatus || selectedStatus === completeReportData.status}
+              className='confirm-button'
+            >
+              {isSubmittingStatus ? (
+                <>
+                  <span className='spinner-border spinner-border-sm me-2' />
+                  Updating...
+                </>
+              ) : (
+                "Update Status"
+              )}
+            </Button>
+          </div>
+        </Form>
+      )}
+
+      {(!assignedReportOwnerId || assignedReportOwnerId !== userId || !assignableStatuses.has(completeReportData.status)) && (
+        <div className='mb-3'>
+          <strong>Status:</strong> {statusColumns[completeReportData.status]}
+        </div>
+      )}
 
       {currentExternalMaintainerId && (
         <div className='mb-2 text-muted small'>

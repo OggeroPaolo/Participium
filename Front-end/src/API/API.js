@@ -436,6 +436,35 @@ async function updateStatus(reportId, status) {
   }
 }
 
+// Update status of a report (tech officer only)
+async function updateTechOfficerStatus(reportId, status) {
+  try {
+    const body = {
+      status: status,
+    };
+
+    const response = await fetch(`${URI}/tech_officer/reports/${reportId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${await getBearerToken()}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || errorData.errors?.[0] || "Failed to update status"
+      );
+    }
+
+    return await response.json();
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
 // Assign an external maintainer to a report
 async function assignExternalMaintainer(reportId, externalMaintainerId) {
   if (!externalMaintainerId) {
@@ -698,6 +727,7 @@ export {
   getAssignedReports,
   getExternalAssignedReports,
   updateStatus,
+  updateTechOfficerStatus,
   getExternalMaintainers,
   assignExternalMaintainer,
   getCommentsInternal,

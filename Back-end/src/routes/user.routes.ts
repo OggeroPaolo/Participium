@@ -95,9 +95,17 @@ router.patch("/users/:userId",
 
                 uploadedUrl = result.secure_url;
 
-                // Delete local temporary files
-                await unlink(file.path);
-                await unlink(newPath);
+                // Delete local temporary files (ignore errors if files don't exist)
+                try {
+                    await unlink(file.path);
+                } catch (error) {
+                    // File may already be deleted or not exist
+                }
+                try {
+                    await unlink(newPath);
+                } catch (error) {
+                    // File may already be deleted or not exist
+                }
 
                 // Delete old Cloudinary image after new one is uploaded
                 if (oldImgPublicId) {
@@ -106,11 +114,13 @@ router.patch("/users/:userId",
             }
 
             // Update user info in DB
+            // Pass fields only if they're explicitly in the request body
+            // null means set to null, undefined means don't update
             await userDao.updateUserInfo(
                 user.id,
-                telegram_username,
-                email_notifications_enabled,
-                uploadedUrl || undefined
+                'telegram_username' in req.body ? telegram_username : undefined,
+                'email_notifications_enabled' in req.body ? email_notifications_enabled : undefined,
+                uploadedUrl !== null ? uploadedUrl : undefined
             );
 
             return res.status(200).json({

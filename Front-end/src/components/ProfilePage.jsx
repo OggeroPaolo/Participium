@@ -71,15 +71,15 @@ function ProfilePage() {
         if (!user) throw new Error("No user present");
 
         const allReports = await getApprovedReports();
-        // filter by username
-        const myReports = allReports.filter(
-          (report) => report.reporterUsername === user.username
-        );
-
+        // Get detailed reports first, then filter by user_id to include anonymous reports
         const detailedArray = await Promise.all(
-          myReports.map((report) => getReport(report.id))
+          allReports.map((report) => getReport(report.id))
         );
-        setReports(detailedArray);
+        // Filter by user_id to include anonymous reports created by this user
+        const myReports = detailedArray.filter(
+          (report) => report.user?.id === user.id
+        );
+        setReports(myReports);
       } catch (error) {
         console.error("Error fetching reports:", error);
       }

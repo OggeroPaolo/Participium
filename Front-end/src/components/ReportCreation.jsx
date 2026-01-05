@@ -177,15 +177,16 @@ function ReportCreation() {
                 ))}
               </div>
             </Form.Group>
-            <Form.Group className='mb-3' controlId='isAnonymous'>
+            <Form.Group className='mb-3 anonymous-switch-group' controlId='isAnonymous'>
               <Form.Check
                 type='switch'
                 id='anonymous-switch'
-                label={<strong>I want to be anonymous</strong>}
+                label={<strong className='anonymous-label'>I want to be anonymous</strong>}
                 checked={isAnonymous}
                 onChange={(e) => setIsAnonymous(e.target.checked)}
+                className='anonymous-switch-control'
               />
-              <Form.Text className='text-muted'>
+              <Form.Text className='text-muted anonymous-help-text'>
                 Your name will not be visible to other users
               </Form.Text>
             </Form.Group>
