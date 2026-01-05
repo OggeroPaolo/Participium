@@ -432,7 +432,7 @@ router.patch("/tech_officer/reports/:reportId",
             const report = req.authorizedReport!;
             const user = req.user!
 
-            if (report.external_user !== user.id) {
+            if (report.assigned_to !== user.id) {
                 return res.status(403).json({
                     error: `You are not allowed to change status of a report that is not assigned to you`
                 });
