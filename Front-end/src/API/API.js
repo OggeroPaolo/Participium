@@ -737,4 +737,5 @@ export {
   resendCode,
   modifyUserInfo,
   updateRole,
+  updateTechOfficerStatus,
 };

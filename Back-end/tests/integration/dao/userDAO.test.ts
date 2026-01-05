@@ -234,7 +234,7 @@ describe("UserDAO Integration Test Suite", () => {
       expect(updateMock).toHaveBeenCalledTimes(1);
       expect(updateMock).toHaveBeenCalledWith(
         expect.stringContaining("UPDATE users"),
-        ["newTelegram", true, "http://new.url/photo.png", userId]
+        ["newTelegram", 1, "http://new.url/photo.png", userId]
       );
     });
 
@@ -243,10 +243,7 @@ describe("UserDAO Integration Test Suite", () => {
 
       await dao.updateUserInfo(userId);
 
-      expect(updateMock).toHaveBeenCalledWith(
-        expect.stringContaining("UPDATE users"),
-        [undefined, undefined, undefined, userId]
-      );
+      expect(updateMock).not.toHaveBeenCalled();
     });
 
     it("throws error if no rows are updated", async () => {

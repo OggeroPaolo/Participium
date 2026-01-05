@@ -50,6 +50,10 @@ function TechAssignedReports() {
   const [assigningExternal, setAssigningExternal] = useState(false);
   const assignableStatuses = new Set(["assigned", "in_progress", "suspended"]);
 
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+
   // --- HELPERS ---
   const getAssignedReportOwnerId = () => {
     if (completeReportData?.assigned_to?.id)
@@ -67,8 +71,8 @@ function TechAssignedReports() {
     const ownerId = getAssignedReportOwnerId();
     return Boolean(
       completeReportData &&
-        assignableStatuses.has(completeReportData.status) &&
-        ownerId === userId
+      assignableStatuses.has(completeReportData.status) &&
+      ownerId === userId
     );
   };
 
@@ -267,20 +271,10 @@ function TechAssignedReports() {
     setModalPage("info");
   };
 
-  const handleSetStatus = async (e) => {
-    e.preventDefault();
+  const handleSetStatus = async () => {
+    if (!selectedStatus) return;
 
-    if (!selectedStatus) {
-      setAlert({
-        show: true,
-        message: "Please select a status",
-        variant: "warning",
-      });
-      return;
-    }
-
-    setIsSubmittingStatus(true);
-
+    setIsSubmitting(true);
     try {
       await updateTechOfficerStatus(completeReportData.id, selectedStatus);
 
@@ -290,23 +284,18 @@ function TechAssignedReports() {
         variant: "success",
       });
 
-      // Reload reports list
       const reloadedReports = await getAssignedReports();
       setReports(reloadedReports);
 
-      // Reload report details
-      const completeReport = await getReport(completeReportData.id);
-      const reportData = completeReport.report || completeReport;
-      setCompleteReportData(reportData);
-
-      setSelectedStatus("");
+      const refreshed = await getReport(completeReportData.id);
+      setCompleteReportData(refreshed.report || refreshed);
     } catch (error) {
-      console.error("Failed to update status:", error);
       setAlert({ show: true, message: error.message, variant: "danger" });
     } finally {
-      setIsSubmittingStatus(false);
+      setIsSubmitting(false);
     }
   };
+
 
   const handleImageClick = (imageUrl) => {
     setSelectedImage(imageUrl);
@@ -563,30 +552,7 @@ function TechAssignedReports() {
     return colors[category] || "secondary";
   };
 
-  // set status
-  const handleSetStatus = async () => {
-    setIsSubmitting(true);
 
-    console.log(selectedStatus);
-
-    try {
-      await updateStatusTechOfficer(completeReportData.id, selectedStatus);
-
-      setAlert({
-        show: true,
-        message: "Status updated successfully",
-        variant: "success",
-      });
-
-      const reloadedReports = await getAssignedReports();
-      setReports(reloadedReports);
-      handleCloseModal();
-    } catch (error) {
-      setAlert({ show: true, message: error.message, variant: "danger" });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   useEffect(() => {
     if (completeReportData?.status) {
@@ -829,9 +795,8 @@ function TechReportModal({
             Internal Comments
           </button>
           <button
-            className={`modal-tab ${
-              modalPage === "citizenChat" ? "active" : ""
-            }`}
+            className={`modal-tab ${modalPage === "citizenChat" ? "active" : ""
+              }`}
             onClick={() => setModalPage("citizenChat")}
           >
             Citizen Chat
@@ -884,6 +849,9 @@ function TechReportModal({
                 handleAssignExternalMaintainer={handleAssignExternalMaintainer}
                 handleImageClick={handleImageClick}
                 onClose={onClose}
+                selectedStatus={selectedStatus}
+                handleSetStatus={handleSetStatus}
+                isSubmitting={isSubmitting}
               />
             )}
 
@@ -937,6 +905,9 @@ function TechReportInfoTab({
   handleAssignExternalMaintainer,
   handleImageClick,
   onClose,
+  selectedStatus,
+  handleSetStatus,
+  isSubmitting,
 }) {
   const getMaintainerSelectOption = () => {
     if (isLoadingMaintainers) {
@@ -1004,8 +975,8 @@ function TechReportInfoTab({
       <div className='mb-3 mt-2'>
         <strong>Reported by:</strong>{" "}
         {completeReportData.user?.username ||
-            completeReportData.user?.complete_name ||
-            "Unknown"}
+          completeReportData.user?.complete_name ||
+          "Unknown"}
       </div>
 
       <div className='mb-3'>
