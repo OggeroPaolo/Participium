@@ -10,6 +10,7 @@ import {
   createComment,
   getExternalMaintainers,
   assignExternalMaintainer,
+  updateStatusTechOfficer,
 } from "../API/API";
 import {
   Container,
@@ -47,6 +48,8 @@ function TechAssignedReports() {
   const [isLoadingMaintainers, setIsLoadingMaintainers] = useState(false);
   const [maintainersError, setMaintainersError] = useState("");
   const [assigningExternal, setAssigningExternal] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const assignableStatuses = new Set(["assigned", "in_progress", "suspended"]);
 
   // --- HELPERS ---
@@ -520,6 +523,38 @@ function TechAssignedReports() {
     return colors[category] || "secondary";
   };
 
+  // set status
+  const handleSetStatus = async () => {
+    setIsSubmitting(true);
+
+    console.log(selectedStatus);
+
+    try {
+      await updateStatusTechOfficer(completeReportData.id, selectedStatus);
+
+      setAlert({
+        show: true,
+        message: "Status updated successfully",
+        variant: "success",
+      });
+
+      const reloadedReports = await getAssignedReports();
+      setReports(reloadedReports);
+      handleCloseModal();
+    } catch (error) {
+      setAlert({ show: true, message: error.message, variant: "danger" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (completeReportData?.status) {
+      setSelectedStatus(completeReportData.status);
+      console.log(completeReportData);
+    }
+  }, [completeReportData]);
+
   return (
     <Container className='py-4 body-font assigned-reports-container'>
       <h2 className='mb-4 fw-bold'>Assigned Reports Review</h2>
@@ -579,6 +614,10 @@ function TechAssignedReports() {
         assigningExternal={assigningExternal}
         handleAssignExternalMaintainer={handleAssignExternalMaintainer}
         handleImageClick={handleImageClick}
+        handleSetStatus={handleSetStatus}
+        selectedStatus={selectedStatus}
+        setSelectedStatus={setSelectedStatus}
+        isSubmitting={isSubmitting}
       />
 
       <ImagePreviewModal
@@ -723,6 +762,10 @@ function TechReportModal({
   assigningExternal,
   handleAssignExternalMaintainer,
   handleImageClick,
+  handleSetStatus,
+  selectedStatus,
+  setSelectedStatus,
+  isSubmitting,
 }) {
   return (
     <Modal show={show} onHide={onClose} size='lg' centered>
@@ -801,6 +844,10 @@ function TechReportModal({
                 handleAssignExternalMaintainer={handleAssignExternalMaintainer}
                 handleImageClick={handleImageClick}
                 onClose={onClose}
+                handleSetStatus={handleSetStatus}
+                selectedStatus={selectedStatus}
+                setSelectedStatus={setSelectedStatus}
+                isSubmitting={isSubmitting}
               />
             )}
 
@@ -854,6 +901,10 @@ function TechReportInfoTab({
   handleAssignExternalMaintainer,
   handleImageClick,
   onClose,
+  handleSetStatus,
+  selectedStatus,
+  setSelectedStatus,
+  isSubmitting,
 }) {
   const getMaintainerSelectOption = () => {
     if (isLoadingMaintainers) {
@@ -865,6 +916,26 @@ function TechReportInfoTab({
     }
 
     return "Select an external maintainer";
+  };
+
+  const statusChanged = selectedStatus !== completeReportData.status;
+  const maintainerChanged =
+    selectedExternalMaintainer !== currentExternalMaintainerId;
+  const hasChanges = statusChanged || maintainerChanged;
+
+  // unique handler
+  const handleSaveChanges = async () => {
+    try {
+      if (statusChanged) await handleSetStatus(selectedStatus);
+
+      if (maintainerChanged) {
+        await handleAssignExternalMaintainer(selectedExternalMaintainer);
+      }
+
+      onClose();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -942,7 +1013,31 @@ function TechReportInfoTab({
       </div>
 
       <div className='mb-3'>
-        <strong>Status:</strong> {statusColumns[completeReportData.status]}
+        <strong>Status:</strong>{" "}
+        <Form.Select
+          name='status'
+          required
+          style={{
+            display: "inline-block",
+            width: "auto",
+            padding: "0.25rem 2rem 0.25rem 0.5rem",
+            fontSize: "0.9rem",
+          }}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+          disabled={statusColumns[completeReportData.status] === "Resolved"}
+        >
+          <option key='0' value={statusColumns[completeReportData.status]}>
+            {statusColumns[completeReportData.status]}
+          </option>
+          {Object.keys(statusColumns).map(
+            (s) =>
+              statusColumns[completeReportData.status] !== statusColumns[s] && (
+                <option key={s} value={s}>
+                  {statusColumns[s]}
+                </option>
+              )
+          )}
+        </Form.Select>
       </div>
 
       {currentExternalMaintainerId && (
@@ -1021,20 +1116,32 @@ function TechReportInfoTab({
           <div className='d-flex justify-content-end mt-3'>
             <Button
               variant='primary'
-              onClick={handleAssignExternalMaintainer}
-              disabled={isAssignButtonDisabled}
+              onClick={handleSaveChanges}
+              disabled={!hasChanges || assigningExternal || isSubmitting}
               className='confirm-button'
             >
-              {assigningExternal ? (
+              {assigningExternal || isSubmitting ? (
                 <>
                   <span className='spinner-border spinner-border-sm me-2' />{" "}
-                  Assigning...
+                  Saving...
                 </>
               ) : (
-                "Assign to External"
+                "Save changes"
               )}
             </Button>
           </div>
+
+          {statusChanged && (
+            <Form.Text className='text-muted'>Status will be updated</Form.Text>
+          )}
+
+          {statusChanged && maintainerChanged && <p></p>}
+
+          {maintainerChanged && (
+            <Form.Text className='text-muted'>
+              External maintainer will be reassigned
+            </Form.Text>
+          )}
         </div>
       )}
 
@@ -1281,6 +1388,11 @@ TechReportModal.propTypes = {
   handleAssignExternalMaintainer: PropTypes.func.isRequired,
 
   handleImageClick: PropTypes.func.isRequired,
+
+  handleSetStatus: PropTypes.func.isRequired,
+  selectedStatus: PropTypes.string.isRequired,
+  setSelectedStatus: PropTypes.func.isRequired,
+  isSubmitting: PropTypes.bool.isRequired,
 };
 
 AssignedReportsBoard.propTypes = {
@@ -1370,6 +1482,10 @@ TechReportInfoTab.propTypes = {
 
   handleImageClick: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
+  handleSetStatus: PropTypes.func.isRequired,
+  selectedStatus: PropTypes.string.isRequired,
+  setSelectedStatus: PropTypes.func.isRequired,
+  isSubmitting: PropTypes.bool.isRequired,
 };
 
 TechReportCommentsTab.propTypes = {
