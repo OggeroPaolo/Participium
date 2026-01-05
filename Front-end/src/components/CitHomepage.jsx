@@ -1,12 +1,20 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import CityMap from "./CityMap";
 import { getApprovedReports } from "../API/API";
+import {
+  forwardGeocode,
+  isWithinBounds,
+  TURIN_BOUNDING_BOX,
+} from "../utils/geocoding";
 
 import { Card, Form, InputGroup, Button } from "react-bootstrap";
 
 import { useNavigate } from "react-router";
 import useUserStore from "../store/userStore.js";
 import WelcomeModal from "./HomeComponents/WelcomeModal.jsx";
+
+const DEFAULT_MAP_CENTER = [45.0703, 7.6869];
+const DEFAULT_MAP_ZOOM = 13;
 
 function CitHomepage(props) {
   const [reports, setReports] = useState([]);
@@ -18,9 +26,12 @@ function CitHomepage(props) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [userReports, setUserReports] = useState([]);
   const [showUserReports, setShowUserReports] = useState(false);
+  const [mapCenter, setMapCenter] = useState(DEFAULT_MAP_CENTER);
+  const [mapZoom, setMapZoom] = useState(DEFAULT_MAP_ZOOM);
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
   const reportRefs = useRef({});
+  const suppressGeocodeRef = useRef(false);
   const navigate = useNavigate();
 
   const { user, isAuthenticated } = useUserStore();
@@ -76,6 +87,48 @@ function CitHomepage(props) {
     };
   }, []);
 
+  // Recenter map based on typed address (even without existing reports)
+  useEffect(() => {
+    const query = searchQuery.trim();
+
+    if (!query || query.length < 3) {
+      suppressGeocodeRef.current = false;
+      return undefined;
+    }
+
+    if (suppressGeocodeRef.current) {
+      suppressGeocodeRef.current = false;
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const debounceId = setTimeout(async () => {
+      try {
+        const result = await forwardGeocode(query, {
+          signal: controller.signal,
+          bounds: TURIN_BOUNDING_BOX,
+        });
+
+        if (
+          result?.lat != null &&
+          result?.lng != null &&
+          isWithinBounds(result.lat, result.lng, TURIN_BOUNDING_BOX)
+        ) {
+          setMapCenter([result.lat, result.lng]);
+        }
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Failed to geocode search query:", error);
+        }
+      }
+    }, 600);
+
+    return () => {
+      clearTimeout(debounceId);
+      controller.abort();
+    };
+  }, [searchQuery]);
+
   // handle selection from list or map
   const handleReportClick = (id) => {
     setSelectedReportID(id);
@@ -93,8 +146,17 @@ function CitHomepage(props) {
   const handleSelectReport = (reportId, address) => {
     setSelectedReportID(reportId);
     setSelectedAddress(address);
+    suppressGeocodeRef.current = true;
     setSearchQuery(address);
     setShowDropdown(false);
+
+    const selectedReport = reports.find((report) => report.id === reportId);
+    const lat = selectedReport?.position?.lat;
+    const lng = selectedReport?.position?.lng;
+
+    if (typeof lat === "number" && typeof lng === "number") {
+      setMapCenter([lat, lng]);
+    }
 
     // Scroll to the selected report in the list
     if (reportRefs.current[reportId]) {
@@ -116,6 +178,7 @@ function CitHomepage(props) {
 
   // Handle clear search
   const handleClearSearch = () => {
+    suppressGeocodeRef.current = true;
     setSearchQuery("");
     setSelectedAddress("");
     setShowDropdown(false);
@@ -362,13 +425,14 @@ function CitHomepage(props) {
         >
           <CityMap
             isAuthenticated={isAuthenticated}
-            center={[45.0703, 7.6869]}
-            zoom={13}
+            center={mapCenter}
+            zoom={mapZoom}
             approvedReports={reports}
             showUserReports={showUserReports}
             userReports={userReports}
             selectedReportID={selectedReportID}
             onMarkerSelect={handleReportClick}
+            onZoomChange={setMapZoom}
           />
 
           {/* Interactive Overlay */}
