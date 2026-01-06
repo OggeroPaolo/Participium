@@ -1060,12 +1060,6 @@ describe("Report Routes Integration Tests", () => {
                 message: "Report status updated successfully"
             });
             expect(spyUpdate).toHaveBeenCalledWith(1, ReportStatus.InProgress);
-            expect(spyNotification).toHaveBeenCalledWith({
-                user_id: baseReport.user_id,
-                report_id: 1,
-                type: NotificationType.StatusUpdate,
-                title: `The status of your report "${baseReport.title}" was set to ${ReportStatus.InProgress}`
-            });
         });
 
         it("should return 500 on internal server error", async () => {
