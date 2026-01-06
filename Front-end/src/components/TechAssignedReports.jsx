@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router";
 import useUserStore from "../store/userStore";
+import { markReportNotificationsAsRead } from "../store/notificationStore";
+import useNotificationStore from "../store/notificationStore";
 import {
   getAssignedReports,
   getCategories,
@@ -55,6 +57,7 @@ function TechAssignedReports() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const assignableStatuses = new Set(["assigned", "in_progress", "suspended"]);
   const [pendingReportId, setPendingReportId] = useState(null);
+  const unreadByReport = useNotificationStore((state) => state.unreadByReport);
 
 
 
@@ -253,6 +256,7 @@ function TechAssignedReports() {
       setCompleteReportData(reportData);
       setComments(internalComments);
       setCitizenComments(externalComments);
+      markReportNotificationsAsRead(report.id);
     } catch (error) {
       console.error("Failed to load complete report:", error);
       setAlert({
@@ -614,6 +618,7 @@ function TechAssignedReports() {
         getCategoryBadge={getCategoryBadge}
         onReportClick={handleReportClick}
         onLoadMore={() => setVisibleCount((prev) => prev + 3)}
+        unreadByReport={unreadByReport}
       />
 
       <TechReportModal
@@ -679,6 +684,7 @@ function AssignedReportsBoard({
   getCategoryBadge,
   onReportClick,
   onLoadMore,
+  unreadByReport,
 }) {
   if (!loadingDone) {
     return (
@@ -718,37 +724,46 @@ function AssignedReportsBoard({
               {statusColumns[status]}
             </h5>
 
-            {reportsByStatus[status].slice(0, visibleCount).map((report) => (
-              <div key={report.id} className='mb-3'>
-                <Card
-                  className='shadow-sm report-card h-100'
-                  onClick={() => onReportClick(report)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <Card.Body>
-                    <div className='d-flex justify-content-between align-items-start mb-2'>
-                      <strong>{report.title}</strong>
-                    </div>
-                    <div className='small mb-2'>
-                      <i className='bi bi-geo-alt-fill text-danger' />{" "}
-                      {formatAddress(report)}
-                    </div>
-                    <div className='small text-muted'>
-                      <i className='bi bi-calendar3' />{" "}
-                      {new Date(report.created_at).toLocaleDateString()}
-                    </div>
-                    <div className='mt-2'>
-                      <Badge
-                        bg={getCategoryBadge(categoryMap[report.category_id])}
-                      >
-                        {categoryMap[report.category_id] ||
-                          `Category ${report.category_id}`}
-                      </Badge>
-                    </div>
-                  </Card.Body>
-                </Card>
-              </div>
-            ))}
+            {reportsByStatus[status].slice(0, visibleCount).map((report) => {
+              const hasUnread = unreadByReport?.[report.id] > 0;
+              return (
+                <div key={report.id} className='mb-3'>
+                  <Card
+                    className='shadow-sm report-card h-100'
+                    onClick={() => onReportClick(report)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {hasUnread && (
+                      <span
+                        className='report-unread-indicator'
+                        aria-label='Unread updates'
+                      />
+                    )}
+                    <Card.Body>
+                      <div className='d-flex justify-content-between align-items-start mb-2'>
+                        <strong>{report.title}</strong>
+                      </div>
+                      <div className='small mb-2'>
+                        <i className='bi bi-geo-alt-fill text-danger' />{" "}
+                        {formatAddress(report)}
+                      </div>
+                      <div className='small text-muted'>
+                        <i className='bi bi-calendar3' />{" "}
+                        {new Date(report.created_at).toLocaleDateString()}
+                      </div>
+                      <div className='mt-2'>
+                        <Badge
+                          bg={getCategoryBadge(categoryMap[report.category_id])}
+                        >
+                          {categoryMap[report.category_id] ||
+                            `Category ${report.category_id}`}
+                        </Badge>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>

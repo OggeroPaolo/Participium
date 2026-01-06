@@ -16,6 +16,7 @@ import {
 } from "react-bootstrap";
 import PropTypes from "prop-types";
 import useUserStore from "../store/userStore";
+import { markReportNotificationsAsRead } from "../store/notificationStore";
 import AlertBlock from "./AlertBlock";
 
 function ReportInfo() {
@@ -33,9 +34,10 @@ function ReportInfo() {
       const reportById = await getReport(rid);
       setReport(reportById);
       setLoadingDone(true);
+      markReportNotificationsAsRead(Number(rid));
     };
     loadReport();
-  }, []);
+  }, [rid]);
 
   // string formatter for status
   // can be pending_approval, assigned, in_progress, suspended, rejected, resolved

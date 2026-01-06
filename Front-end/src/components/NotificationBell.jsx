@@ -18,15 +18,17 @@ function NotificationBell() {
   const location = useLocation();
   const [pendingNotificationId, setPendingNotificationId] = useState(null);
 
-  const latestNotifications = useMemo(
-    () => notifications.slice(0, 5),
+  const unreadNotifications = useMemo(
+    () => notifications.filter((notification) => !notification.isRead),
     [notifications]
   );
 
-  const unreadCount = useMemo(
-    () => notifications.filter((notification) => !notification.isRead).length,
-    [notifications]
+  const latestNotifications = useMemo(
+    () => unreadNotifications.slice(0, 5),
+    [unreadNotifications]
   );
+
+  const unreadCount = unreadNotifications.length;
 
   const getDestinationForNotification = (notification) => {
     if (!notification?.reportId) {

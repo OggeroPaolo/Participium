@@ -89,12 +89,24 @@ html {
 
 .report-card {
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .report-card.selected {
   border: 1px solid #023a82 !important;
   background-color: #e4f4fb !important;
   transform: scale(1.02);
+}
+
+.report-unread-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #dc3545;
+  box-shadow: 0 0 0 2px #fff;
 }
 
 .report-car {
@@ -1468,6 +1480,8 @@ html {
 .notifications-dropdown {
   min-width: 18rem;
   max-width: 22rem;
+  max-height: 24rem;
+  overflow-y: auto;
 }
 
 .notification-item + .notification-item {

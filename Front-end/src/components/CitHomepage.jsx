@@ -12,6 +12,7 @@ import { Card, Form, InputGroup, Button } from "react-bootstrap";
 import { useNavigate } from "react-router";
 import useUserStore from "../store/userStore.js";
 import WelcomeModal from "./HomeComponents/WelcomeModal.jsx";
+import useNotificationStore from "../store/notificationStore.js";
 
 const DEFAULT_MAP_CENTER = [45.0703, 7.6869];
 const DEFAULT_MAP_ZOOM = 13;
@@ -35,6 +36,7 @@ function CitHomepage(props) {
   const navigate = useNavigate();
 
   const { user, isAuthenticated } = useUserStore();
+  const unreadByReport = useNotificationStore((state) => state.unreadByReport);
 
   // handle welcome modal based on login
   const [showWelcomeModal, setShowWelcomeModal] = useState(true);
@@ -359,6 +361,7 @@ function CitHomepage(props) {
           {(showUserReports ? userReports : reports) !== 0 && (
             <>
               {(showUserReports ? userReports : reports).map((r) => {
+                const hasUnread = unreadByReport?.[r.id] > 0;
                 return (
                   <Card
                     key={r.id}
@@ -369,8 +372,8 @@ function CitHomepage(props) {
                     className={`mt-2 shadow-sm report-card ${
                       selectedReportID === r.id ? "selected" : ""
                     } ${
-                      isAuthenticated && 
-                      r.reporterUsername && 
+                      isAuthenticated &&
+                      r.reporterUsername &&
                       r.reporterUsername === user.username
                         ? "my-report"
                         : ""
@@ -387,6 +390,12 @@ function CitHomepage(props) {
                     }}
                     style={{ cursor: "pointer" }}
                   >
+                    {hasUnread && (
+                      <span
+                        className='report-unread-indicator'
+                        aria-label='Unread updates'
+                      />
+                    )}
                     <Card.Body>
                       <strong>{r.title}</strong>
                       <div className='text-muted small'>
@@ -628,6 +637,7 @@ function CitHomepage(props) {
             {(showUserReports ? userReports : reports).length !== 0 && (
               <>
                 {(showUserReports ? userReports : reports).map((r) => {
+                  const hasUnread = unreadByReport?.[r.id] > 0;
                   return (
                     <Card
                       key={r.id}
@@ -659,6 +669,12 @@ function CitHomepage(props) {
                       }}
                       style={{ cursor: "pointer" }}
                     >
+                      {hasUnread && (
+                        <span
+                          className='report-unread-indicator'
+                          aria-label='Unread updates'
+                        />
+                      )}
                       <Card.Body>
                         <strong>{r.title}</strong>
                         <div className='text-muted small'>

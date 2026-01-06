@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router";
 import useUserStore from "../store/userStore";
+import { markReportNotificationsAsRead } from "../store/notificationStore";
+import useNotificationStore from "../store/notificationStore";
 import {
   getExternalAssignedReports,
   getCategories,
@@ -42,6 +44,7 @@ function ExtAssignedReports() {
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
   const [selectedStatus, setSelectedStatus] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const unreadByReport = useNotificationStore((state) => state.unreadByReport);
 
   // comment section variables
   const [modalPage, setModalPage] = useState("info");
@@ -136,6 +139,7 @@ function ExtAssignedReports() {
       const reportData = completeReport.report || completeReport;
       setCompleteReportData(reportData);
       setComments(internalComments);
+      markReportNotificationsAsRead(report.id);
     } catch (error) {
       console.error("Failed to load complete report:", error);
       setAlert({
@@ -374,38 +378,47 @@ function ExtAssignedReports() {
                 {statusColumns[status]}
               </h5>
 
-              {reportsByStatus[status].slice(0, visibleCount).map((report) => (
-                <div key={report.id} className='mb-3'>
-                  <Card
-                    className='shadow-sm report-card h-100'
-                    onClick={() => handleReportClick(report)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <Card.Body>
-                      <div className='d-flex justify-content-between align-items-start mb-2'>
-                        <strong>{report.title}</strong>
-                      </div>
+              {reportsByStatus[status].slice(0, visibleCount).map((report) => {
+                const hasUnread = unreadByReport?.[report.id] > 0;
+                return (
+                  <div key={report.id} className='mb-3'>
+                    <Card
+                      className='shadow-sm report-card h-100'
+                      onClick={() => handleReportClick(report)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      {hasUnread && (
+                        <span
+                          className='report-unread-indicator'
+                          aria-label='Unread updates'
+                        />
+                      )}
+                      <Card.Body>
+                        <div className='d-flex justify-content-between align-items-start mb-2'>
+                          <strong>{report.title}</strong>
+                        </div>
 
-                      <div className='small mb-2'>
-                        <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
-                        {formatAddress(report)}
-                      </div>
-                      <div className='small text-muted'>
-                        <i className='bi bi-calendar3'></i>{" "}
-                        {new Date(report.created_at).toLocaleDateString()}
-                      </div>
-                      <div className='mt-2'>
-                        <Badge
-                          bg={getCategoryBadge(categoryMap[report.category_id])}
-                        >
-                          {categoryMap[report.category_id] ||
-                            `Category ${report.category_id}`}
-                        </Badge>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </div>
-              ))}
+                        <div className='small mb-2'>
+                          <i className='bi bi-geo-alt-fill text-danger'></i>{" "}
+                          {formatAddress(report)}
+                        </div>
+                        <div className='small text-muted'>
+                          <i className='bi bi-calendar3'></i>{" "}
+                          {new Date(report.created_at).toLocaleDateString()}
+                        </div>
+                        <div className='mt-2'>
+                          <Badge
+                            bg={getCategoryBadge(categoryMap[report.category_id])}
+                          >
+                            {categoryMap[report.category_id] ||
+                              `Category ${report.category_id}`}
+                          </Badge>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
