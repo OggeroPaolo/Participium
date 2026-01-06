@@ -98,7 +98,6 @@ router.post("/verify-code",
 
         // Check if code has expired
         if (Date.now() > pending.expiresAt) {
-            removePendingUser(email);
             return res.status(410).json({ error: "Verification code expired" });
         }
 
@@ -156,6 +155,7 @@ router.post("/resend-code",
 
             // Check if there is a pending user for the given email
             const pending = getPendingUser(email);
+            console.log(pending)
             if (!pending) {
                 return res.status(400).json({ error: "No pending verification for this email" });
             }
