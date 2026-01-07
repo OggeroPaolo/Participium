@@ -1,15 +1,15 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { body, param, validationResult } from "express-validator";
 import UserDAO from "../dao/UserDAO.js";
 import { ROLES } from "../models/userRoles.js";
 import { verifyFirebaseToken } from "../middlewares/verifyFirebaseToken.js";
 import { upload } from "../config/multer.js";
 import cloudinary from "../config/cloudinary.js";
-import { unlink } from "node:fs/promises";
 import type { User } from "../models/user.js"
 import path from 'node:path';
 import sharp from 'sharp';
+import { validatePatchUser } from "../middlewares/userValidation.js";
+import fs from "node:fs/promises"
 
 const router = Router();
 const userDao = new UserDAO();
@@ -34,18 +34,9 @@ router.get("/users/:firebaseUid", verifyFirebaseToken([ROLES.ADMIN, ROLES.CITIZE
 
 router.patch("/users/:userId",
     upload.single("photo_profile"),
-    [
-        param("userId").isInt().withMessage("User ID must be a valid integer"),
-        body("telegram_username").optional({ nullable: true }).isString().withMessage("telegram_username must be a string"),
-        body("email_notifications_enabled").optional({ nullable: true }).isBoolean().withMessage("email_notifications_enabled must be a boolean").toBoolean()
-    ],
+    validatePatchUser,
     verifyFirebaseToken([ROLES.CITIZEN]),
     async (req: Request, res: Response) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            const extractedErrors = errors.array().map(err => err.msg);
-            return res.status(400).json({ errors: extractedErrors });
-        }
 
         let uploadedUrl: string | null = null;
 
@@ -96,16 +87,8 @@ router.patch("/users/:userId",
                 uploadedUrl = result.secure_url;
 
                 // Delete local temporary files (ignore errors if files don't exist)
-                try {
-                    await unlink(file.path);
-                } catch (error) {
-                    // File may already be deleted or not exist
-                }
-                try {
-                    await unlink(newPath);
-                } catch (error) {
-                    // File may already be deleted or not exist
-                }
+                await fs.unlink(file.path).catch(() => {});
+                await fs.unlink(newPath).catch(() => {});
 
                 // Delete old Cloudinary image after new one is uploaded
                 if (oldImgPublicId) {
@@ -120,7 +103,7 @@ router.patch("/users/:userId",
                 user.id,
                 'telegram_username' in req.body ? telegram_username : undefined,
                 'email_notifications_enabled' in req.body ? email_notifications_enabled : undefined,
-                uploadedUrl !== null ? uploadedUrl : undefined
+                uploadedUrl ?? undefined
             );
 
             return res.status(200).json({
