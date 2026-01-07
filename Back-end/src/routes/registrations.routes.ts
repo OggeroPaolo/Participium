@@ -155,7 +155,6 @@ router.post("/resend-code",
 
             // Check if there is a pending user for the given email
             const pending = getPendingUser(email);
-            console.log(pending)
             if (!pending) {
                 return res.status(400).json({ error: "No pending verification for this email" });
             }
