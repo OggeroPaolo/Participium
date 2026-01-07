@@ -4,7 +4,7 @@ import { body, validationResult } from "express-validator";
 import UserDAO from "../dao/UserDAO.js";
 import { createUserWithFirebase, UserAlreadyExistsError, EmailOrUsernameConflictError } from "../services/userService.js";
 import bcrypt from "bcrypt";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { savePendingUser, getPendingUser, removePendingUser, updateCode } from "../services/pendingUsersService.js";
 import { sendVerificationEmail, resendVerificationEmail } from "../services/emailService.js";
 import { encrypt, decrypt, codeSalt } from "../services/passwordEncryptionSercive.js";
