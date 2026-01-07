@@ -1,4 +1,3 @@
-import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { Navigate, Route, Routes } from "react-router";
@@ -51,8 +50,7 @@ function App() {
   }
 
   return (
-    <>
-      <Routes>
+    <Routes>
         <Route
           path='/'
           element={
@@ -95,7 +93,7 @@ function App() {
           <Route
             path='/email-verification'
             element={
-              !isAuthenticated ? <EmailCode /> : <Navigate replace to='/' />
+              isAuthenticated ? <Navigate replace to='/' /> : <EmailCode />
             }
           />
 
@@ -194,7 +192,6 @@ function App() {
 
         <Route path='*' element={<h1>404 Not Found</h1>} />
       </Routes>
-    </>
   );
 }
 
