@@ -23,7 +23,6 @@ function CitHomepage(props) {
   const [showMapOverlay, setShowMapOverlay] = useState(true);
   const [showReportList, setShowReportList] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedAddress, setSelectedAddress] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [userReports, setUserReports] = useState([]);
   const [showUserReports, setShowUserReports] = useState(false);
@@ -149,7 +148,6 @@ function CitHomepage(props) {
   // Handle report selection from dropdown
   const handleSelectReport = (reportId, address) => {
     setSelectedReportID(reportId);
-    setSelectedAddress(address);
     suppressGeocodeRef.current = true;
     setSearchQuery(address);
     setShowDropdown(false);
@@ -175,7 +173,6 @@ function CitHomepage(props) {
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
-    setSelectedAddress(""); // Clear selection when typing
     setSelectedReportID(0); // Clear report selection when typing
     setShowDropdown(value.trim().length > 0 && reportSuggestions.length > 0);
   };
@@ -184,7 +181,6 @@ function CitHomepage(props) {
   const handleClearSearch = () => {
     suppressGeocodeRef.current = true;
     setSearchQuery("");
-    setSelectedAddress("");
     setShowDropdown(false);
   };
 
