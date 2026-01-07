@@ -11,32 +11,35 @@ This directory contains database-related files for the Participium project.
 
 ## Entity Relationship Diagram
 ![Database Diagram](DB_schema.png)
-
 ## Users Table
 
-The `users` table stores information about users. Each user has exactly one role that determines their permissions and access within the system.
+The `users` table stores information about users. Each user may have **one or more roles** via the `user_roles` table, which determines their permissions and access within the system.  
 
-| Column                      | Type                   | Description                                                         |
-| --------------------------- | ---------------------- | ------------------------------------------------------------------- |
-| id                          | INTEGER PK             | Primary key                                                         |
-| firebase_uid                | TEXT                   | Unique Firebase identifier for authentication                       |
-| email                       | TEXT                   | Unique email of the user                                            |
-| username                    | TEXT                   | Unique username                                                     |
-| first_name                  | TEXT                   | User's first name                                                   |
-| last_name                   | TEXT                   | User's last name                                                    |
-| role_id                     | INTEGER FK → roles(id) | Foreign key linking to the user's role                              |
-| profile_photo_url           | TEXT                   | Optional URL for the user's profile picture                         |
-| telegram_username           | TEXT                   | Optional Telegram username for notifications                        |
-| email_notifications_enabled | INTEGER (boolean)      | Whether the user receives email notifications (1 = true, 0 = false) |
-| is_active                   | INTEGER (boolean)      | Whether the user account is active (1 = active, 0 = inactive)       |
-| created_at                  | DATETIME               | Timestamp when the user was created                                 |
-| updated_at                  | DATETIME               | Timestamp when the user was last updated                            |
-| last_login_at               | DATETIME               | Timestamp of the user's last login                                  |
+| Column                      | Type              | Description                                                         |
+| --------------------------- | ----------------- | ------------------------------------------------------------------- |
+| id                          | INTEGER PK        | Primary key                                                         |
+| firebase_uid                | TEXT              | Unique Firebase identifier for authentication                       |
+| email                       | TEXT              | Unique email of the user                                            |
+| username                    | TEXT              | Unique username                                                     |
+| first_name                  | TEXT              | User's first name                                                   |
+| last_name                   | TEXT              | User's last name                                                    |
+| profile_photo_url           | TEXT              | Optional URL for the user's profile picture                         |
+| telegram_username           | TEXT              | Optional Telegram username for notifications                        |
+| email_notifications_enabled | INTEGER (boolean) | Whether the user receives email notifications (1 = true, 0 = false) |
+| is_active                   | INTEGER (boolean) | Whether the user account is active (1 = active, 0 = inactive)       |
+| created_at                  | DATETIME          | Timestamp when the user was created                                 |
+| updated_at                  | DATETIME          | Timestamp when the user was last updated                            |
+| last_login_at               | DATETIME          | Timestamp of the user's last login                                  |
+
+**Notes:**  
+- Users can have multiple roles through the `user_roles` table.  
+- Roles define access permissions, workflow responsibilities, and the offices or companies a user is associated with.  
+
 ---
 
 ## Roles Table
 
-The `roles` table stores predefined user roles for access control. Roles determine which reports a user can view, review, or handle.
+The `roles` table stores predefined user roles for access control. Roles define **what reports a user can view, assign, review, or resolve**.  
 
 | Column     | Type                       | Description                                                                            |
 | ---------- | -------------------------- | -------------------------------------------------------------------------------------- |
@@ -47,13 +50,35 @@ The `roles` table stores predefined user roles for access control. Roles determi
 | company_id | INTEGER FK → companies(id) | Optional foreign key linking the role to an external company                           |
 | created_at | DATETIME                   | Timestamp when the role was created                                                    |
 
-**Notes:**
-- `citizen` — Regular users who can submit reports  
-- `pub_relations` — Municipal Public Relations Officers (approval workflow)  
-- `tech_officer` — Technical Office Staff (execution workflow)  
-- `external_maintainer` — External company staff  
-- `admin` — System administrators  
-- Each user has exactly one role, which may reference an office or company.
+**Role Descriptions:**  
+- `citizen` — Regular users who can submit reports.  
+- `pub_relations` — Municipal Public Relations Officers (approval workflow).  
+- `tech_officer` — Technical Office Staff (execution workflow).  
+- `external_maintainer` — External company staff.  
+- `admin` — System administrators with full access.  
+
+**Notes:**  
+- Users may have **one primary role** or multiple roles via the `user_roles` table.  
+- Roles can optionally reference an office or a company for organizational mapping.  
+
+---
+
+## User_Roles Table
+
+The `user_roles` table establishes a **many-to-many relationship** between `users` and `roles`. It allows a user to have multiple roles and tracks the assignment date of each role.  
+
+| Column      | Type                   | Description                                      |
+| ----------- | ---------------------- | ------------------------------------------------ |
+| user_id     | INTEGER FK → users(id) | References the user assigned to the role         |
+| role_id     | INTEGER FK → roles(id) | References the role assigned to the user         |
+| assigned_at | DATETIME               | Timestamp when the role was assigned to the user |
+
+**Notes:**  
+- Primary key is a composite of `user_id` and `role_id`.  
+- `ON DELETE` behavior:  
+  - Deleting a user cascades to remove their roles.  
+  - Deleting a role is restricted if assigned to users.  
+- This table allows flexible role management for users with multiple responsibilities.
 
 ---
 
@@ -106,7 +131,7 @@ The `reports` table stores user-submitted reports about issues.
 | reviewed_at  | DATETIME                    | Timestamp when the report was reviewed                                                             |
 | note         | TEXT                        | Optional note; required if the report is rejected                                                  |
 | is_anonymous | INTEGER (boolean)           | Whether the report was submitted anonymously (1 = true, 0 = false)                                 |
-| address        | TEXT                        | Address of the reported issue |
+| address      | TEXT                        | Address of the reported issue                                                                      |
 | position_lat | REAL                        | Latitude of the reported issue                                                                     |
 | position_lng | REAL                        | Longitude of the reported issue                                                                    |
 | created_at   | DATETIME                    | Timestamp when the report was created                                                              |
@@ -153,7 +178,21 @@ The `comments` table stores comments on reports, either public or private.
 | type      | TEXT                     | Comment type (`public` or `private`)   |
 | text      | TEXT                     | Comment content                        |
 | timestamp | DATETIME                 | Timestamp when the comment was created |
+# Notifications Table
 
+The `notifications` table stores system-generated notifications for users related to report activity, such as comments, status updates, and assignments.
+
+| Column      | Type                         | Description                                                                 |
+| ----------- | ---------------------------- | --------------------------------------------------------------------------- |
+| id          | INTEGER PK                   | Primary key                                                                 |
+| user_id     | INTEGER FK → users(id)       | User who receives the notification                                          |
+| type        | TEXT                         | Notification type (e.g. `internal_comment_on_report`, `status_update`)       |
+| report_id   | INTEGER FK → reports(id)     | Report the notification refers to                                           |
+| comment_id  | INTEGER FK → comments(id)    | Related comment (nullable, for comment-based notifications)                 |
+| title       | TEXT                         | Short notification title                                                    |
+| message     | TEXT                         | Detailed notification message (optional)                                   |
+| is_read     | INTEGER                      | Read status (`0` = unread, `1` = read)                                      |
+| created_at  | DATETIME                     | Timestamp when the notification was created  
 
 ## Initialization Process
 
@@ -188,14 +227,18 @@ Optimized for common queries:
 
 The database enforces referential integrity with specific deletion rules:
 
-| Relationship                              | On Delete | Description                                                        |
-| ----------------------------------------- | --------- | ------------------------------------------------------------------ |
-| users → roles                             | RESTRICT  | Prevent deleting a role that has active users                      |
-| reports → users (creator)                 | RESTRICT  | Prevent deleting a user who has created reports                    |
-| reports → users (reviewed_by/assigned_to) | SET NULL  | When a reviewer or assigned officer is deleted, set field to NULL  |
-| reports → categories                      | RESTRICT  | Prevent deleting a category that has reports                       |
-| photos → reports                          | CASCADE   | When a report is deleted, all associated photos are also deleted   |
-| comments → reports                        | CASCADE   | When a report is deleted, all associated comments are also deleted |
+| Relationship                              | On Delete | Description                                                                  |
+| ----------------------------------------- | --------- | ---------------------------------------------------------------------------- |
+| users → roles                             | RESTRICT  | Prevent deleting a role that has active users                                |
+| reports → users (creator)                 | RESTRICT  | Prevent deleting a user who has created reports                              |
+| reports → users (reviewed_by/assigned_to) | SET NULL  | When a reviewer or assigned officer is deleted, set field to NULL            |
+| reports → categories                      | RESTRICT  | Prevent deleting a category that has reports                                 |
+| photos → reports                          | CASCADE   | When a report is deleted, all associated photos are also deleted             |
+| comments → reports                        | CASCADE   | When a report is deleted, all associated comments are also deleted           |
+| comments → users                          | SET NULL  | When a user is deleted, their comments remain but author is set to NULL     |
+| notifications → users                    | CASCADE   | When a user is deleted, all their notifications are also deleted             |
+| notifications → reports                  | CASCADE   | When a report is deleted, all related notifications are also deleted         |
+| notifications → comments                 | CASCADE   | When a comment is deleted, related notifications are also deleted            |
 
 ---
 ## Pre-defined Database Promises

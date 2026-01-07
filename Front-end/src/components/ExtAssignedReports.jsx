@@ -1,5 +1,8 @@
 import { useEffect, useState, useRef } from "react";
+import { useLocation, useNavigate } from "react-router";
 import useUserStore from "../store/userStore";
+import { markReportNotificationsAsRead } from "../store/notificationStore";
+import useNotificationStore from "../store/notificationStore";
 import {
   getExternalAssignedReports,
   getCategories,
@@ -26,6 +29,8 @@ function ExtAssignedReports() {
   const userId = user.id;
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [completeReportData, setCompleteReportData] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -39,6 +44,7 @@ function ExtAssignedReports() {
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
   const [selectedStatus, setSelectedStatus] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const unreadByReport = useNotificationStore((state) => state.unreadByReport);
 
   // comment section variables
   const [modalPage, setModalPage] = useState("info");
@@ -75,16 +81,24 @@ function ExtAssignedReports() {
     return acc;
   }, {});
 
-  const reportCounts = Object.values(reportsByStatus).map(
-    (arr) => arr.length
-  );
+  const reportCounts = Object.values(reportsByStatus).map((arr) => arr.length);
   const maxReportsAvailable =
     reportCounts.length > 0 ? Math.max(...reportCounts) : 0;
+
+  const [pendingReportId, setPendingReportId] = useState(null);
 
   useEffect(() => {
     loadReports();
     loadCategories();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const reportIdParam = params.get("reportId");
+    if (reportIdParam) {
+      setPendingReportId(reportIdParam);
+    }
+  }, [location.search]);
 
   const loadCategories = async () => {
     try {
@@ -125,6 +139,7 @@ function ExtAssignedReports() {
       const reportData = completeReport.report || completeReport;
       setCompleteReportData(reportData);
       setComments(internalComments);
+      markReportNotificationsAsRead(report.id);
     } catch (error) {
       console.error("Failed to load complete report:", error);
       setAlert({
@@ -136,6 +151,24 @@ function ExtAssignedReports() {
       setIsLoadingReportDetails(false);
     }
   };
+
+  useEffect(() => {
+    if (!pendingReportId) return;
+
+    handleReportClick({ id: Number(pendingReportId) });
+
+    const params = new URLSearchParams(location.search);
+    params.delete("reportId");
+    navigate(
+      {
+        pathname: location.pathname,
+        search: params.toString() ? `?${params.toString()}` : "",
+      },
+      { replace: true }
+    );
+
+    setPendingReportId(null);
+  }, [pendingReportId, handleReportClick, location.pathname, location.search, navigate]);
 
   const handleCloseModal = () => {
     setShowModal(false);
@@ -217,6 +250,7 @@ function ExtAssignedReports() {
   }, [completeReportData, modalPage, showModal]);
 
   const getCategoryBadge = (category) => {
+    // prettier-ignore
     const colors = {
       "Water Supply – Drinking Water": "primary", // Blue - Water
       "Architectural Barriers": "secondary", // Gray - Infrastructure
@@ -257,7 +291,6 @@ function ExtAssignedReports() {
     }
   };
 
-
   // handle posting of new comments
   const writeComment = async (e) => {
     e.preventDefault();
@@ -267,14 +300,14 @@ function ExtAssignedReports() {
     setIsSubmittingComment(true);
 
     try {
-      await createComment(completeReportData.id, "private", newComment);
+      await createComment(completeReportData.id, newComment);
 
       // clear textarea
       setNewComment("");
 
       // reload comments
       const newComments = await getCommentsInternal(completeReportData.id);
-      setComments(newComments)
+      setComments(newComments);
     } catch (error) {
       setAlert({
         show: true,
@@ -286,6 +319,21 @@ function ExtAssignedReports() {
       setIsSubmittingComment(false);
     }
   };
+
+  // make comment section scrollable
+  const commentsEndRef = useRef(null);
+
+  useEffect(() => {
+    if (modalPage === "comments") {
+      const timeout = setTimeout(() => {
+        commentsEndRef.current?.scrollIntoView({ behavior: "auto" });
+      }, 10);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [comments, modalPage]);
+
+  const statusChanged = selectedStatus !== completeReportData?.status;
 
   return (
     <Container className='py-4 body-font assigned-reports-container'>
@@ -330,15 +378,21 @@ function ExtAssignedReports() {
                 {statusColumns[status]}
               </h5>
 
-              {reportsByStatus[status]
-                .slice(0, visibleCount)
-                .map((report) => (
+              {reportsByStatus[status].slice(0, visibleCount).map((report) => {
+                const hasUnread = unreadByReport?.[report.id] > 0;
+                return (
                   <div key={report.id} className='mb-3'>
                     <Card
                       className='shadow-sm report-card h-100'
                       onClick={() => handleReportClick(report)}
                       style={{ cursor: "pointer" }}
                     >
+                      {hasUnread && (
+                        <span
+                          className='report-unread-indicator'
+                          aria-label='Unread updates'
+                        />
+                      )}
                       <Card.Body>
                         <div className='d-flex justify-content-between align-items-start mb-2'>
                           <strong>{report.title}</strong>
@@ -354,9 +408,7 @@ function ExtAssignedReports() {
                         </div>
                         <div className='mt-2'>
                           <Badge
-                            bg={getCategoryBadge(
-                              categoryMap[report.category_id]
-                            )}
+                            bg={getCategoryBadge(categoryMap[report.category_id])}
                           >
                             {categoryMap[report.category_id] ||
                               `Category ${report.category_id}`}
@@ -365,7 +417,8 @@ function ExtAssignedReports() {
                       </Card.Body>
                     </Card>
                   </div>
-                ))}
+                );
+              })}
             </div>
           ))}
         </div>
@@ -401,8 +454,9 @@ function ExtAssignedReports() {
             </button>
 
             <button
-              className={`modal-tab ${modalPage === "comments" ? "active" : ""
-                }`}
+              className={`modal-tab ${
+                modalPage === "comments" ? "active" : ""
+              }`}
               onClick={() => setModalPage("comments")}
             >
               Comments
@@ -453,7 +507,7 @@ function ExtAssignedReports() {
               {/* Minimal read-only map: must be always rendered */}
               <div
                 ref={mapRef}
-                className="map-container"
+                className='map-container'
                 style={{
                   width: "100%",
                   height: "250px",
@@ -468,11 +522,9 @@ function ExtAssignedReports() {
                 <>
                   <div className='mb-3 mt-2'>
                     <strong>Reported by:</strong>{" "}
-                    {completeReportData.is_anonymous
-                      ? "Anonymous"
-                      : completeReportData.user?.username ||
-                      completeReportData.user?.complete_name ||
-                      "Unknown"}
+                    {completeReportData.user?.username ||
+                        completeReportData.user?.complete_name ||
+                        "Unknown"}
                   </div>
 
                   <div className='mb-3'>
@@ -522,16 +574,21 @@ function ExtAssignedReports() {
                           "Resolved"
                         }
                       >
-                        <option key="0" value={statusColumns[completeReportData.status]}>
+                        <option
+                          key='0'
+                          value={completeReportData.status}
+                        >
                           {statusColumns[completeReportData.status]}
                         </option>
-                        {Object.keys(statusColumns).map((s) => (
-                          statusColumns[completeReportData.status] !== statusColumns[s] && (
-                            <option key={s} value={s}>
-                              {statusColumns[s]}
-                            </option>
-                          )
-                        ))}
+                        {Object.keys(statusColumns).map(
+                          (s) =>
+                            statusColumns[completeReportData.status] !==
+                              statusColumns[s] && (
+                              <option key={s} value={s}>
+                                {statusColumns[s]}
+                              </option>
+                            )
+                        )}
                       </Form.Select>
                     </div>
 
@@ -547,21 +604,21 @@ function ExtAssignedReports() {
                       </Button>
                       {statusColumns[completeReportData.status] !==
                         "Resolved" && (
-                          <Button
-                            type='submit'
-                            disabled={isSubmitting}
-                            className='confirm-button'
-                          >
-                            {isSubmitting ? (
-                              <>
-                                <span className='spinner-border spinner-border-sm me-2' />
-                                Submitting...
-                              </>
-                            ) : (
-                              "Update status"
-                            )}
-                          </Button>
-                        )}
+                        <Button
+                          type='submit'
+                          disabled={!statusChanged || isSubmitting}
+                          className='confirm-button'
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <span className='spinner-border spinner-border-sm me-2' />
+                              Submitting...
+                            </>
+                          ) : (
+                            "Update status"
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </Form>
                 </>
@@ -569,55 +626,64 @@ function ExtAssignedReports() {
 
               {modalPage === "comments" && (
                 /* modal page with comment section */
-                <>
-                  {comments.length !== 0 ? (
-                    <>
-                      {comments.map((c, i) => (
-                        <div key={i} className='mb-3 pb-2 border-bottom'>
-                          <div className='d-flex justify-content-between align-items-start'>
 
-                            <div className="d-flex flex-column">
-                              {c.user_id !== userId && c.role_name && (
-                                <small className="text-muted">
-                                  {c.role_name.replaceAll("_", " ")}
-                                </small>
-                              )}
-                              <div className='d-flex align-items-center'>
-                                <div
-                                  style={{
-                                    width: "14px",
-                                    height: "14px",
-                                    borderRadius: "50%",
-                                    backgroundColor:
-                                      c.user_id === userId
-                                        ? "#F5E078"
-                                        : "#0350b5",
-                                    marginRight: "8px",
-                                  }}
-                                ></div>
-                                <strong>
-                                  {c.user_id === userId ? "Me" : `${c.first_name} ${c.last_name}`}
-                                </strong>
+                <div className='modal-comments-container'>
+                  <div className='comments-list'>
+                    {comments.length !== 0 ? (
+                      <>
+                        {comments.map((c, i) => (
+                          <div key={i} className='mb-3 pb-2 border-bottom'>
+                            <div className='d-flex justify-content-between align-items-start'>
+                              <div className='d-flex flex-column'>
+                                {c.user_id !== userId && c.role_name && (
+                                  <small className='text-muted'>
+                                    {c.role_name.replaceAll("_", " ")}
+                                  </small>
+                                )}
+                                <div className='d-flex align-items-center'>
+                                  <div
+                                    style={{
+                                      width: "14px",
+                                      height: "14px",
+                                      borderRadius: "50%",
+                                      backgroundColor:
+                                        c.user_id === userId
+                                          ? "#F5E078"
+                                          : "#0350b5",
+                                      marginRight: "8px",
+                                    }}
+                                  ></div>
+                                  <strong>
+                                    {c.user_id === userId
+                                      ? "Me"
+                                      : `${c.first_name} ${c.last_name}`}
+                                  </strong>
+                                </div>
                               </div>
+
+                              <small className='text-muted'>
+                                {(() => {
+                                  const d = new Date(c.timestamp);
+                                  d.setHours(d.getHours() + 1);
+                                  return d.toLocaleString("it-IT");
+                                })()}
+                              </small>
                             </div>
 
-                            <small className='text-muted'>
-                              {new Date(c.timestamp).toLocaleString()}
-                            </small>
+                            <div className='mt-1'>
+                              <p className='mb-0 text-dark'>{c.text}</p>
+                            </div>
                           </div>
+                        ))}
+                        <div ref={commentsEndRef} />
+                      </>
+                    ) : (
+                      /* no comments */
+                      <p className='text-muted'>No comments yet</p>
+                    )}
+                  </div>
 
-                          <div className='mt-1'>
-                            <p className='mb-0 text-dark'>{c.text}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                  ) : (
-                    /* no comments */
-                    <p className='text-muted'>No comments yet</p>
-                  )}
-
-                  <Form className='pt-3' onSubmit={writeComment}>
+                  <Form className='comment-input pt-3' onSubmit={writeComment}>
                     <Form.Group className='mb-3'>
                       <Form.Control
                         as='textarea'
@@ -647,8 +713,7 @@ function ExtAssignedReports() {
                       </Button>
                     </div>
                   </Form>
-
-                </>
+                </div>
               )}
             </>
           )}

@@ -1,27 +1,29 @@
 import crypto from "node:crypto";
-import type { Server as HTTPServer } from "http";
+import type { Server as HTTPServer } from "node:http";
 import { Server as SocketIOServer, type Socket } from "socket.io";
 import firebaseAdmin from "../config/firebaseAdmin.js";
 import { env } from "../config/env.js";
 import { logger } from "../config/logger.js";
 import UserDAO from "../dao/UserDAO.js";
+import type { Notification } from "../models/notification.js";
 
 type SocketUser = Awaited<ReturnType<UserDAO["findUserByUid"]>>;
 
 type NotificationPayload = {
   type: string;
-  title: string;
-  message: string;
+  title?: string;
+  message?: string;
   metadata?: Record<string, unknown>;
   createdAt?: string;
+  notification?: Notification | Record<string, unknown>;
 };
 
 const ROLE_ROOM_PREFIX = "role:";
 
 class RealtimeGateway {
-  private io: SocketIOServer;
-  private userDAO = new UserDAO();
-  private userToSockets = new Map<string, Set<string>>();
+  private readonly io: SocketIOServer;
+  private readonly userDAO = new UserDAO();
+  private readonly userToSockets = new Map<string, Set<string>>();
 
   constructor(server: HTTPServer) {
     this.io = new SocketIOServer(server, {
@@ -40,25 +42,41 @@ class RealtimeGateway {
     this.io.use(async (socket, next) => {
       try {
         const token = this.extractToken(socket);
+
         if (!token) {
           return next(new Error("Unauthorized"));
         }
+
+        // Verify Firebase token
         const decoded = await firebaseAdmin.auth().verifyIdToken(token);
+
+        if (!decoded?.uid) {
+          return next(new Error("Unauthorized"));
+        }
+
+        // Find user
         const user = await this.userDAO.findUserByUid(decoded.uid);
+
         if (!user) {
           return next(new Error("User not found"));
         }
 
+        // Populate socket data
         socket.data.uid = decoded.uid;
         socket.data.role = user.role_type;
         socket.data.user = user;
+
         next();
-      } catch (error) {
-        logger.warn({ error }, "Realtime auth failed");
+      } catch (error: any) {
+        logger.warn(
+          { message: error.message, stack: error.stack, uid: socket.data?.uid },
+          "Realtime auth failed"
+        );
         next(new Error("Unauthorized"));
       }
     });
   }
+
 
   private registerConnectionHandlers() {
     this.io.on("connection", (socket) => {
@@ -163,9 +181,7 @@ class RealtimeGateway {
 let gatewayInstance: RealtimeGateway | null = null;
 
 export function initializeRealtime(server: HTTPServer) {
-  if (!gatewayInstance) {
-    gatewayInstance = new RealtimeGateway(server);
-  }
+  gatewayInstance ??= new RealtimeGateway(server);
   return gatewayInstance;
 }
 

@@ -5,7 +5,7 @@ export type CreateCommentDTO = {
     text: string;
 }
 
-export type GetPrivateCommentDTO = {
+export type GetCommentDTO = {
     id: number;
     report_id: number;
     user_id: number;
@@ -15,5 +15,4 @@ export type GetPrivateCommentDTO = {
     username: string;
     last_name: string;
     first_name: string;
-    role_name: string;
 }

@@ -218,9 +218,6 @@ async function getApprovedReports() {
   try {
     const response = await fetch(URI + "/reports/map/accepted", {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
     });
 
     if (response.status === 204) {
@@ -240,7 +237,8 @@ async function getApprovedReports() {
 
 // Create a new report
 async function createReport(reportData, lat, lng) {
-  const { title, description, category, photos, address } = reportData;
+  const { title, description, category, photos, is_anonymous, address } =
+    reportData;
 
   const formData = new FormData();
   formData.append("category_id", category);
@@ -250,7 +248,7 @@ async function createReport(reportData, lat, lng) {
   formData.append("address", address);
   formData.append("position_lat", lat);
   formData.append("position_lng", lng);
-  formData.append("is_anonymous", false);
+  formData.append("is_anonymous", is_anonymous);
 
   // Append each photo
   photos.forEach((photo) => {
@@ -278,9 +276,6 @@ async function getReport(rid) {
   try {
     const response = await fetch(`${URI}/reports/${rid}`, {
       method: "GET",
-      headers: {
-        Authorization: `${await getBearerToken()}`,
-      },
     });
 
     if (response.ok) {
@@ -441,6 +436,35 @@ async function updateStatus(reportId, status) {
   }
 }
 
+// Update status of a report (tech officer only)
+async function updateStatusTechOfficer(reportId, status) {
+  try {
+    const body = {
+      status: status,
+    };
+
+    const response = await fetch(`${URI}/tech_officer/reports/${reportId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${await getBearerToken()}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || errorData.errors?.[0] || "Failed to update status"
+      );
+    }
+
+    return await response.json();
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
 // Assign an external maintainer to a report
 async function assignExternalMaintainer(reportId, externalMaintainerId) {
   if (!externalMaintainerId) {
@@ -505,16 +529,140 @@ async function getCommentsInternal(reportId) {
   }
 }
 
+// Get external comments for a report (citizen and technical officer)
+async function getCommentsExternal(reportId) {
+  try {
+    const response = await fetch(
+      `${URI}/report/${reportId}/external-comments`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `${await getBearerToken()}`,
+        },
+      }
+    );
+
+    if (response.status === 204) {
+      return [];
+    }
+
+    if (response.ok) {
+      const externalComments = await response.json();
+      return Array.isArray(externalComments.comments)
+        ? externalComments.comments
+        : [];
+    } else {
+      throw new Error("Failed to fetch external comments");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
+function normalizeNotification(notification) {
+  if (!notification || typeof notification !== "object") {
+    return null;
+  }
+
+  const normalizedIsReadValue =
+    notification.is_read ?? notification.isRead ?? 0;
+
+  return {
+    id: notification.id,
+    userId: notification.user_id ?? notification.userId ?? null,
+    type: notification.type ?? null,
+    reportId: notification.report_id ?? notification.reportId ?? null,
+    commentId: notification.comment_id ?? notification.commentId ?? null,
+    title: notification.title ?? null,
+    message: notification.message ?? null,
+    createdAt: notification.createdAt ?? notification.created_at ?? null,
+    isRead: Boolean(normalizedIsReadValue),
+    report: notification.report ?? null,
+    comment: notification.comment ?? null,
+    raw: notification,
+  };
+}
+
+async function getNotifications(options = {}) {
+  const { includeRead = true } = options;
+
+  const params = new URLSearchParams();
+  if (!includeRead) {
+    params.append("includeRead", "false");
+  }
+
+  const query = params.toString() ? `?${params.toString()}` : "";
+
+  try {
+    const response = await fetch(`${URI}/notifications${query}`, {
+      method: "GET",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return [];
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || errorData.errors?.[0] || "Failed to load notifications"
+      );
+    }
+
+    const payload = await response.json();
+    const notifications = Array.isArray(payload?.notifications)
+      ? payload.notifications
+      : [];
+
+    return notifications
+      .map(normalizeNotification)
+      .filter((notification) => notification !== null);
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
+async function markNotificationRead(notificationId) {
+  if (!notificationId) {
+    throw new Error("Notification id is required");
+  }
+
+  try {
+    const response = await fetch(
+      `${URI}/notifications/${notificationId}/set-read`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `${await getBearerToken()}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error ||
+          errorData.errors?.[0] ||
+          "Failed to mark notification as read"
+      );
+    }
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
 // Create a new comment
-async function createComment(reportId, type, comment) {
-  const response = await fetch(`${URI}/reports/${reportId}/comments`, {
+async function createComment(reportId, comment) {
+  const response = await fetch(`${URI}/reports/${reportId}/internal-comments`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `${await getBearerToken()}`,
     },
     body: JSON.stringify({
-      type: type,
       text: comment,
     }),
   });
@@ -522,6 +670,27 @@ async function createComment(reportId, type, comment) {
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.error?.[0] || "Failed to post comment");
+  }
+
+  return await response.json();
+}
+
+// Create a new external comment
+async function createExternalComment(reportId, comment) {
+  const response = await fetch(`${URI}/reports/${reportId}/external-comments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${await getBearerToken()}`,
+    },
+    body: JSON.stringify({
+      text: comment,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to post comment");
   }
 
   return await response.json();
@@ -568,6 +737,74 @@ async function resendCode(email) {
   return await response.json();
 }
 
+// Modify user information
+async function modifyUserInfo(userInfo, profilePic, userId) {
+  if (!userId) {
+    throw new Error("User id is required");
+  }
+
+  const { telegram_username, email_notifications_enabled } = userInfo;
+
+  const formData = new FormData();
+  formData.append("telegram_username", telegram_username);
+  formData.append(
+    "email_notifications_enabled",
+    email_notifications_enabled ? 1 : 0
+  );
+  formData.append("photo_profile", profilePic);
+
+  try {
+    const response = await fetch(`${URI}/users/${userId}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `${await getBearerToken()}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error ||
+          errorData.errors?.[0] ||
+          "Failed to modify user information"
+      );
+    }
+
+    return await response.json();
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
+async function updateRole(userId, roleList) {
+  try {
+    const body = {
+      roles_id: roleList,
+    };
+
+    const response = await fetch(`${URI}/operators/${userId}/roles`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${await getBearerToken()}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || errorData.errors?.[0] || "Failed to update roles"
+      );
+    }
+
+    return await response.json();
+  } catch (err) {
+    throw new Error(err.message || "Network error");
+  }
+}
+
 export {
   handleSignup,
   createInternalUser,
@@ -588,8 +825,15 @@ export {
   getExternalMaintainers,
   assignExternalMaintainer,
   getCommentsInternal,
+  getCommentsExternal,
   createComment,
+  createExternalComment,
+  getNotifications,
+  markNotificationRead,
+  normalizeNotification,
   verifyEmail,
   resendCode,
-
+  modifyUserInfo,
+  updateRole,
+  updateStatusTechOfficer,
 };

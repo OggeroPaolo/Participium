@@ -1,27 +1,37 @@
-import type { User } from "../models/user.js";
+import type {UserRoleDTO } from "../models/user.js";
 
-export type ExternalUserDTO = {
+export interface ExternalUserDTO {
   id: number;
   fullName: string;
   username: string;
   email: string;
-  roleName: string;
-  roleType: string;
   companyId: number;
   companyName: string;
-};
+  roles: UserRoleDTO[];
+}
+export function mapExternalUsersWithRoles(rows: any[]): ExternalUserDTO[] {
+  const map = new Map<number, ExternalUserDTO>();
 
-export function mapToExternalUserDTO(u: User & { company_id: number; company_name: string; category_id?: number }): ExternalUserDTO {
-  return {
-    id: u.id,
-    fullName: `${u.first_name} ${u.last_name}`,
-    username: u.username,
-    email: u.email,
-    roleName: u.role_name,
-    roleType: u.role_type,
-    companyId: u.company_id,
-    companyName: u.company_name,
-  };
+  rows.forEach(r => {
+    if (!map.has(r.id)) {
+      map.set(r.id, {
+        id: r.id,
+        fullName: `${r.first_name} ${r.last_name}`,
+        username: r.username,
+        email: r.email,
+        companyId: r.company_id,
+        companyName: r.company_name,
+        roles: []
+      });
+    }
+
+    map.get(r.id)!.roles.push({
+      role_name: r.role_name,
+      role_type: r.role_type
+    });
+  });
+
+  return [...map.values()];
 }
 
-export default mapToExternalUserDTO;
+

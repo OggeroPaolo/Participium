@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 
 const rawKey = process.env.PENDING_ENCRYPTION_KEY;
 

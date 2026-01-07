@@ -2,16 +2,16 @@ import request from "supertest";
 import { Express } from "express";
 import { describe, it, expect, beforeAll, afterEach, vi, beforeEach } from "vitest";
 import reportsRouter from "../../src/routes/reports.routes.js";
-import { initTestDB, resetTestDB , makeTestApp} from "../setup/tests_util.js";
+import { initTestDB, resetTestDB, makeTestApp } from "../setup/tests_util.js";
 import ReportDAO from "../../src/dao/ReportDAO.js";
 import { Report } from "../../src/models/report.js";
 import path from "node:path";
 import cloudinary from "../../src/config/cloudinary.js";
 import { ReportStatus } from "../../src/models/reportStatus.js";
 import { Update } from "../../src/config/database.js";
+import CommentDAO from "../../src/dao/CommentDAO.js";
 
 
-const mock_user_id = 3;
 
 //Use for clean up of Create Report test
 let testUploadedUrls: string[] = [];
@@ -134,7 +134,6 @@ describe("Reports E2E", () => {
         ...cleaned
       } = report;
 
-      // Compare only the desired fields
       expect(cleaned).toEqual(expectedReport);
     });
 
@@ -170,6 +169,7 @@ describe("Reports E2E", () => {
         description: "This area near Porta Nuova has been neglected and many people use it as a urinal, can something be done about it.",
         status: ReportStatus.PendingApproval,
         assigned_to: null,
+        external_user: null,
         reviewed_by: null,
         reviewed_at: null,
         note: null,
@@ -196,13 +196,13 @@ describe("Reports E2E", () => {
 
 
     it("should return 204 when no pending_approval reports exist", async () => {
-      // Temporarily mock DAO to return empty array
-      const spy = vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValue([]);
+      await Update("PRAGMA foreign_keys = OFF");
+      await Update("DELETE FROM reports");
+
       const res = await request(app).get("/reports?status=pending_approval");
 
       expect(res.status).toBe(204);
       expect(res.body).toEqual({}); // empty response
-      spy.mockRestore();
     });
 
     it("should return 500 if DAO throws an error", async () => {
@@ -222,7 +222,6 @@ describe("Reports E2E", () => {
     });
 
   });
-
 
   describe("POST /reports", () => {
     afterEach(async () => {
@@ -262,7 +261,7 @@ describe("Reports E2E", () => {
         is_anonymous: 0,
         address: "Broadway 260, 10000 New York",
         position_lat: 40.7128,
-        position_lng: -74.0060,
+        position_lng: -74.006,
       };
 
       const res = await request(app)
@@ -275,12 +274,11 @@ describe("Reports E2E", () => {
         .field("position_lat", payload.position_lat.toString())
         .field("position_lng", payload.position_lng.toString())
         .attach("photos", testImg);
-
       expect(res.status).toBe(201);
       expect(res.body.report).toBeDefined();
       expect(res.body.report.photos).toHaveLength(1);
 
-      testUploadedUrls = (res.body.report.photos || []).map(p =>
+      testUploadedUrls = (res.body.report.photos || []).map((p: { url: any; photo_url: any; }) =>
         typeof p === "string" ? p : p.url || p.photo_url
       );
     });
@@ -293,7 +291,7 @@ describe("Reports E2E", () => {
         is_anonymous: false,
         address: "Broadway 260, 10000 New York",
         position_lat: 40.7128,
-        position_lng: -74.0060,
+        position_lng: -74.006,
       };
 
       const res = await request(app)
@@ -320,7 +318,7 @@ describe("Reports E2E", () => {
     });
 
     it("should delete uploaded image if report creation fails", async () => {
-      const createSpy = vi.spyOn(ReportDAO.prototype, "createReport").mockRejectedValue(new Error("Forced DB error"));
+      vi.spyOn(ReportDAO.prototype, "createReport").mockRejectedValue(new Error("Forced DB error"));
       const payload = {
         category_id: 1,
         title: "Report causing error",
@@ -328,7 +326,7 @@ describe("Reports E2E", () => {
         is_anonymous: false,
         address: "Broadway 260, 10000 New York",
         position_lat: 40.7128,
-        position_lng: -74.0060,
+        position_lng: -74.006,
       }
 
       const res = await request(app)
@@ -347,10 +345,35 @@ describe("Reports E2E", () => {
 
       testUploadedUrls = [];
     });
+
+    it("should return 400 if some params are missing", async () => {
+      const payload = {
+        category_id: 1,
+        title: "Report causing error",
+        description: "This should trigger rollback",
+        is_anonymous: false,
+        address: "Broadway 260, 10000 New York",
+        position_lat: 40.7128,
+        position_lng: -74.006,
+      }
+
+      const res = await request(app)
+        .post("/reports")
+        .field("category_id", payload.category_id.toString())
+        .field("title", payload.title)
+        .field("position_lat", payload.position_lat.toString())
+        .field("position_lng", payload.position_lng.toString())
+        .attach("photos", testImg);
+
+      expect(res.status).toBe(400);
+      expect(res.body.errors).toBeDefined();
+
+      testUploadedUrls = [];
+    });
   });
 
-
   describe("PATCH /pub_relations/reports/:reportId", () => {
+
     it("should return multiple validation errors together", async () => {
       const res = await request(app)
         .patch("/pub_relations/reports/xyz")
@@ -426,7 +449,7 @@ describe("Reports E2E", () => {
     it("should update the category, assign a specific operator and return 200 ", async () => {
       const res = await request(app)
         .patch("/pub_relations/reports/1")
-        .send({ status: ReportStatus.Assigned, categoryId: 1, officerId: 5 });
+        .send({ status: ReportStatus.Assigned, categoryId: 1, officerId: 6 });
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ message: "Report status updated successfully" });
@@ -469,8 +492,8 @@ describe("Reports E2E", () => {
         reviewed_at: null,
         note: "Initial note",
         address: "Via vai 9, 10125 Torino",
-        position_lat: 40.0,
-        position_lng: -70.0,
+        position_lat: 40,
+        position_lng: -70,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -486,43 +509,141 @@ describe("Reports E2E", () => {
     });
   });
 
-
-
-  /*
-  
-    describe("PATCH /tech_officer/reports/:reportId/assign_external", () => {
-    });
-  
-  
-    describe.skip("PATCH /ext_maintainer/reports/:reportId", () => {
-     
-    });
-
-
   describe("GET /report/:reportId/internal-comments", () => {
-    const mockReportId = 1;
-    it("should assign report to external maintainer successfully", async () => {
+
+    const reportId = 3;
+    it("should return 200 with internal comments", async () => {
       const res = await request(app)
-        .get(`/report/${mockReportId}/internal-comments`)
+        .get(`/report/${reportId}/internal-comments`);
+
       expect(res.status).toBe(200);
+      expect(res.body.comments.length).toBeGreaterThan(0);
     });
+
+    it("should return 204 when no internal comments exist", async () => {
+      const res = await request(app)
+        .get(`/report/999/internal-comments`);
+
+      expect(res.status).toBe(204);
+      expect(res.body).toEqual({});
+    });
+
+    it("should return 500 if DAO throws an error", async () => {
+      const spy = vi
+        .spyOn(CommentDAO.prototype, "getCommentsByReportIdAndType")
+        .mockRejectedValue(new Error("DB failure"));
+
+      const res = await request(app)
+        .get(`/report/${reportId}/internal-comments`);
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: "Internal server error" });
+
+      spy.mockRestore();
+    });
+
+    it("should return 400 for invalid reportId", async () => {
+      const res = await request(app)
+        .get("/report/abc/internal-comments");
+
+      expect(res.status).toBe(400);
+    });
+
   });
 
-  describe("POST /reports/:reportId/comments", () => {
+  describe("GET /report/:reportId/external-comments", () => {
+
     const reportId = 3;
 
-    it("creates a comment successfully", async () => {
+    it("should return 200 with external comments", async () => {
       const res = await request(app)
-        .post(`/reports/${reportId}/comments`)
-        .send({
-          type: "private",
-          text: "internal note",
-        });
+        .get(`/report/${reportId}/external-comments`);
 
-      expect(res.status).toBe(201);
+      expect(res.status).toBe(200);
+      expect(res.body.comments.length).toBeGreaterThan(0);
+    });
+
+    it("should return 204 when no external comments exist", async () => {
+      const res = await request(app)
+        .get(`/report/999/external-comments`);
+
+      expect(res.status).toBe(204);
+      expect(res.body).toEqual({});
+    });
+
+    it("should return 500 if DAO throws an error", async () => {
+      const spy = vi
+        .spyOn(CommentDAO.prototype, "getCommentsByReportIdAndType")
+        .mockRejectedValue(new Error("DB failure"));
+
+      const res = await request(app)
+        .get(`/report/${reportId}/external-comments`);
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: "Internal server error" });
+
+      spy.mockRestore();
+    });
+
+    it("should return 400 for invalid reportId", async () => {
+      const res = await request(app)
+        .get("/report/abc/external-comments");
+
+      expect(res.status).toBe(400);
+    });
+
+  });
+
+  describe("PATCH /tech_officer/reports/:reportId - E2E", () => {
+    it("should return 404 if report does not exist", async () => {
+      const res = await request(app)
+        .patch("/tech_officer/reports/99999")
+        .send({ status: ReportStatus.InProgress });
+
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: "Report not found" });
+    });
+
+    it("should return 403 if status transition is not allowed", async () => {
+      //Report with ID 1 is in 'pending_approval' status
+      const res = await request(app)
+        .patch("/tech_officer/reports/1")
+        .send({ status: ReportStatus.InProgress });
+
+      expect(res.status).toBe(403);
+    });
+
+    it("should return 403 if report is not assigned to this tech officer", async () => {
+      // Report 8 is assigned to a different tech officer
+      const res = await request(app)
+        .patch("/tech_officer/reports/8")
+        .send({ status: ReportStatus.InProgress });
+
+      expect(res.status).toBe(403);
+      expect(res.body).toEqual({
+        error: "You are not allowed to change status of a report that is not assigned to you"
+      });
+    });
+
+    it("should update the status successfully", async () => {
+      // Report 3 is assigned to the tech officer with status InProgress
+      const res = await request(app)
+        .patch("/tech_officer/reports/4")
+        .send({ status: ReportStatus.Resolved });
       console.log(res.body);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        message: "Report status updated successfully"
+      })
+    });
 
+    it("should return 400 for invalid status", async () => {
+      const res = await request(app)
+        .patch("/tech_officer/reports/3")
+        .send({ status: "INVALID_STATUS" });
+
+      expect(res.status).toBe(400);
     });
   });
-*/
+
 });

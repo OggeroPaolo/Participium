@@ -4,10 +4,14 @@ import { Container } from "react-bootstrap";
 import yellowbull from "../assets/yellowbull.png";
 import { Nav } from "react-bootstrap";
 import NotificationBell from "./NotificationBell.jsx";
+import WelcomeModal from "./HomeComponents/WelcomeModal.jsx";
+import { useState } from "react";
 
 function Header(props) {
   const expand = "sm";
   const { user, isAuthenticated } = props;
+
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   const displayName =
     user?.username || user?.first_name || user?.email || "User";
@@ -52,17 +56,32 @@ function Header(props) {
                       <span>{displayName}</span>
                     </Navbar.Text>
                   )}
-                  {user?.role_name === "Admin" && (
+                  {user?.role_type === "admin" && (
                     <>
                       <Nav.Link href='/user-creation'>User Creation</Nav.Link>
                       <Nav.Link href='/user-list'>User List</Nav.Link>
                     </>
                   )}
-                  {user?.role_name === "Citizen" && (
-                    <Nav.Link href='/create-report'>New Report</Nav.Link>
+                  {user?.role_type === "citizen" && (
+                    <>
+                      <Nav.Link href='/create-report'>New Report</Nav.Link>
+                      <Nav.Link
+                        href='/profile'
+                        className='nav-icon-link'
+                        title='Profile'
+                      >
+                        <i className='bi bi-person-circle fs-5'></i>
+                      </Nav.Link>
+                      <Nav.Link
+                        role='button'
+                        className='nav-icon-link'
+                        title='Info'
+                        onClick={() => setShowWelcomeModal(true)}
+                      >
+                        <i className='bi bi-question-circle fs-5'></i>
+                      </Nav.Link>
+                    </>
                   )}
-
-                  <NotificationBell />
 
                   {user?.role_type === "tech_officer" && (
                     <>
@@ -78,13 +97,13 @@ function Header(props) {
                       </Nav.Link>
                     </>
                   )}
-                  {user?.role_name === "Municipal_public_relations_officer" && (
+                  {user?.role_type === "pub_relations" && (
                     <>
-                      <Nav.Link href='/review-reports'>
-                        Review reports
-                      </Nav.Link>
+                      <Nav.Link href='/review-reports'>Review reports</Nav.Link>
                     </>
                   )}
+
+                  <NotificationBell />
 
                   <Nav.Link href='#' onClick={handleLogout}>
                     Logout
@@ -94,6 +113,14 @@ function Header(props) {
                 <>
                   <Nav.Link href='/login'>Login</Nav.Link>
                   <Nav.Link href='/signup'>Signup</Nav.Link>
+                  <Nav.Link
+                    role='button'
+                    className='nav-icon-link'
+                    title='Info'
+                    onClick={() => setShowWelcomeModal(true)}
+                  >
+                    <i className='bi bi-question-circle fs-5 ms-2'></i>
+                  </Nav.Link>
                 </>
               )}
             </Nav>
@@ -101,6 +128,10 @@ function Header(props) {
         </Container>
       </Navbar>
       <Outlet />
+      <WelcomeModal
+        showWelcomeModal={showWelcomeModal}
+        setShowWelcomeModal={setShowWelcomeModal}
+      />
     </>
   );
 }

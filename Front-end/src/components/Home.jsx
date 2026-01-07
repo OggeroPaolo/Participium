@@ -1,22 +1,17 @@
 import useUserStore from "../store/userStore";
-import { GuestDashboard, CitizenDashboard, AuthenticatedUserDashboard } from "./HomeComponents/DashBoards";
+import {
+  CitizenDashboard,
+  AuthenticatedUserDashboard,
+} from "./HomeComponents/DashBoards";
 
 function Home() {
   const { user, isAuthenticated } = useUserStore();
 
-  return (
-    <>
-      {renderDashboard(user, isAuthenticated)}
-    </>
-  );
+  return <>{renderDashboard(user, isAuthenticated)}</>;
 }
 
 function renderDashboard(user, isAuthenticated) {
-  if (!isAuthenticated) {
-    return <GuestDashboard />;
-  }
-
-  if (user?.role_name === "Citizen") {
+  if (user?.role_type === "citizen" || !isAuthenticated) {
     return <CitizenDashboard />;
   }
 

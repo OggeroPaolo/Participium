@@ -1,4 +1,3 @@
-import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { Navigate, Route, Routes } from "react-router";
@@ -18,6 +17,7 @@ import OfficerReviewList from "./components/OfficerReviewList.jsx";
 import TechAssignedReports from "./components/TechAssignedReports.jsx";
 import ExtAssignedReports from "./components/ExtAssignedReports.jsx";
 import EmailCode from "./components/EmailCode.jsx";
+import ProfilePage from "./components/ProfilePage.jsx";
 
 function App() {
   // Sync Zustand store with Firebase auth state
@@ -50,8 +50,7 @@ function App() {
   }
 
   return (
-    <>
-      <Routes>
+    <Routes>
         <Route
           path='/'
           element={
@@ -72,7 +71,7 @@ function App() {
             element={
               isAuthenticated ? (
                 <>
-                  {user?.role_name === "Admin" && (
+                  {user?.role_type === "admin" && (
                     <Navigate replace to='/user-list' />
                   )}
                   {user?.role_type === "tech_officer" && (
@@ -81,8 +80,8 @@ function App() {
                   {user?.role_type === "external_maintainer" && (
                     <Navigate replace to='/ext-assigned-reports' />
                   )}
-                  {user?.role_name === "Citizen" && <Navigate replace to='/' />}
-                  {user?.role_name === "Municipal_public_relations_officer" && (
+                  {user?.role_type === "citizen" && <Navigate replace to='/' />}
+                  {user?.role_type === "pub_relations" && (
                     <Navigate replace to='/review-reports' />
                   )}
                 </>
@@ -94,7 +93,7 @@ function App() {
           <Route
             path='/email-verification'
             element={
-              !isAuthenticated ? <EmailCode /> : <Navigate replace to='/' />
+              isAuthenticated ? <Navigate replace to='/' /> : <EmailCode />
             }
           />
 
@@ -102,7 +101,7 @@ function App() {
           <Route
             path='/user-creation'
             element={
-              user?.role_name === "Admin" ? (
+              user?.role_type === "admin" ? (
                 <UserCreation />
               ) : (
                 <Navigate replace to='/' />
@@ -112,7 +111,7 @@ function App() {
           <Route
             path='/user-list'
             element={
-              user?.role_name === "Admin" ? (
+              user?.role_type === "admin" ? (
                 <UserList />
               ) : (
                 <Navigate replace to='/' />
@@ -124,7 +123,7 @@ function App() {
           <Route
             path='/create-report'
             element={
-              user?.role_name === "Citizen" ? (
+              user?.role_type === "citizen" ? (
                 <ReportCreation />
               ) : (
                 <Navigate replace to='/' />
@@ -132,9 +131,21 @@ function App() {
             }
           />
           <Route
+            path='/profile'
+            element={
+              user?.role_type === "citizen" ? (
+                <ProfilePage />
+              ) : (
+                <Navigate replace to='/' />
+              )
+            }
+          />
+
+          {/* Citizen and unlogged user routes */}
+          <Route
             path='/reports/:rid'
             element={
-              user?.role_name === "Citizen" ? (
+              user?.role_type === "citizen" || !isAuthenticated ? (
                 <ReportInfo />
               ) : (
                 <Navigate replace to='/' />
@@ -146,7 +157,7 @@ function App() {
           <Route
             path='/review-reports'
             element={
-              user?.role_name === "Municipal_public_relations_officer" ? (
+              user?.role_type === "pub_relations" ? (
                 <OfficerReviewList />
               ) : (
                 <Navigate replace to='/' />
@@ -181,7 +192,6 @@ function App() {
 
         <Route path='*' element={<h1>404 Not Found</h1>} />
       </Routes>
-    </>
   );
 }
 

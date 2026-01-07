@@ -10,15 +10,12 @@ CREATE TABLE IF NOT EXISTS users (
   username TEXT NOT NULL UNIQUE,
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
-  role_id INTEGER NOT NULL DEFAULT 1,
   profile_photo_url TEXT,
   telegram_username TEXT,
   email_notifications_enabled INTEGER DEFAULT 1,
   is_active INTEGER DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  last_login_at DATETIME,
-  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Roles table
@@ -33,6 +30,14 @@ CREATE TABLE IF NOT EXISTS roles (
   FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS user_roles (
+  user_id INTEGER NOT NULL,
+  role_id INTEGER NOT NULL,
+  assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, role_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT
+);
 
 -- Offices table. 
 CREATE TABLE IF NOT EXISTS offices (
@@ -119,12 +124,9 @@ CREATE TABLE IF NOT EXISTS notifications (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,
   type TEXT NOT NULL CHECK(type IN (
-    'comment_on_created_report',
-    'comment_on_assigned_report', 
-    'status_update',
-    'report_assigned',
-    'report_reviewed',
-    'report_rejected'
+    'internal_comment_on_report',
+    'external_comment_on_report', 
+    'status_update'
   )),
   report_id INTEGER NOT NULL,
   comment_id INTEGER NULL,
@@ -146,7 +148,10 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_firebase_uid ON users(firebase_uid);
 CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
-CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id);
+
+-- User_Roles indexes
+CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_roles_role_id ON user_roles(role_id);
 
 -- Offices indexes
 CREATE INDEX IF NOT EXISTS idx_offices_type ON offices(type);

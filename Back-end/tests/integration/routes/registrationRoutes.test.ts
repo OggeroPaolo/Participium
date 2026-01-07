@@ -79,8 +79,10 @@ describe("POST /user-registrations", () => {
         first_name: "Jane",
         last_name: "Doe",
         email: "alice@example.com",
-        role_name: "Citizen",
-        role_type: "citizen",
+        roles: [{
+          role_name: "Citizen",
+          role_type: "citizen",
+        }]
       });
 
 
@@ -197,7 +199,7 @@ describe("POST /verify-code", () => {
       expiresAt: Date.now() + 5 * 60 * 1000,
     });
 
-    vi.spyOn(bcrypt, "compare").mockResolvedValue(true);
+    vi.spyOn(bcrypt, "compare").mockImplementation(async () => true);
 
     vi.spyOn(passwordEnc, "decrypt").mockReturnValue("password123");
 
@@ -208,8 +210,10 @@ describe("POST /verify-code", () => {
       first_name: "Jane",
       last_name: "Doe",
       email: "alice@example.com",
-      role_name: "Citizen",
-      role_type: "citizen",
+      roles: [{
+        role_name: "Citizen",
+        role_type: "citizen",
+      }]
     });
 
     vi.spyOn(pendingUsers, "removePendingUser").mockImplementation(() => { });
@@ -361,10 +365,6 @@ describe("POST /verify-code", () => {
 
 });
 
-/* ============================================================
-   RESEND CODE TESTS
-============================================================ */
-
 describe("POST /resend-code", () => {
 
   beforeEach(() => {
@@ -417,7 +417,7 @@ describe("POST /resend-code", () => {
   });
 
   it("should return 500 on internal errors", async () => {
-    vi.spyOn(emailService, "resendVerificationEmail").mockRejectedValue(new Error());
+    vi.spyOn(emailService, "resendVerificationEmail").mockRejectedValue(new Error("DB Error"));
 
     const res = await request(app)
       .post("/resend-code")

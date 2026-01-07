@@ -1,8 +1,20 @@
-import { getAll, Update, getOne, beginTransaction, commitTransaction, rollbackTransaction } from '../config/database.js'
-import { type ReportMap } from '../models/reportMap.js';
-import type { Report } from "../models/report.js"
-import type { CreateReportDTO } from '../dto/CreateReportDTO.js';
-import type { ReportPhotoDTO, CompleteReportDTO, ReportUserDTO, ReportCategoryDTO } from '../dto/ReportWithPhotosDTO.js';
+import {
+  getAll,
+  Update,
+  getOne,
+  beginTransaction,
+  commitTransaction,
+  rollbackTransaction,
+} from "../config/database.js";
+import { type ReportMap } from "../models/reportMap.js";
+import type { Report } from "../models/report.js";
+import type { CreateReportDTO } from "../dto/CreateReportDTO.js";
+import type {
+  ReportPhotoDTO,
+  CompleteReportDTO,
+  ReportUserDTO,
+  ReportCategoryDTO,
+} from "../dto/ReportWithPhotosDTO.js";
 
 export interface ReportFilters {
   status?: string;
@@ -12,7 +24,6 @@ export interface ReportFilters {
 }
 
 export default class ReportDao {
-
   async getReportsByFilters(filters: ReportFilters): Promise<Report[]> {
     const conditions: string[] = [];
     const params: any[] = [];
@@ -46,7 +57,7 @@ export default class ReportDao {
 
   async getAcceptedReportsForMap(): Promise<ReportMap[]> {
     const sql = `
-      SELECT r.id, r.title, u.first_name, u.last_name, u.username, r.address, r.position_lat, r.position_lng
+      SELECT r.id, r.title, u.first_name, u.last_name, u.username, r.address, r.position_lat, r.position_lng, r.is_anonymous
       FROM reports r
       JOIN users u ON r.user_id = u.id
       WHERE r.status != 'pending_approval' AND r.status != 'rejected'
@@ -55,7 +66,10 @@ export default class ReportDao {
     return getAll<ReportMap>(sql);
   }
 
-  async updateReportExternalMaintainer(reportId: number, externalMaintainerId: number) {
+  async updateReportExternalMaintainer(
+    reportId: number,
+    externalMaintainerId: number
+  ) {
     const query = `
       UPDATE reports
       SET external_user = ?
@@ -87,7 +101,14 @@ export default class ReportDao {
     return result;
   }
 
-  async updateReportStatusAndAssign(reportId: number, status: string, reviewerId: number, note?: string, categoryId?: number, assigneeId?: number) {
+  async updateReportStatusAndAssign(
+    reportId: number,
+    status: string,
+    reviewerId: number,
+    note?: string,
+    categoryId?: number,
+    assigneeId?: number
+  ) {
     const query = `
       UPDATE reports
       SET status = ?, 
@@ -98,7 +119,14 @@ export default class ReportDao {
       WHERE id = ?;
     `;
 
-    const result = await Update(query, [status, reviewerId, note, categoryId, assigneeId, reportId]);
+    const result = await Update(query, [
+      status,
+      reviewerId,
+      note,
+      categoryId,
+      assigneeId,
+      reportId,
+    ]);
 
     if (result.changes === 0) {
       throw new Error("Report not found or no changes made");
@@ -165,8 +193,8 @@ export default class ReportDao {
     const baseRow = rows[0];
 
     const photos: ReportPhotoDTO[] = rows
-      .filter(row => row.photo_url !== null)
-      .map(row => ({
+      .filter((row) => row.photo_url !== null)
+      .map((row) => ({
         url: row.photo_url,
         ordering: row.photo_ordering,
       }));
@@ -233,7 +261,6 @@ export default class ReportDao {
     return completeReport;
   }
 
-
   async createReport(data: CreateReportDTO): Promise<CompleteReportDTO> {
     try {
       await beginTransaction();
@@ -255,7 +282,7 @@ export default class ReportDao {
         data.address,
         data.position_lat,
         data.position_lng,
-        data.is_anonymous ? 1 : 0
+        data.is_anonymous ? 1 : 0,
       ];
 
       const result = await Update(insertReportSql, params);
@@ -263,7 +290,6 @@ export default class ReportDao {
         throw new Error("Insert report failed");
       }
       const reportId = result.lastID;
-
 
       if (data.photos && data.photos.length > 0) {
         const insertPhotoSql = `
@@ -277,7 +303,6 @@ export default class ReportDao {
 
       const createdReport = await this.getCompleteReportById(reportId);
       return createdReport;
-
     } catch (error) {
       await rollbackTransaction();
       throw error;

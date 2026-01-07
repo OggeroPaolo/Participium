@@ -7,8 +7,9 @@ const userDAO = new UserDAO();
 export function verifyFirebaseToken(allowedRoles: string[]) {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
+
             const authHeader = req.headers.authorization;
-            if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            if (!authHeader?.startsWith("Bearer ")) {
                 return res.status(401).json({ error: "Unauthorized" });
             }
             const idToken = authHeader.split(" ")[1];
@@ -26,15 +27,18 @@ export function verifyFirebaseToken(allowedRoles: string[]) {
 
             // Check role authorization
             if (!allowedRoles.includes(user.role_type)) {
+                console.log("if")
                 return res.status(403).json({ error: "Forbidden: insufficient permissions" });
             }
 
             // Attach user to request for downstream use
-            (req as any).user = user;
+            req.user = user;
 
             next();
         } catch (error) {
+            console.log(error);
             return res.status(401).json({ error: "Unauthorized" });
         }
+
     }
 }

@@ -5,7 +5,10 @@ import operatorRouter from "../../src/routes/operator.routes.js";
 import OperatorDAO from "../../src/dao/OperatorDAO.js";
 import * as userService from "../../src/services/userService.js";
 import { initTestDB, makeTestApp, resetTestDB } from "../setup/tests_util.js";
-import { getAll, runQuery } from "../../src/config/database.js";
+import { runQuery } from "../../src/config/database.js";
+import { ROLES } from "../../src/models/userRoles.js";
+import { assert } from "console";
+import RolesDao from "../../src/dao/RolesDAO.js";
 // Mock Firebase auth middleware
 vi.mock("../../src/middlewares/verifyFirebaseToken.js", () => ({
   verifyFirebaseToken: (_roles: string[]) => (_req: any, _res: any, next: any) => next(),
@@ -73,8 +76,8 @@ describe("Operator Routes E2E", () => {
         username: "aliceop",
         first_name: "Alice",
         last_name: "Operator",
-        role_name: "Operator",
-        role_type: "tech_officer",
+        role_type: ROLES.TECH_OFFICER,
+        roles: ["Operator"],
       };
 
       vi.spyOn(userService, "createUserWithFirebase").mockResolvedValue(mockUser);
@@ -223,5 +226,56 @@ describe("Operator Routes E2E", () => {
       expect(res.status).toBe(422);
       expect(res.body).toEqual({ error: "Firebase email already exists" });
     });
+  });
+
+  // ----------------------------
+  // PATCH /operators/:operatorId/roles
+  // ----------------------------
+  describe("PATCH /operators/:operatorId/roles", () => {
+    const operatorId = 12; // tech_officer without report assign
+
+    it("should successfully update roles when valid tech_officer roles are provided", async () => {
+      const res = await request(app)
+        .patch(`/operators/${operatorId}/roles`)
+        .send({ roles_id: [3, 4] });
+      expect(res.status).toBe(200);
+    });
+
+    it("should return 400 if trying to assign roles not of type tech_officer", async () => {
+      const res = await request(app)
+        .patch(`/operators/${operatorId}/roles`)
+        .send({ roles_id: [1, 2] }); //1 = citizen and 2 = admin
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({
+        error: "Changing roles is not allowed to roles that are not of type tech officer",
+      });
+    });
+
+
+    it("should return 400 if operator has reports for roles to be removed", async () => {
+
+      const res = await request(app)
+        .patch(`/operators/10/roles`) //tech_officer with some reports assigned
+        .send({ roles_id: [3, 4] });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({
+        error: "This internal officer has reports for some roles",
+        conflicting_roles: [{ role_id: 8, role_name: "Road_signs_urban_furnishings_officer" }],
+      });
+    });
+
+    it("should return 500 if an unexpected error occurs", async () => {
+
+      vi.spyOn(RolesDao.prototype, "getRolesByIds").mockRejectedValue(new Error("DB failure"));
+
+      const res = await request(app)
+        .patch(`/operators/${operatorId}/roles`)
+        .send({ roles_id:[3] });
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: "Internal server error" });
+    });
+
   });
 });

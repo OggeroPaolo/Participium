@@ -5,7 +5,7 @@ import {
   validateReportId,
   validateGetReports,
   validateAssignExternalMaintainer,
-  validateExternalMaintainerUpdateStatus
+  validateUpdateStatus
 } from "../../../src/middlewares/reportValidation.js";
 
 // Helper to mock req/res/next
@@ -186,7 +186,7 @@ describe("Report Validation Middleware Tests", () => {
         req: { params: { reportId: 1 }, body: { status: "resolved" } }
       });
 
-      for (const middleware of validateExternalMaintainerUpdateStatus) await middleware(req, res, next);
+      for (const middleware of validateUpdateStatus) await middleware(req, res, next);
 
       expect(next).toHaveBeenCalled();
     });
@@ -196,7 +196,7 @@ describe("Report Validation Middleware Tests", () => {
         req: { params: { reportId: 1 }, body: { status: "wrong" } }
       });
 
-      for (const middleware of validateExternalMaintainerUpdateStatus) await middleware(req, res, next);
+      for (const middleware of validateUpdateStatus) await middleware(req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json.mock.calls[0][0].errors[0].msg).toContain("Status must be one of");

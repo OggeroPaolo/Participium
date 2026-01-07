@@ -1,8 +1,8 @@
 import sqlite3 from "sqlite3";
 import { env } from "./env.js";
 import { logger } from "./logger.js";
-import path from "path";
-import fs from "fs";
+import path from "node:path";
+import fs from "node:fs";
 
 let db: any = null;
 

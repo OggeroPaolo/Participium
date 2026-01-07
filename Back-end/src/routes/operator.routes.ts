@@ -4,6 +4,7 @@ import { body, validationResult, param, query } from "express-validator";
 import { verifyFirebaseToken } from "../middlewares/verifyFirebaseToken.js";
 import { ROLES } from "../models/userRoles.js";
 import UserDAO from "../dao/UserDAO.js";
+import RolesDAO from "../dao/RolesDAO.js";
 import OperatorDAO, { type ExternalMaintainerFilters } from "../dao/OperatorDAO.js";
 import { createUserWithFirebase, UserAlreadyExistsError, EmailOrUsernameConflictError } from "../services/userService.js";
 
@@ -11,6 +12,7 @@ import { createUserWithFirebase, UserAlreadyExistsError, EmailOrUsernameConflict
 const router = Router();
 const operatorDao = new OperatorDAO();
 const userDao = new UserDAO();
+const rolesDao = new RolesDAO();
 
 // GET all operators
 router.get("/operators", verifyFirebaseToken([ROLES.ADMIN]), async (req: Request, res: Response) => {
@@ -147,6 +149,51 @@ router.get("/external-maintainers",
       res.status(500).json({ error: (error as Error).message });
     }
   }
+);
+
+
+// Update the roles of an operators
+router.patch("/operators/:operatorId/roles",
+    verifyFirebaseToken([ROLES.ADMIN]),
+    async (req: Request, res: Response) => {
+        try {
+
+            const operatorId = Number(req.params.operatorId);
+            const { roles_id } = req.body;
+
+            // Throw an error if the roles to be changed to are not of type tech officer
+            const rolesInfo = await rolesDao.getRolesByIds(roles_id);
+
+            const roles_type = rolesInfo.map(role => role.type);
+
+            if (roles_type.some(type => type !== ROLES.TECH_OFFICER)) {
+              return res.status(400).json({ error: "Changing roles is not allowed to roles that are not of type tech officer" });
+            }
+
+            const existingRoles = await operatorDao.getOperatorRolesId(operatorId);
+
+            const rolesToBeCanceled = existingRoles.filter(role => !roles_id.includes(role));
+
+
+            // get the roles to be canceled for which that operator has at least one report open [open is defined as not resolved]
+            const conflictingRoles = await operatorDao.getOperatorRolesIfReportExists(operatorId, rolesToBeCanceled);
+
+
+            if (conflictingRoles.length > 0) {
+              return res.status(400).json({ error: "This internal officer has reports for some roles", conflicting_roles: conflictingRoles });
+            }
+
+            await operatorDao.updateRolesOfOperator(operatorId, roles_id);
+           
+            return res.status(200).json({
+                message: "Roles successfully updated"
+            });
+
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
 );
 
 export default router;

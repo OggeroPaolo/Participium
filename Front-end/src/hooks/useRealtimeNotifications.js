@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
-import { API_BASE_URL } from '../API/API';
+import { API_BASE_URL, getNotifications, normalizeNotification } from '../API/API';
 import { getBearerToken } from '../firebaseService';
 import useUserStore from '../store/userStore';
 import useNotificationStore from '../store/notificationStore';
@@ -25,8 +25,24 @@ export function useRealtimeNotifications() {
   useEffect(() => {
     let isDisposed = false;
 
+    const loadNotifications = async () => {
+      if (!isAuthenticated || !userUid) {
+        replaceNotifications([]);
+        return;
+      }
+
+      try {
+        const notifications = await getNotifications({ includeRead: true });
+        if (!isDisposed) {
+          replaceNotifications(notifications);
+        }
+      } catch (error) {
+        console.error('Failed to load notifications:', error);
+      }
+    };
+
     const connect = async () => {
-    if (!isAuthenticated || !userUid) {
+      if (!isAuthenticated || !userUid) {
         return;
       }
 
@@ -63,9 +79,19 @@ export function useRealtimeNotifications() {
           }
         });
 
-        socket.on('notifications:new', (notification) => {
-          if (notification && typeof notification === 'object') {
-            addNotification(notification);
+        socket.on('notifications:new', (eventPayload) => {
+          if (!eventPayload || typeof eventPayload !== 'object') {
+            return;
+          }
+
+          const maybeNotification =
+            eventPayload.notification && typeof eventPayload.notification === 'object'
+              ? eventPayload.notification
+              : eventPayload;
+
+          const normalized = normalizeNotification(maybeNotification);
+          if (normalized) {
+            addNotification(normalized);
           }
         });
 
@@ -83,6 +109,7 @@ export function useRealtimeNotifications() {
       }
     };
 
+    loadNotifications();
     connect();
 
     return () => {

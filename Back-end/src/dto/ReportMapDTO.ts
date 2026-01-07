@@ -1,4 +1,4 @@
-import {type ReportMap } from '../models/reportMap.js';
+import { type ReportMap } from "../models/reportMap.js";
 
 export type ReportMapDTO = {
   id: number;
@@ -10,20 +10,22 @@ export type ReportMapDTO = {
     lat: number;
     lng: number;
   };
+  is_anonymous: boolean;
 };
-
 
 function mapToDTO(r: ReportMap): ReportMapDTO {
   return {
     id: r.id,
     title: r.title,
-    reporterName: `${r.first_name} ${r.last_name}`,
-    reporterUsername: r.username,
+    // Mask reporter identity for anonymous reports
+    reporterName: r.is_anonymous ? "Anonymous" : `${r.first_name} ${r.last_name}`,
+    reporterUsername: r.is_anonymous ? "" : r.username,
     address: r.address,
     position: {
       lat: r.position_lat,
-      lng: r.position_lng
-    }
+      lng: r.position_lng,
+    },
+    is_anonymous: r.is_anonymous,
   };
 }
 

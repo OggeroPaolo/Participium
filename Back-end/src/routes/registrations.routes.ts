@@ -1,10 +1,10 @@
 import { Router } from "express";
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response} from "express";
 import { body, validationResult } from "express-validator";
 import UserDAO from "../dao/UserDAO.js";
 import { createUserWithFirebase, UserAlreadyExistsError, EmailOrUsernameConflictError } from "../services/userService.js";
 import bcrypt from "bcrypt";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { savePendingUser, getPendingUser, removePendingUser, updateCode } from "../services/pendingUsersService.js";
 import { sendVerificationEmail, resendVerificationEmail } from "../services/emailService.js";
 import { encrypt, decrypt, codeSalt } from "../services/passwordEncryptionSercive.js";
@@ -75,7 +75,7 @@ router.post("/user-registrations",
     }
 );
 
-
+//Create a new user if the given verification code is valid
 router.post("/verify-code",
     [
         body("email").isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage("Email must be valid"),
@@ -98,7 +98,6 @@ router.post("/verify-code",
 
         // Check if code has expired
         if (Date.now() > pending.expiresAt) {
-            removePendingUser(email);
             return res.status(410).json({ error: "Verification code expired" });
         }
 
@@ -138,7 +137,7 @@ router.post("/verify-code",
     }
 );
 
-
+//Resend the verification code
 router.post("/resend-code",
     [
         body("email").isEmail().normalizeEmail({ gmail_remove_dots: false }),
@@ -175,6 +174,7 @@ router.post("/resend-code",
             });
         }
         catch (error: any) {
+            console.log(error)
             return res.status(500).json({ error: "Internal server error" });
         }
     }

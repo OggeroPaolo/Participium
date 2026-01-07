@@ -7,8 +7,7 @@ import { type CreateReportDTO } from "../dto/CreateReportDTO.js";
 import type { ReportMap } from "../models/reportMap.js";
 import OperatorDAO from "../dao/OperatorDAO.js";
 import { ROLES } from "../models/userRoles.js";
-import type { User } from "../models/user.js"
-import { validateAssignExternalMaintainer, validateCreateReport, validateExternalMaintainerUpdateStatus, validateReportId, validateGetReports, validateCreateComment } from "../middlewares/reportValidation.js";
+import { validateAssignExternalMaintainer, validateCreateReport, validateUpdateStatus, validateReportId, validateGetReports, validateCreateComment } from "../middlewares/reportValidation.js";
 import { upload } from "../config/multer.js";
 import cloudinary from "../config/cloudinary.js";
 import { unlink } from "node:fs/promises";
@@ -24,6 +23,12 @@ import { logger } from "../config/logger.js";
 import CommentDAO from "../dao/CommentDAO.js";
 import type { CreateCommentDTO } from "../dto/CommentDTO.js";
 
+import NotificationDAO from "../dao/NotificationDAO.js";
+import type { CreateNotificationDTO } from "../dto/NotificationDTO.js";
+import { NotificationType } from "../models/NotificationType.js";
+import { notificationService } from "../services/notificationService.js";
+import { authorizeReportStatusUpdate } from "../middlewares/authorizeReportStatusUpdate.js";
+
 
 const router = Router();
 const reportDAO = new ReportDAO();
@@ -32,6 +37,8 @@ const operatorDAO = new OperatorDAO();
 const userDAO = new UserDAO();
 
 const commentDAO = new CommentDAO();
+
+const notificationDAO = new NotificationDAO();
 
 //GET /reports/map
 router.get("/reports/map/accepted",
@@ -61,12 +68,24 @@ router.get("/reports/:reportId",
             const reportId = Number(req.params.reportId);
             const report = await reportDAO.getCompleteReportById(reportId);
 
+            const user = req.user;
+
+            //Mark as read if the user is logged in
+            if (user?.id) {
+                await notificationDAO.markByReportAsRead(user.id, reportId,
+                    [
+                        NotificationType.StatusUpdate
+                    ]
+                );
+            }
+
             return res.status(200).json({ report });
 
         } catch (error: any) {
             if (error instanceof Error && error.message === "Report not found") {
                 return res.status(404).json({ error: "Report not found" });
             }
+            console.error(error);
             return res.status(500).json({ error: "Internal server error" });
         }
     }
@@ -77,7 +96,7 @@ router.get("/ext_maintainer/reports",
     verifyFirebaseToken([ROLES.EXT_MAINTAINER]),
     async (req: Request, res: Response) => {
         try {
-            const user = (req as Request & { user: User }).user;
+            const user = req.user!;
             const filters: ReportFilters = { externalUser: user.id };
 
             const reports = await reportDAO.getReportsByFilters(filters);
@@ -101,7 +120,7 @@ router.get("/tech_officer/reports",
     verifyFirebaseToken([ROLES.TECH_OFFICER]),
     async (req: Request, res: Response) => {
         try {
-            const user = (req as Request & { user: User }).user;
+            const user = req.user!;
             const filters: ReportFilters = { officerId: user.id };
 
             const reports = await reportDAO.getReportsByFilters(filters);
@@ -147,25 +166,83 @@ router.get("/reports",
     }
 )
 
-//POST /reports/:reportId/comments
-router.post("/reports/:reportId/comments",
+//POST /reports/:reportId/internal-comments
+router.post("/reports/:reportId/internal-comments",
     validateCreateComment,
     verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]),
     async (req: Request, res: Response) => {
         try {
-            const user = (req as Request & { user: User }).user;
+            const user = req.user!;
 
             const data: CreateCommentDTO = {
                 user_id: Number(user.id),
                 report_id: Number(req.params.reportId),
-                type: req.body.type,
+                type: "private",
                 text: req.body.text
             };
             const createdComment = await commentDAO.createComment(data);
 
+            const report = await reportDAO.getReportById(Number(req.params.reportId));
+
+            const recipientId = user.role_type === ROLES.TECH_OFFICER ? report?.external_user : report?.assigned_to;
+
+            if (recipientId != null) {
+                const notification: CreateNotificationDTO = {
+                    user_id: recipientId,
+                    report_id: Number(req.params.reportId),
+                    comment_id: createdComment.id,
+                    type: NotificationType.ExternalCommentOnReport,
+                    title: 'A new comment has arrived',
+                    message: createdComment.text?.slice(0, 200) ?? undefined,
+                };
+
+                await notificationService.createAndDispatch(notification);
+            }
+
             return res.status(201).json({ comment: createdComment });
         } catch (error) {
-            console.log(error);
+            console.error(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
+
+//POST /reports/:reportId/external-comments
+router.post("/reports/:reportId/external-comments",
+    validateCreateComment,
+    verifyFirebaseToken([ROLES.TECH_OFFICER, ROLES.CITIZEN]),
+    async (req: Request, res: Response) => {
+        try {
+            const user = req.user!;
+
+            const data: CreateCommentDTO = {
+                user_id: Number(user.id),
+                report_id: Number(req.params.reportId),
+                type: "public",
+                text: req.body.text
+            };
+            const createdComment = await commentDAO.createComment(data);
+
+            const report = await reportDAO.getReportById(Number(req.params.reportId));
+
+            const recipientId = user.role_type === ROLES.TECH_OFFICER ? report?.user_id : report?.assigned_to;
+
+            if (recipientId != null) {
+                const notification: CreateNotificationDTO = {
+                    user_id: recipientId,
+                    report_id: Number(req.params.reportId),
+                    comment_id: createdComment.id,
+                    type: NotificationType.InternalCommentOnReport,
+                    title: 'A new comment has arrived',
+                    message: createdComment.text?.slice(0, 200) ?? undefined,
+                };
+
+                await notificationService.createAndDispatch(notification);
+            }
+
+            return res.status(201).json({ comment: createdComment });
+        } catch (error) {
+            console.error(error);
             return res.status(500).json({ error: "Internal server error" });
         }
     }
@@ -206,7 +283,7 @@ router.post("/reports",
                 await unlink(newPath);
             }
 
-            const user = (req as Request & { user: User }).user;
+            const user = req.user!;
 
             const data: CreateReportDTO = {
                 user_id: Number(user.id),
@@ -225,7 +302,7 @@ router.post("/reports",
 
         }
         catch (error) {
-            console.log(error);
+            console.error(error);
             for (const url of uploadedUrls) {
                 await rollbackCloundinaryImages(url)
             }
@@ -260,8 +337,9 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
     verifyFirebaseToken([ROLES.TECH_OFFICER]),
     async (req: Request, res: Response) => {
         try {
+
             const reportId = Number(req.params.reportId);
-            const user = (req as Request & { user: User }).user;
+            const user = req.user!;
             let { externalMaintainerId } = req.body
 
             // get report info to check the current status
@@ -283,8 +361,8 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
             }
 
 
-            const externalMaintainerCategoryId = await operatorDAO.getCategoryOfExternalMaintainer(externalMaintainerId);
-            if (externalMaintainerCategoryId === report.category_id) {
+            const externalMaintainerCategoryId = await operatorDAO.getCategoriesOfExternalMaintainer(externalMaintainerId);
+            if (externalMaintainerCategoryId.includes(report.category_id)) {
                 await reportDAO.updateReportExternalMaintainer(reportId, externalMaintainerId);
             } else {
                 return res.status(403).json({
@@ -305,24 +383,15 @@ router.patch("/tech_officer/reports/:reportId/assign_external",
 
 // Permits to an external maintainer to update the status of a report assigned to him
 router.patch("/ext_maintainer/reports/:reportId",
-    validateExternalMaintainerUpdateStatus,
+    validateUpdateStatus,
     verifyFirebaseToken([ROLES.EXT_MAINTAINER]),
+    authorizeReportStatusUpdate,
     async (req: Request, res: Response) => {
         try {
             const reportId = Number(req.params.reportId);
-            const user = (req as Request & { user: User }).user;
             let { status } = req.body
-
-            const report = await reportDAO.getReportById(reportId);
-            if (!report) return res.status(404).json({ error: "Report not found" });
-
-            if (report.status !== ReportStatus.Assigned &&
-                report.status !== ReportStatus.InProgress &&
-                report.status !== ReportStatus.Suspended) {
-                return res.status(403).json({
-                    error: `You are not allowed to change status of a report not in assigned/in_progress/suspended state`
-                });
-            }
+            const report = req.authorizedReport!;
+            const user = req.user!
 
             if (report.external_user !== user.id) {
                 return res.status(403).json({
@@ -332,12 +401,67 @@ router.patch("/ext_maintainer/reports/:reportId",
 
             await reportDAO.updateReportStatus(reportId, status)
 
+            if (report.user_id != null) {
+                const notification: CreateNotificationDTO = {
+                    user_id: report.user_id,
+                    report_id: Number(req.params.reportId),
+                    type: NotificationType.StatusUpdate,
+                    title: `The status of your report "${report.title}" was set to ${status}`,
+                    message: `Current status: ${status}`,
+                };
+
+                await notificationService.createAndDispatch(notification);
+            }
+
             return res.status(200).json({
                 message: "Report status updated successfully"
             });
 
         } catch (error) {
-            console.log(error);
+            console.error(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
+
+// Permits to a tech officer to update the status of a report assigned to him
+router.patch("/tech_officer/reports/:reportId",
+    validateUpdateStatus,
+    verifyFirebaseToken([ROLES.TECH_OFFICER]),
+    authorizeReportStatusUpdate,
+    async (req: Request, res: Response) => {
+        try {
+            const reportId = Number(req.params.reportId);
+            let { status } = req.body
+            const report = req.authorizedReport!;
+            const user = req.user!
+
+            if (report.assigned_to !== user.id) {
+                return res.status(403).json({
+                    error: `You are not allowed to change status of a report that is not assigned to you`
+                });
+            }
+
+            await reportDAO.updateReportStatus(reportId, status)
+
+            if (report.user_id != null) {
+                const notification: CreateNotificationDTO = {
+                    user_id: report.user_id,
+                    report_id: Number(req.params.reportId),
+                    type: NotificationType.StatusUpdate,
+                    title: `The status of your report "${report.title}" was set to ${status}`,
+                    message: `Current status: ${status}`,
+                };
+
+                await notificationService.createAndDispatch(notification);
+            }
+
+            return res.status(200).json({
+                message: "Report status updated successfully"
+            });
+
+        } catch (error) {
+            console.error(error);
             return res.status(500).json({ error: "Internal server error" });
         }
     }
@@ -370,14 +494,14 @@ router.patch("/pub_relations/reports/:reportId",
             let { status, note, categoryId, officerId } = req.body;
 
             // if status to be changed is not rejected set note to null so it won't be changed in the sql query
-            if (status != "rejected") {
+            if (status != ReportStatus.Rejected) {
                 note = null;
             }
 
             // category is always optional (probably not needed to set it to null but i dont know)
             // categoryId = categoryId? categoryId : null;
             const reportId = Number(req.params.reportId);
-            const user = (req as Request & { user: User }).user;
+            const user = req.user!;
 
             // get report info to check the current status
             const report = await reportDAO.getReportById(reportId);
@@ -400,8 +524,8 @@ router.patch("/pub_relations/reports/:reportId",
                 assigneeId = await operatorDAO.getAssigneeId(categoryIdFinal);
             }
             if (status === "assigned" && officerId) {
-                const officerCategoryId = await operatorDAO.getCategoryOfOfficer(officerId);
-                if (officerCategoryId === categoryIdFinal) {
+                const officerCategoryId = await operatorDAO.getCategoriesOfOfficer(officerId);
+                if (officerCategoryId.includes(categoryIdFinal)) {
                     assigneeId = officerId
                 } else {
                     return res.status(403).json({
@@ -413,25 +537,18 @@ router.patch("/pub_relations/reports/:reportId",
             // update the report and optionally assigne it if to be status is assigned
             await reportDAO.updateReportStatusAndAssign(reportId, status, user.id, note, categoryId, assigneeId);
 
-            if (status === ReportStatus.Assigned) {
-                try {
-                    const reportOwner = await userDAO.findUserById(report.user_id);
-                    if (reportOwner?.firebase_uid) {
-                        getRealtimeGateway().notifyUser(reportOwner.firebase_uid, {
-                            type: "report.accepted",
-                            title: "Report approved",
-                            message: `Your report "${report.title}" has been approved and assigned for action.`,
-                            metadata: {
-                                reportId,
-                                status,
-                                categoryId: categoryIdFinal,
-                                assignedOfficerId: assigneeId ?? null
-                            }
-                        });
-                    }
-                } catch (notifyError) {
-                    logger.warn({ notifyError, reportId }, "Failed to emit realtime report notification");
-                }
+            const recipientId = report?.user_id;
+
+            if (recipientId != null) {
+                const notification: CreateNotificationDTO = {
+                    user_id: recipientId,
+                    report_id: Number(req.params.reportId),
+                    type: NotificationType.StatusUpdate,
+                    title: `The status of your report "${report.title}" was set to ${status}`,
+                    message: note ?? `Current status: ${status}`,
+                };
+
+                await notificationService.createAndDispatch(notification);
             }
 
             return res.status(200).json({
@@ -443,7 +560,6 @@ router.patch("/pub_relations/reports/:reportId",
     }
 );
 
-
 //GET /report/:reportId/internal-comments
 router.get("/report/:reportId/internal-comments",
     validateReportId,
@@ -451,11 +567,18 @@ router.get("/report/:reportId/internal-comments",
     async (req: Request, res: Response) => {
         try {
             const reportId = Number(req.params.reportId);
-            const comments = await commentDAO.getPrivateCommentsByReportId(reportId);
+            const comments = await commentDAO.getCommentsByReportIdAndType(reportId, 'private');
+            const user = req.user!;
 
             if (Array.isArray(comments) && comments.length === 0) {
                 return res.status(204).send();
             }
+
+            await notificationDAO.markByReportAsRead(user.id, reportId,
+                [
+                    NotificationType.InternalCommentOnReport
+                ]
+            );
 
             return res.status(200).json({ comments });
 
@@ -465,5 +588,35 @@ router.get("/report/:reportId/internal-comments",
         }
     }
 );
+
+//GET /report/:reportId/external-comments
+router.get("/report/:reportId/external-comments",
+    validateReportId,
+    verifyFirebaseToken([ROLES.CITIZEN, ROLES.TECH_OFFICER]),
+    async (req: Request, res: Response) => {
+        try {
+            const reportId = Number(req.params.reportId);
+            const comments = await commentDAO.getCommentsByReportIdAndType(reportId, 'public');
+            const user = req.user!;
+
+            if (Array.isArray(comments) && comments.length === 0) {
+                return res.status(204).send();
+            }
+
+            await notificationDAO.markByReportAsRead(user.id, reportId,
+                [
+                    NotificationType.ExternalCommentOnReport
+                ]
+            );
+
+            return res.status(200).json({ comments });
+
+        } catch (error: any) {
+            console.log(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
+
 
 export default router;

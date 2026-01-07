@@ -8,7 +8,7 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.awesome-markers/dist/leaflet.awesome-markers.css";
 import "leaflet.awesome-markers/dist/leaflet.awesome-markers.js";
 import { reverseGeocode } from "../utils/geocoding";
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 
 // Fix for default marker icons in Leaflet with React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -25,13 +25,18 @@ function CityMap({
   center = [45.0703, 7.6869],
   zoom = 13,
   approvedReports,
+  showUserReports,
+  userReports,
   selectedReportID,
   onMarkerSelect,
+  isAuthenticated,
+  onZoomChange,
 }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const currentMarkerRef = useRef(null);
   const clusterGroupRef = useRef(null);
+  const cityBorderRef = useRef(null);
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -86,7 +91,7 @@ function CityMap({
     marker.openPopup();
     currentMarkerRef.current = marker;
     return marker;
-  }
+  };
 
   const attachCreateReportButton = (marker, lat, lng) => {
     // timeout per assicurarsi che il DOM sia pronto
@@ -97,9 +102,15 @@ function CityMap({
       const btn = popupNode.querySelector(".report-btn");
       if (!btn) return;
 
-      L.DomEvent.on(btn, "click", () =>
-        navigate("/create-report", { state: { lat, lng } })
-      );
+      const action = btn.dataset.action;
+
+      L.DomEvent.on(btn, "click", () => {
+        if (action === "create") {
+          navigate("/create-report", { state: { lat, lng } });
+        } else {
+          navigate("/login");
+        }
+      });
     }, 100);
   };
 
@@ -108,7 +119,10 @@ function CityMap({
       `<div class="body-font">
         <b>Selected Location</b><br>
         ${address}<br>
-        <button class="map-button report-btn">Create a new report</button>
+        <button class="map-button report-btn"
+        data-action="${isAuthenticated ? "create" : "login"}">${
+        isAuthenticated ? "Create a new report" : "Login to create reports"
+      }</button>
       </div>`
     );
     // Re-attach button listener
@@ -143,7 +157,7 @@ function CityMap({
     // Store coordinates immediately
     setSelectedPoint({ lat: lat.toFixed(5), lng: lng.toFixed(5) });
     setIsGeocoding(true);
-    setSelectedAddress('Loading address...');
+    setSelectedAddress("Loading address...");
 
     // Remove previous marker
     selectedLayerRef.current.clearLayers();
@@ -156,9 +170,10 @@ function CityMap({
       const address = await reverseGeocode(lat, lng);
       const lower = address.toLowerCase();
       // Check if address contains Torino/Turin/TO
-      const isTorino = lower.includes('torino') ||
-        lower.includes('turin') ||
-        lower.includes('to,');
+      const isTorino =
+        lower.includes("torino") ||
+        lower.includes("turin") ||
+        lower.includes("to,");
 
       setSelectedAddress(address);
       setIsGeocoding(false);
@@ -173,7 +188,6 @@ function CityMap({
 
       // Location outside Torino - show error, disable button
       setPopupLocationOutsideTorino(marker, address);
-
     } catch (error) {
       console.error("Geocoding failed:", error);
       setSelectedAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
@@ -183,7 +197,7 @@ function CityMap({
       if (!marker.getPopup()) return;
       setPopupGeocodingError(marker, lat, lng);
     }
-  }
+  };
 
   const handleReportPopupOpen = (e, reportId) => {
     setTimeout(() => {
@@ -195,23 +209,22 @@ function CityMap({
 
       const btnClone = btn.cloneNode(true);
       btn.parentNode.replaceChild(btnClone, btn);
-      L.DomEvent.on(btnClone, "click", () =>
-        navigate(`/reports/${reportId}`)
-      );
+      L.DomEvent.on(btnClone, "click", () => navigate(`/reports/${reportId}`));
     }, 0);
   };
 
   const addReportMarkerToCluster = (clusterGroup, report) => {
     if (!report.position?.lat || !report.position?.lng) return;
 
-    const marker = L.marker(
-      [report.position.lat, report.position.lng],
-      { icon: reportIcon }
-    ).bindPopup(
+    const reporter = report.is_anonymous ? "Anonymous" : report.reporterName;
+
+    const marker = L.marker([report.position.lat, report.position.lng], {
+      icon: reportIcon,
+    }).bindPopup(
       `<div class="body-font">
         <p class="my-1"><b>${report.title}</b></p>
         <p class="my-1 d-inline reporte-by-size">Reported by: </p>
-        <p class="my-1 d-inline">${report.reporterName}</p>
+        <p class="my-1 d-inline">${reporter}</p>
         <button class="map-button report-btn">View full report</button>
       </div>`
     );
@@ -268,6 +281,14 @@ function CityMap({
     // Click handler for map
     mapInstance.on("click", handleMapClick);
 
+    const handleZoomEnd = () => {
+      if (typeof onZoomChange === "function") {
+        onZoomChange(mapInstance.getZoom());
+      }
+    };
+
+    mapInstance.on("zoomend", handleZoomEnd);
+
     mapInstanceRef.current = mapInstance;
 
     // Ensure proper rendering
@@ -277,10 +298,10 @@ function CityMap({
       }
     }, 100);
 
-
     return () => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
+        mapInstance.off("zoomend", handleZoomEnd);
+        mapInstance.remove();
         mapInstanceRef.current = null;
       }
       clusterGroupRef.current = null;
@@ -288,7 +309,38 @@ function CityMap({
       selectedLayerRef?.current?.clearLayers?.();
       currentMarkerRef.current = null;
     };
-  }, [centerLat, centerLng, zoom]);
+  }, []); // intentionally run once; center/zoom updates handled in other effects
+
+  // Keep map zoom in sync when controlled value changes
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    if (typeof zoom !== "number") return;
+
+    const map = mapInstanceRef.current;
+    const currentZoom = map.getZoom();
+    if (Math.abs(currentZoom - zoom) < 0.0001) return;
+
+    map.setZoom(zoom);
+  }, [zoom]);
+
+  // Pan map when center prop changes without affecting current zoom level
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    if (centerLat == null || centerLng == null) return;
+
+    const map = mapInstanceRef.current;
+    const nextCenter = L.latLng(centerLat, centerLng);
+    const currentCenter = map.getCenter();
+
+    if (
+      Number(currentCenter.lat.toFixed(6)) === Number(nextCenter.lat.toFixed(6)) &&
+      Number(currentCenter.lng.toFixed(6)) === Number(nextCenter.lng.toFixed(6))
+    ) {
+      return;
+    }
+
+    map.setView(nextCenter, map.getZoom(), { animate: true });
+  }, [centerLat, centerLng]);
 
   //add city border to map
   useEffect(() => {
@@ -296,25 +348,36 @@ function CityMap({
 
     const loadGeoJSON = async () => {
       try {
-        const response = await fetch('/turin_geojson.geojson');
+        const response = await fetch("/turin_geojson.geojson");
         const geojson = await response.json();
 
         const layer = L.geoJSON(geojson, {
-          style: { color: '#2886da', weight: 2, opacity: 0.4, fillColor: '#2886da', fillOpacity: 0.07 }
+          style: {
+            color: "#2886da",
+            weight: 2,
+            opacity: 0.4,
+            fillColor: "#2886da",
+            fillOpacity: 0.07,
+          },
         }).addTo(mapInstanceRef.current);
 
-        mapInstanceRef.current.fitBounds(layer.getBounds());      //maybe should take the pan to fit the boundary away
+        cityBorderRef.current = layer;
+
+        mapInstanceRef.current.fitBounds(layer.getBounds()); //maybe should take the pan to fit the boundary away
       } catch (err) {
         console.error("Failed loading GeoJSON", err);
       }
-    }
+    };
 
     loadGeoJSON();
   }, []);
 
-  // add reports to cluster
+  // Determine which list to use based on the switch state
+  const reportsToDisplay = showUserReports ? userReports : approvedReports;
+
+  // Update the cluster whenever the active list changes
   useEffect(() => {
-    if (!approvedReports || !clusterGroupRef.current) return;
+    if (!reportsToDisplay || !clusterGroupRef.current) return;
 
     const clusterGroup = clusterGroupRef.current;
 
@@ -322,9 +385,17 @@ function CityMap({
     clusterGroup.clearLayers();
     markersRef.current = {};
 
-    approvedReports.forEach((report) =>
-      addReportMarkerToCluster(clusterGroup, report));
-  }, [approvedReports]);
+    reportsToDisplay.forEach((report) =>
+      addReportMarkerToCluster(clusterGroup, report)
+    );
+
+    if (cityBorderRef.current && mapInstanceRef.current) {
+      mapInstanceRef.current.fitBounds(cityBorderRef.current.getBounds());
+    }
+
+
+    // Add reportsToDisplay to the dependency array
+  }, [reportsToDisplay]);
 
   // highlight / un-highlight markers when selectedReportID changes
   useEffect(() => {
@@ -348,8 +419,7 @@ function CityMap({
       map.panTo(marker.getLatLng());
       marker.openPopup();
     });
-
-  }, [selectedReportID]);
+  }, [selectedReportID, reportsToDisplay]);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
@@ -366,7 +436,7 @@ function CityMap({
 
       {selectedPoint && (
         <div
-          className="location-info-box"
+          className='location-info-box'
           style={{
             position: "absolute",
             top: "10px",
@@ -384,11 +454,11 @@ function CityMap({
           <div style={{ marginTop: "5px", color: "#555" }}>
             {isGeocoding ? (
               <span>
-                <i className="spinner-border spinner-border-sm me-2"></i>{' '}
+                <i className='spinner-border spinner-border-sm me-2'></i>{" "}
                 Loading address...
               </span>
             ) : (
-              selectedAddress || 'Unknown location'
+              selectedAddress || "Unknown location"
             )}
           </div>
           <div style={{ fontSize: "11px", color: "#999", marginTop: "5px" }}>
@@ -401,7 +471,7 @@ function CityMap({
 }
 
 CityMap.propTypes = {
-  center: PropTypes.arrayOf(PropTypes.number),          // [lat, lng]
+  center: PropTypes.arrayOf(PropTypes.number), // [lat, lng]
   zoom: PropTypes.number,
   approvedReports: PropTypes.arrayOf(
     PropTypes.shape({
@@ -414,12 +484,22 @@ CityMap.propTypes = {
       }),
     })
   ),
-  selectedReportID: PropTypes.oneOfType([
-    PropTypes.string,
-    PropTypes.number,
-  ]),
+  showUserReports: PropTypes.bool,
+  userReports: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      title: PropTypes.string,
+      reporterName: PropTypes.string,
+      position: PropTypes.shape({
+        lat: PropTypes.number,
+        lng: PropTypes.number,
+      }),
+    })
+  ),
+  selectedReportID: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onMarkerSelect: PropTypes.func,
+  isAuthenticated: PropTypes.bool,
+  onZoomChange: PropTypes.func,
 };
-
 
 export default CityMap;
