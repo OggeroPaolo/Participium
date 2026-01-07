@@ -8,9 +8,8 @@ import {
   Alert,
   InputGroup,
   Modal,
-} from "react-bootstrap";
+ Form } from "react-bootstrap";
 import { verifyEmail, resendCode } from "../API/API";
-import { Form } from "react-bootstrap";
 import { useState, useRef } from "react";
 import yellowbull from "../assets/yellowbull.png";
 import { useNavigate } from "react-router";
@@ -18,7 +17,7 @@ import { useEmailStore } from "../store/emailStore";
 import { loginWithEmail } from "../firebaseService";
 
 function EmailCode() {
-  const [code, setCode] = useState(Array(4).fill(""));
+  const [code, setCode] = useState((new Array(4)).fill(""));
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
@@ -36,7 +35,7 @@ function EmailCode() {
 
   const handleChange = async (value, index) => {
     // return if it's not a digit
-    if (!/^[0-9]?$/.test(value)) return;
+    if (!/^\d?$/.test(value)) return;
 
     const newCode = [...code];
     newCode[index] = value;
@@ -73,7 +72,7 @@ function EmailCode() {
       // code expired (410)
       if (error.message === "Verification code expired") {
         setShowExpiredModal(true);
-        setCode(Array(4).fill(""));
+        setCode((new Array(4)).fill(""));
         inputsRef.current[0]?.focus();
         return;
       }
@@ -85,7 +84,7 @@ function EmailCode() {
       });
 
       // reset code fields
-      setCode(Array(4).fill(""));
+      setCode((new Array(4)).fill(""));
       inputsRef.current[0]?.focus();
     }
   };
@@ -151,7 +150,7 @@ function EmailCode() {
 
       // Reset verification state
       setIsCodeVerified(false);
-      setCode(Array(4).fill(""));
+      setCode((new Array(4)).fill(""));
       inputsRef.current[0]?.focus();
 
       // Inform user
@@ -161,6 +160,7 @@ function EmailCode() {
         variant: "success",
       });
     } catch (error) {
+      console.error('Resend code failed:', error);
       setAlert({
         show: true,
         message: "Failed to resend code. Try again.",
@@ -170,6 +170,8 @@ function EmailCode() {
       setIsResending(false);
     }
   };
+
+  const inputKeys = ['pin-1', 'pin-2', 'pin-3', 'pin-4'];
 
   return (
     <Container className='p-2 body-font'>
@@ -201,7 +203,7 @@ function EmailCode() {
             <div className='d-flex justify-content-center gap-1 mb-4'>
               {code.map((digit, i) => (
                 <input
-                  key={i}
+                  key={inputKeys[i]}
                   type='text'
                   maxLength={1}
                   className='form-control text-center'
@@ -271,6 +273,7 @@ function EmailCode() {
               {isSubmitting ? (
                 <>
                   <span className='spinner-border spinner-border-sm me-2' />
+                  {' '}
                   Verifying...
                 </>
               ) : (
@@ -313,6 +316,7 @@ function EmailCode() {
             {isResending ? (
               <>
                 <span className='spinner-border spinner-border-sm me-2'></span>
+                {' '}
                 Sending...
               </>
             ) : (
