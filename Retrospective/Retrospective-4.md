@@ -86,50 +86,50 @@ sections:
 
 #### What caused your errors in estimation (if any)?
 
-- Overall, our estimates were more realistic than in the previous sprint, but we still had slight overestimations on some frontend tasks (e.g., responsiveness tweaks), mostly due to uncertainty about UI edge cases
-- For a few tasks, we underestimated the time needed to polish and fix small bugs after the main implementation was “done.”
-- We did not fully account for context switching and code review overhead, so tasks that looked small on paper sometimes ended up slipping toward the end of the sprint.
+-	Overall, estimation accuracy was strong this sprint and we delivered all accepted stories.
+
+-	Most underestimations were minor (typically ~10–15 minutes) and came from small implementation details and polish that surfaced during execution.
+
+-	We had one notable frontend underestimation (~1+ hour), which was primarily caused by a misunderstanding of the feature’s intended functionality—this required discussion and alignment to reach a “middle-ground” solution to re-implementation could proceed.
+
+-	Some work naturally landed later in the sprint because multiple tasks had hard dependencies (linked functionalities that needed to be implemented in sequence), which limited how early we could start certain items.
 
 #### What lessons did you learn (both positive and negative) in this sprint?
 
 **Positive:**
 
-- Our calibration of estimates improved compared to the previous sprint – there were fewer major surprises.
-- The quality of planning and specifications remained stable: we are no longer missing major requirements, although some small tasks still emerge during development.
-- We can consistently deliver working features, even when some work drifts into the last days.
+- When requirements are clear, our team can estimate and execute very reliably—most tasks landed close to plan.
+- Alignment conversations (even when they cost time) prevented us from implementing the “wrong” solution and reduced downstream rework.
+- SonarCloud discipline worked extremely well: we reduced code smells and improved overall code quality while still delivering features.
 
 **Negative:**
 
-- Improving estimates alone is not enough; our pacing still pushes too many implementations into the final 2–3 days.
-- Final integration and polishing take more time than we intuitively expect, and we still tend to treat them as “small” tasks.
+-	A single misunderstanding can still create a disproportionate slip (as seen in the 1+ hour FE task), so catching ambiguity earlier is the biggest lever to keep estimates accurate.
+
+-	Even if late-sprint concentration is “expected” due to dependencies, it can still increase risk if integration or QA gets compressed—worth monitoring to keep it from turning into a recurring pattern.
 
 #### Which improvement goals set in the previous retrospective were you able to achieve?
 
-- **Goal 2 – Calibrate estimations (reduce fear-based overestimation):**
-  Partially achieved. Our estimates, especially on frontend tasks like responsiveness, were closer to reality and less “fear padded” than before, though some overestimation still remains.
 
-- **Goal 3 – Youtrack logging right after working on a task:**
-  Partially achieved. Frequent reminders improved logging behavior compared to the previous sprint, but some logs were still missing, so there is room for further improvement
+- **Goal 2 – Better management of Technical Debt:**
+	SonarCloud results were strong: we lowered code smells and improved code health during feature delivery.
+- **Goal 3 – YouTrack logging right after working on a task::**
+  We maintained as much as possible "on-time" tracking on YouTrack. 
 
 #### Which ones you were not able to achieve? Why?
 
-- **Goal 1 – Smooth execution across the sprint (avoid last-minute crunch):**
-  Not achieved. We again had a concentration of implementations and finishing touches in the last 2–3 days. On the positive side, we did apply bi-daily checks and broke large tasks into smaller pieces—but the pacing still needs work.
+- **Goal 1 – Smooth execution across the sprint:**
+  Mostly achieved within the constraints of dependencies. While a larger portion of implementation happened in the last week, this was driven by sequenced work rather than avoidable crunch.
 
 #### Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
 
-- **Goal 1 – Smooth execution across the sprint (avoid last-minute crunch):**
-- Ensure that by mid-sprint, at least 60–70% of critical stories are “To verify” or “Done.”
-- Continuing with daily/bi-daily check
-- Reassign tasks as needed to balance workload
+- **Goal 1 –  Reduce “misunderstanding-driven” slippage :**
+  Add a quick “definition checkpoint” before starting any story with unclear behavior (5–10 min sync or async clarification). For any story with UX/logic ambiguity, write a 3–5 bullet “expected behavior” note in the ticket before implementation.
 
-- **Goal 2 – Better management of Technical Debt:**
-- Issues were 98 at the start (sprint 1/mid sprint 2), peaked at 215, and were reduced to 156 by the end of sprint 3, with no code smells above “medium” severity. This is progress, but we can do better.
-- We aim to leverage the Sonar plugin continuously while developing new features to avoid increasing the issue count unnecessarily and to improve code quality without inflating TD-specific hours.
-
-- **Goal 3 – Youtrack logging right after working on a task:**
-- Maintain consistent logging immediately after completing or progressing on a task, to keep the team aligned and the board up to date.
+- **Goal 2 – Dependency-aware sprint planning :**
+	Explicitly mark dependency chains in YouTrack and schedule prerequisites earlier.
+	If a chain forces last-week concentration, plan QA/integration time accordingly (so testing doesn’t get squeezed).
 
 #### One thing you are proud of as a Team!!
 
-Even though we still struggled with last-minute implementations, we slightly improved our estimation quality compared to the previous sprint and kept our planning, coordination, and delivery discipline strong. We’re showing that we can learn from each sprint, adjust our approach, and keep delivering working features while gradually tightening our process.
+We delivered 100% of the stories we committed to, kept estimation accuracy high, and simultaneously improved code quality through SonarCloud—showing we can ship reliably while raising engineering standards.
