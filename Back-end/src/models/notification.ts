@@ -1,4 +1,4 @@
-import type { NotificationType } from "./NotificationType.js";
+import type { NotificationType } from "./notificationType.js";
 
 export interface Notification {
     id: number;

@@ -2,7 +2,7 @@ import useUserStore from "../store/userStore";
 import {
   CitizenDashboard,
   AuthenticatedUserDashboard,
-} from "./HomeComponents/DashBoards";
+} from "./HomeComponents/Dashboards";
 
 function Home() {
   const { user, isAuthenticated } = useUserStore();
