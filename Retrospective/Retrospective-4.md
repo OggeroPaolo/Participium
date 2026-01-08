@@ -1,4 +1,4 @@
-# RETROSPECTIVE N.3 (Team 17)
+# RETROSPECTIVE N.4 (Team 17)
 
 The retrospective should include _at least_ the following
 sections:
@@ -25,10 +25,10 @@ sections:
 
 **Remember** a story is done ONLY if it fits the Definition of Done:
 
-- Unit Tests passing:: 220
+- Unit Tests passing:: 348
 - Code review completed: 17h 30m
 - Code present on VCS
-- End-to-End tests performed: 77
+- End-to-End tests performed: 113
 
 > Please refine your DoD
 
@@ -63,16 +63,16 @@ sections:
 ## QUALITY MEASURES
 
 - Unit Testing:
-  - Total hours estimated: 3h
-  - Total hours spent: 3h 30m
-  - Nr of automated unit test cases:220
-  - Coverage: 99.68%
-- Integration testing:
   - Total hours estimated: 2h
-  - Total hours spent: 2h 40m
-- E2E testing:
+  - Total hours spent: 2h 30m
+  - Nr of automated unit test cases:348
+  - Coverage: 98.94%
+- Integration testing:
   - Total hours estimated: 7h
   - Total hours spent: 7h
+- E2E testing:
+  - Total hours estimated: 4h
+  - Total hours spent: 3h 45m
 - Code review:
   - Total hours estimated: 25h 30m
   - Total hours spent: 17h 30m

@@ -383,7 +383,15 @@ export const seedDefaultUsers = async (): Promise<void> => {
           first_name: "Palema",
           last_name: "Anderson",
           roles: ["GeneralWorks Worker"]
-        }
+        },
+        {
+          firebase_uid: "QRrZKKHkn8JbKlb4DfJooG7VET2f2",
+          email: "citizenexample1@example.com",
+          username: "CoryWong",
+          first_name: "Cory",
+          last_name: "Wong",
+          roles: ["Citizen"]
+        },
       ];
 
     // --------------------------------------------------

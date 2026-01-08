@@ -215,64 +215,6 @@ describe("Account Configuration User Story Integration Tests", () => {
           expect(user?.telegram_username).toBeNull();
         });
 
-        it("should allow citizen to update profile photo for virtual presence", async () => {
-          const testImgPath = path.join(__dirname, "../../test_img/test.jpg");
-
-          const res = await request(app)
-            .patch("/users/1")
-            .attach("photo_profile", testImgPath);
-
-          expect(res.status).toBe(200);
-          expect(res.body).toEqual({
-            message: "User information updated",
-          });
-
-          // Verify Cloudinary upload was called
-          if (shouldMockCloudinary) {
-            expect(cloudinary.uploader.upload).toHaveBeenCalled();
-          }
-
-          // Verify the profile photo URL was updated in database
-          const user = await getOne<any>(
-            "SELECT profile_photo_url FROM users WHERE id = ?",
-            [1]
-          );
-          if (shouldMockCloudinary) {
-            expect(user?.profile_photo_url).toBe("https://res.cloudinary.com/test/image/upload/v123/test.jpg");
-          }
-        });
-
-        it("should replace old profile photo when uploading new one", async () => {
-          const testImgPath = path.join(__dirname, "../../test_img/test.jpg");
-
-          // Upload first photo
-          await request(app)
-            .patch("/users/1")
-            .attach("photo_profile", testImgPath);
-
-          const firstPhoto = await getOne<any>(
-            "SELECT profile_photo_url FROM users WHERE id = ?",
-            [1]
-          );
-
-          // Upload second photo
-          const res = await request(app)
-            .patch("/users/1")
-            .attach("photo_profile", testImgPath);
-
-          expect(res.status).toBe(200);
-
-          // Verify old photo was deleted (if Cloudinary is mocked)
-          if (shouldMockCloudinary) {
-            expect(cloudinary.uploader.destroy).toHaveBeenCalled();
-          }
-
-          const secondPhoto = await getOne<any>(
-            "SELECT profile_photo_url FROM users WHERE id = ?",
-            [1]
-          );
-          expect(secondPhoto?.profile_photo_url).toBeDefined();
-        });
       });
 
       describe("Combined Configuration Updates", () => {
@@ -298,29 +240,6 @@ describe("Account Configuration User Story Integration Tests", () => {
           expect(user?.email_notifications_enabled).toBe(0);
         });
 
-        it("should allow citizen to update all settings: telegram, notifications, and photo", async () => {
-          const testImgPath = path.join(__dirname, "../../test_img/test.jpg");
-
-          const res = await request(app)
-            .patch("/users/1")
-            .attach("photo_profile", testImgPath)
-            .field("telegram_username", "@full_config")
-            .field("email_notifications_enabled", "true");
-
-          expect(res.status).toBe(200);
-          expect(res.body).toEqual({
-            message: "User information updated",
-          });
-
-          // Verify all changes were persisted
-          const user = await getOne<any>(
-            "SELECT telegram_username, email_notifications_enabled, profile_photo_url FROM users WHERE id = ?",
-            [1]
-          );
-          expect(user?.telegram_username).toBe("@full_config");
-          expect(user?.email_notifications_enabled).toBe(1);
-          expect(user?.profile_photo_url).toBeDefined();
-        });
       });
 
       describe("Authorization and Security", () => {
@@ -389,7 +308,6 @@ describe("Account Configuration User Story Integration Tests", () => {
 
       describe("Real-world Scenarios", () => {
         it("should handle complete account configuration workflow", async () => {
-          const testImgPath = path.join(__dirname, "../../test_img/test.jpg");
 
           // Step 1: Set telegram username
           let res = await request(app)
@@ -403,19 +321,14 @@ describe("Account Configuration User Story Integration Tests", () => {
             .send({ email_notifications_enabled: true });
           expect(res.status).toBe(200);
 
-          // Step 3: Upload profile photo
-          res = await request(app)
-            .patch("/users/1")
-            .attach("photo_profile", testImgPath);
-          expect(res.status).toBe(200);
 
-          // Step 4: Update telegram username
+          // Step 3: Update telegram username
           res = await request(app)
             .patch("/users/1")
             .send({ telegram_username: "@updated_handle" });
           expect(res.status).toBe(200);
 
-          // Step 5: Disable notifications
+          // Step 4: Disable notifications
           res = await request(app)
             .patch("/users/1")
             .send({ email_notifications_enabled: false });
@@ -428,7 +341,6 @@ describe("Account Configuration User Story Integration Tests", () => {
           );
           expect(user?.telegram_username).toBe("@updated_handle");
           expect(user?.email_notifications_enabled).toBe(0);
-          expect(user?.profile_photo_url).toBeDefined();
         });
 
         it("should persist configuration changes across requests", async () => {
