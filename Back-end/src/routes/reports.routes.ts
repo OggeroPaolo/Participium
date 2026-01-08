@@ -25,7 +25,7 @@ import type { CreateCommentDTO } from "../dto/CommentDTO.js";
 
 import NotificationDAO from "../dao/NotificationDAO.js";
 import type { CreateNotificationDTO } from "../dto/NotificationDTO.js";
-import { NotificationType } from "../models/NotificationType.js";
+import { NotificationType } from "../models/notificationType.js";
 import { notificationService } from "../services/notificationService.js";
 import { authorizeReportStatusUpdate } from "../middlewares/authorizeReportStatusUpdate.js";
 

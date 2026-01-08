@@ -21,3 +21,8 @@ export interface User {
   role_type: RoleType;
   roles: string[];
 }
+
+export interface UserRoleDTO {
+  role_name: string;
+  role_type: RoleType;
+}
