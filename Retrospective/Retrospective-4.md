@@ -112,7 +112,10 @@ sections:
 
 
 - **Goal 2 – Better management of Technical Debt:**
-	SonarCloud results were strong: we lowered code smells and improved code health during feature delivery.
+SonarCloud results confirm a stable downward trend with no regressions.
+Issues decreased from 156 at sprint start to 106 at sprint end, with no intermediate increases or peaks, in contrast to the previous sprint.
+
+
 - **Goal 3 – YouTrack logging right after working on a task::**
   We maintained as much as possible "on-time" tracking on YouTrack. 
 
