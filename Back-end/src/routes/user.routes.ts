@@ -10,9 +10,12 @@ import path from 'node:path';
 import sharp from 'sharp';
 import { validatePatchUser } from "../middlewares/userValidation.js";
 import fs from "node:fs/promises"
+import type { ReportFilters } from "../dao/ReportDAO.js";
+import ReportDAO from "../dao/ReportDAO.js";
 
 const router = Router();
 const userDao = new UserDAO();
+const reportDao = new ReportDAO();
 
 // Get user by Firebase UID
 router.get("/users/:firebaseUid", verifyFirebaseToken([ROLES.ADMIN, ROLES.CITIZEN, ROLES.PUB_RELATIONS, ROLES.TECH_OFFICER, ROLES.EXT_MAINTAINER]), async (req: Request, res: Response) => {
@@ -144,5 +147,22 @@ async function rollbackCloundinaryImages(url: string) {
 
 }
 
-
+//GET /user/reports
+router.get("/user/reports",
+    verifyFirebaseToken([ROLES.CITIZEN]),
+    async (req: Request, res: Response) => {
+        try {
+            const user = req.user!;
+            const filters: ReportFilters = { userId: user.id };
+            const reports = await reportDao.getReportsByFilters(filters);
+            if (Array.isArray(reports) && reports.length === 0) {
+                return res.status(204).send();
+            }
+            return res.status(200).json({ reports });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+);
 export default router;

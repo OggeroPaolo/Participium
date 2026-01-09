@@ -171,6 +171,7 @@ export const seedDefaultRoles = async (): Promise<void> => {
       { name: "Clean Roads Worker", type: "external_maintainer", office_id: null, company_id: 8 },
       { name: "GreenCare Worker", type: "external_maintainer", office_id: null, company_id: 9 },
       { name: "GeneralWorks Worker", type: "external_maintainer", office_id: null, company_id: 10 },
+      { name: "FixRoads Worker", type: "external_maintainer", office_id: null, company_id: 7 },
     ];
 
 
@@ -385,13 +386,45 @@ export const seedDefaultUsers = async (): Promise<void> => {
           roles: ["GeneralWorks Worker"]
         },
         {
-          firebase_uid: "QRrZKKHkn8JbKlb4DfJooG7VET2f2",
-          email: "citizenexample1@example.com",
-          username: "CoryWong",
-          first_name: "Cory",
-          last_name: "Wong",
+          firebase_uid: "PQEn35izxmQh7T1a15hCujoxlyr2",
+          email: "rosabianca@example.com",
+          username: "RosaBianca",
+          first_name: "Rosa",
+          last_name: "Bianca",
           roles: ["Citizen"]
         },
+        {
+          firebase_uid: "lJKo4fkjvQbjQBzs4xSu01EUQmU2",
+          email: "mimmoschillaci@municipal.it",
+          username: "Mimmo Schillaci",
+          first_name: "Mimmo",
+          last_name: "Schillaci",
+          roles: ["Municipal_public_relations_officer"]
+        },
+        {
+          firebase_uid: "4qvUQ4PnNPdHjqspu3WLl9QO5hj2",
+          email: "adalovelace@municipal.it",
+          username: "Ada Lovelace",
+          first_name: "Ada",
+          last_name: "Lovelace",
+          roles: ["Road_signs_urban_furnishings_officer"]
+        },
+        {
+          firebase_uid: "X4VF5e2o5yUEBGpxZSYCTfuC87j1",
+          email: "adalovelace@municipal.it",
+          username: "Ada Lovelace",
+          first_name: "Ada",
+          last_name: "Lovelace",
+          roles: ["Road_signs_urban_furnishings_officer"]
+        },
+        {
+          firebase_uid: "xZz3u5pRCjMbtAVMcQQXqbDbLR13",
+          email: "mariorossi@fixroads.it",
+          username: "Mario Rossi",
+          first_name: "Mario",
+          last_name: "Rossi",
+          roles: ["FixRoads Worker"]
+        }
       ];
 
     // --------------------------------------------------
@@ -466,7 +499,7 @@ export const seedDefaultReports = async (): Promise<void> => {
       return;
     }
 
-    const users = await getAll<{ id: number }>("SELECT id FROM users");
+    const users = await getAll<{ id: number; username: string }>("SELECT id, username FROM users");
     const categories = await getAll<{ id: number; name: string }>("SELECT id, name FROM categories");
 
     if (!users.length || !categories.length) {
@@ -475,7 +508,8 @@ export const seedDefaultReports = async (): Promise<void> => {
     }
 
     // Use first user and category as fallback
-    const firstUser = users[0] ?? { id: 1 };
+    const firstUser = users.find(u => u.username === "JohnDoe") ?? users[0] ?? { id: 1, username: "JohnDoe" };
+    const secondUser = users.find(u => u.username === "RosaBianca") ?? users[1] ?? { id: 2, username: "RosaBianca" };
     const firstCategory = categories[0] ?? { id: 1 };
 
     const reports = [
@@ -495,7 +529,7 @@ export const seedDefaultReports = async (): Promise<void> => {
       {
         title: "Fallen Road Sign",
         description: "A road sign has fallen and requires prompt repair.",
-        user_id: firstUser.id,
+        user_id: secondUser.id,
         category_id: categories.find(c => c.name.includes("Road Signs and Traffic Lights"))?.id ?? firstCategory.id,
         address: "Piazza Giambattista Bodoni 1, 10123 Torino",
         position_lat: 45.0632,
@@ -505,7 +539,7 @@ export const seedDefaultReports = async (): Promise<void> => {
       {
         title: "Damaged Bollard",
         description: "A bollard was cracked in an accident and needs repair",
-        user_id: users[0]?.id ?? firstUser.id,
+        user_id: secondUser.id,
         category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
         address: "Corso Stati Uniti 65, 10129 Torino",
         position_lat: 45.06555,
@@ -542,24 +576,24 @@ export const seedDefaultReports = async (): Promise<void> => {
       {
         title: "Damaged Road, Hazard for Vehicles",
         description: "This road surface in poor condition, with several cracks, uneven patches, and worn asphalt. These defects can pose challenges for vehicles, as they may cause instability, discomfort, or even damage to tires and suspension systems.",
-        user_id: firstUser.id,
+        user_id: secondUser.id,
         category_id: categories.find(c => c.name.includes("Roads and Urban Furnishings"))?.id ?? firstCategory.id,
         address: "Corso Galileo Ferraris 49h, 10129 Torino",
         position_lat: 45.06297,
         position_lng: 7.66937,
         status: "resolved",
         reviewed_by: 3,
-        assigned_to: 10,
+        assigned_to: 24,
       },
       {
         title: "Abandoned Pole",
         description: "An abandoned pole in the green areas",
-        user_id: firstUser.id,
+        user_id: secondUser.id,
         category_id: 8,
         address: "Corso Trieste 7a, 10129 Torino",
         position_lat: 45.06222,
         position_lng: 7.66694,
-        status: "pending_approval",
+        status: "rejected",
         reviewed_by: null,
         assigned_to: null,
       },
@@ -769,6 +803,7 @@ export const seedDefaultCompanies = async (): Promise<void> => {
         { name: "Clean Roads", category_id: 7 },              // Roads and Urban Furnishings
         { name: "GreenCare Parks", category_id: 8 },          // Public Green Areas and Playgrounds
         { name: "GeneralWorks Co.", category_id: 9 },         // Other
+        { name: "FixRoads Srl", category_id: 7 },
       ];
 
 

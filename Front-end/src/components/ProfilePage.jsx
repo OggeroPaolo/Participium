@@ -1,7 +1,7 @@
 import { useEffect, useState, useActionState } from "react";
 import useUserStore from "../store/userStore.js";
 import { Badge, Form, Row, Col, Card, Button } from "react-bootstrap";
-import { modifyUserInfo, getApprovedReports, getReport } from "../API/API.js";
+import { modifyUserInfo, getApprovedReports, getReport, getUserReports } from "../API/API.js";
 import avatarPlaceholder from "../assets/avatar_placeholder.png";
 import { useNavigate } from "react-router";
 import AlertBlock from "./AlertBlock";
@@ -70,11 +70,8 @@ function ProfilePage() {
       try {
         if (!user) throw new Error("No user present");
 
-        const allReports = await getApprovedReports();
-        // filter by username
-        const myReports = allReports.filter(
-          (report) => report.reporterUsername === user.username
-        );
+        const myReports = await getUserReports();
+
 
         const detailedArray = await Promise.all(
           myReports.map((report) => getReport(report.id))
@@ -106,12 +103,12 @@ function ProfilePage() {
 
   // string formatter for status
   // can be pending_approval, assigned, in_progress, suspended, rejected, resolved
-  // consider here only assigned, in_progess, suspended, resolved
   const statusColumns = {
     assigned: "Assigned",
     in_progress: "In Progress",
     suspended: "Suspended",
     resolved: "Resolved",
+    pending_approval: "Pending Approval", 
   };
 
   const getStatusBadge = (status) => {
@@ -120,7 +117,8 @@ function ProfilePage() {
     assigned: "secondary",  
     in_progress: "primary",  
     suspended: "warning",   
-    resolved: "success",    
+    resolved: "success", 
+    pending_approval: "info",   
   };
 
     return colors[status] || "secondary";

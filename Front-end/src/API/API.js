@@ -805,6 +805,29 @@ async function updateRole(userId, roleList) {
   }
 }
 
+// Get list of user's reports (authenticated endpoint)
+async function getUserReports() {
+  try {
+    const response = await fetch(URI + "/user/reports", {
+      method: "GET",
+      headers: {
+        "Authorization": `${await getBearerToken()}`,
+      },
+    });
+    if (response.status === 204) {
+      return [];
+    }
+    if (response.ok) {
+      const userReports = await response.json();
+      return userReports.reports;
+    } else {
+      throw new Error("Failed to fetch user reports");
+    }
+  } catch (err) {
+    throw new Error("Network error: " + err.message);
+  }
+}
+
 export {
   handleSignup,
   createInternalUser,
@@ -836,4 +859,5 @@ export {
   modifyUserInfo,
   updateRole,
   updateStatusTechOfficer,
+  getUserReports
 };

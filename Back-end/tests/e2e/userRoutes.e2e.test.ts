@@ -6,8 +6,8 @@ import { makeTestApp, initTestDB, resetTestDB } from "../setup/tests_util.js";
 import UserDAO from "../../src/dao/UserDAO.js";
 import { ROLES } from "../../src/models/userRoles.js";
 import path from "node:path";
-import { User } from "../../src/models/user.js";
 import cloudinary from "../../src/config/cloudinary.js";
+import ReportDAO from "../../src/dao/ReportDAO.js";
 
 
 const mockCitizen = { id: 1, role_name: "Citizen", role_type: "citizen" };
@@ -144,5 +144,56 @@ describe("User (E2E)", () => {
     expect(res.status).toBe(500);
   });
 
+    describe("GET /user/reports", () => {
+    it("should return all reports for the authenticated user", async () => {
+      const res = await request(app).get("/user/reports");
+      
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty("reports");
+      expect(Array.isArray(res.body.reports)).toBe(true);
+      console.log(res.body.reports);
+      res.body.reports.forEach((report: any) => {
+        expect(report.user_id).toBe(mockCitizen.id);
+      });
+    });
+
+    it("should return 204 if user has no reports", async () => {
+      // Mock empty result
+      vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValueOnce([]);
+      
+      const res = await request(app).get("/user/reports");
+      
+      expect(res.status).toBe(204);
+      expect(res.body).toEqual({});
+    });
+
+    it("should only return reports for the authenticated user", async () => {
+      const mockReports = [
+        { id: 1, user_id: 1, status: "pending", title: "Report 1" },
+        { id: 2, user_id: 1, status: "approved", title: "Report 2" },
+      ];
+      
+      vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockResolvedValueOnce(mockReports as any);
+      
+      const res = await request(app).get("/user/reports");
+      
+      expect(res.status).toBe(200);
+      expect(res.body.reports).toHaveLength(2);
+      expect(ReportDAO.prototype.getReportsByFilters).toHaveBeenCalledWith({
+        userId: mockCitizen.id
+      });
+    });
+
+    it("should return 500 if DAO throws an error", async () => {
+      vi.spyOn(ReportDAO.prototype, "getReportsByFilters").mockRejectedValueOnce(
+        new Error("Database error")
+      );
+      
+      const res = await request(app).get("/user/reports");
+      
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: "Internal server error" });
+    });
+  });
 });
 
