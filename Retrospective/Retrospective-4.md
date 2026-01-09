@@ -13,20 +13,20 @@ sections:
 
 - Number of stories committed vs done :
 
-  Stories committed: 5 vs. Stories done: 5
+  Stories committed: 6 vs. Stories done: 6
 
 - Total points committed vs done :
 
-  Total points committed: 34 vs. total points committed: 34
+  Total points committed: 36 vs. total points committed: 36
 
 - Nr of hours planned vs spent (as a team) :
 
-  Planned hours: 98h + 4h from tasks added during the sprint vs. hours spent: 98h 15m
+  Planned hours: 97h 30m + 1h 15m from tasks added during the sprint vs. hours spent: 100h 10m
 
 **Remember** a story is done ONLY if it fits the Definition of Done:
 
 - Unit Tests passing:: 348
-- Code review completed: 17h 30m
+- Code review completed: 18h 15m
 - Code present on VCS
 - End-to-End tests performed: 113
 
@@ -36,12 +36,13 @@ sections:
 
 | Story | # Tasks | Points | Hours est. | Hours actual |
 | ----- | ------- | ------ | ---------- | ------------ |
-| _#0_  | 17      | -      | 33h 45m    | 34h 45m      |
-| #08   | 3       | 2      | 6h         | 4h 40m       |
-| #24   | 11      | 13     | 18h 30m    | 19h 25m      |
-| #25   | 8       | 3      | 11h        | 10h 20m      |
-| #26   | 9       | 8      | 15h 15m    | 14h 55m      |
-| #27   | 10      | 8      | 17h 30m    | 14h 10m      |
+| _#0_  | 11      | -      | 28h 15m    | 27h 45m      |
+| #28   | 3       | 2      | 2h 5m      | 2h 25m       |
+| #15   | 3       | 2      | 2h 15m     | 2h 20m       |
+| #09   | 9       | 3      | 12h 10m    | 11h 10m      |
+| #30   | 3       | 3      | 3h 30m     | 4h 15m       |
+| #10   | 12      | 5      | 20h 30m    | 21h 50m      |
+| #11   | 18      | 21     | 30h        | 30h 25m      |
 
 > place technical tasks corresponding to story `#0` and leave out story points (not applicable in this case)
 
@@ -49,16 +50,16 @@ sections:
 
 |            | Mean | StDev  |
 | ---------- | ---- | ------ |
-| Estimation | 1.76 | 2.1729 |
-| Actual     | 1.70 | 2.0093 |
+| Estimation | 1.64 | 2.0217 |
+| Actual     | 1.66 | 2.0283 |
 
 - Total task estimation error ratio: sum of total hours estimation / sum of total hours spent -1
 
-  = - 0.0367
+  = 0.0091
 
 - Absolute relative task estimation error: sum( abs( spent-task-i / estimation-task-i - 1))/n
 
-  = 0.1557
+  = 0.1672
 
 ## QUALITY MEASURES
 
@@ -74,57 +75,64 @@ sections:
   - Total hours estimated: 4h
   - Total hours spent: 3h 45m
 - Code review:
-  - Total hours estimated: 25h 30m
-  - Total hours spent: 17h 30m
+  - Total hours estimated: 19h
+  - Total hours spent: 18h 15m
 - Technical Debt management:
-  - Strategy adopted: Take the last day of work to focus or resolving code smells (as stated in SONAR_TD.md)
+  - Strategy adopted: Take the last day of work to focus on resolving code smells (as stated in SONAR_TD.md) and leverage on sonar plugin to reduce them while adding features
   - Total hours estimated estimated at sprint planning -> 2h
-  - Total hours spent -> 3h
+  - Total hours spent -> 2h
 
 ## ASSESSMENT
 
 #### What caused your errors in estimation (if any)?
-- Overall, our estimates were more realistic than in the previous sprint, but we still had slight overestimations on some frontend tasks (e.g., responsiveness tweaks), mostly due to uncertainty about UI edge cases
-- For a few tasks, we underestimated the time needed to polish and fix small bugs after the main implementation was “done.”
-- We did not fully account for context switching and code review overhead, so tasks that looked small on paper sometimes ended up slipping toward the end of the sprint.
+
+-	Overall, estimation accuracy was strong this sprint and we delivered all accepted stories.
+
+-	Most underestimations were minor (typically ~10–15 minutes) and came from small implementation details and polish that surfaced during execution.
+
+-	We had one notable frontend underestimation (~1+ hour), which was primarily caused by a misunderstanding of the feature’s intended functionality—this required discussion and alignment to reach a “middle-ground” solution to re-implementation could proceed.
+
+-	Some work naturally landed later in the sprint because multiple tasks had hard dependencies (linked functionalities that needed to be implemented in sequence), which limited how early we could start certain items.
 
 #### What lessons did you learn (both positive and negative) in this sprint?
 
 **Positive:**
-- Our calibration of estimates improved compared to the previous sprint – there were fewer major surprises.
-- The quality of planning and specifications remained stable: we are no longer missing major requirements, although some small tasks still emerge during development.
-- We can consistently deliver working features, even when some work drifts into the last days.
+
+- When requirements are clear, our team can estimate and execute very reliably—most tasks landed close to plan.
+- Alignment conversations (even when they cost time) prevented us from implementing the “wrong” solution and reduced downstream rework.
+- SonarCloud discipline worked extremely well: we reduced code smells and improved overall code quality while still delivering features.
 
 **Negative:**
-- Improving estimates alone is not enough; our pacing still pushes too many implementations into the final 2–3 days.
-- Final integration and polishing take more time than we intuitively expect, and we still tend to treat them as “small” tasks.
+
+-	A single misunderstanding can still create a disproportionate slip (as seen in the 1+ hour FE task), so catching ambiguity earlier is the biggest lever to keep estimates accurate.
+
+-	Even if late-sprint concentration is “expected” due to dependencies, it can still increase risk if integration or QA gets compressed—worth monitoring to keep it from turning into a recurring pattern.
 
 #### Which improvement goals set in the previous retrospective were you able to achieve?
 
-- **Goal 2 – Calibrate estimations (reduce fear-based overestimation):**
-Partially achieved. Our estimates, especially on frontend tasks like responsiveness, were closer to reality and less “fear padded” than before, though some overestimation still remains.
 
-- **Goal 3 – Youtrack logging right after working on a task:**
-Partially achieved. Frequent reminders improved logging behavior compared to the previous sprint, but some logs were still missing, so there is room for further improvement
+- **Goal 2 – Better management of Technical Debt:**
+SonarCloud results confirm a stable downward trend with no regressions.
+Issues decreased from 156 at sprint start to 106 at sprint end, with no intermediate increases or peaks, in contrast to the previous sprint.
+
+
+- **Goal 3 – YouTrack logging right after working on a task::**
+  We maintained as much as possible "on-time" tracking on YouTrack. 
 
 #### Which ones you were not able to achieve? Why?
 
-- **Goal 1  – Smooth execution across the sprint (avoid last-minute crunch):**
-Not achieved. We again had a concentration of implementations and finishing touches in the last 2–3 days. On the positive side, we did apply bi-daily checks and broke large tasks into smaller pieces—but the pacing still needs work.
+- **Goal 1 – Smooth execution across the sprint:**
+  Mostly achieved within the constraints of dependencies. While a larger portion of implementation happened in the last week, this was driven by sequenced work rather than avoidable crunch.
 
 #### Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
 
-- **Goal 1  – Smooth execution across the sprint (avoid last-minute crunch):**
-- Ensure that by mid-sprint, at least 60–70% of critical stories are “To verify” or “Done.”
-- Continuing with daily/bi-daily check
-- Reassign tasks as needed to balance workload
+- **Goal 1 –  Reduce “misunderstanding-driven” slippage :**
+  Add a quick “definition checkpoint” before starting any story with unclear behavior (5–10 min sync or async clarification). For any story with UX/logic ambiguity, write a 3–5 bullet “expected behavior” note in the ticket before implementation.
 
-- **Goal 2  – Better management of Technical Debt:**
-- Issues were 98 at the start (sprint 1/mid sprint 2), peaked at 215, and were reduced to 156 by the end of sprint 3, with no code smells above “medium” severity. This is progress, but we can do better.
-- We aim to leverage the Sonar plugin continuously while developing new features to avoid increasing the issue count unnecessarily and to improve code quality without inflating TD-specific hours.
-
-- **Goal 3 – Youtrack logging right after working on a task:**
-- Maintain consistent logging immediately after completing or progressing on a task, to keep the team aligned and the board up to date.
+- **Goal 2 – Dependency-aware sprint planning :**
+	Explicitly mark dependency chains in YouTrack and schedule prerequisites earlier.
+	If a chain forces last-week concentration, plan QA/integration time accordingly (so testing doesn’t get squeezed).
 
 #### One thing you are proud of as a Team!!
-Even though we still struggled with last-minute implementations, we slightly improved our estimation quality compared to the previous sprint and kept our planning, coordination, and delivery discipline strong. We’re showing that we can learn from each sprint, adjust our approach, and keep delivering working features while gradually tightening our process.
+
+We delivered 100% of the stories we committed to, kept estimation accuracy high, and simultaneously improved code quality through SonarCloud—showing we can ship reliably while raising engineering standards.
