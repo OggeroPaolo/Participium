@@ -402,15 +402,7 @@ export const seedDefaultUsers = async (): Promise<void> => {
           roles: ["Municipal_public_relations_officer"]
         },
         {
-          firebase_uid: "4qvUQ4PnNPdHjqspu3WLl9QO5hj2",
-          email: "adalovelace@municipal.it",
-          username: "Ada Lovelace",
-          first_name: "Ada",
-          last_name: "Lovelace",
-          roles: ["Road_signs_urban_furnishings_officer"]
-        },
-        {
-          firebase_uid: "X4VF5e2o5yUEBGpxZSYCTfuC87j1",
+          firebase_uid: "YOFZLZOXjqWlCBQPZ62bI3aCBG52",
           email: "adalovelace@municipal.it",
           username: "Ada Lovelace",
           first_name: "Ada",
