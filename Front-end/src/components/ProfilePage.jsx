@@ -1,7 +1,7 @@
 import { useEffect, useState, useActionState } from "react";
 import useUserStore from "../store/userStore.js";
 import { Badge, Form, Row, Col, Card, Button } from "react-bootstrap";
-import { modifyUserInfo, getApprovedReports, getReport, getUserReports } from "../API/API.js";
+import { modifyUserInfo, getReport, getUserReports } from "../API/API.js";
 import avatarPlaceholder from "../assets/avatar_placeholder.png";
 import { useNavigate } from "react-router";
 import AlertBlock from "./AlertBlock";
@@ -9,7 +9,7 @@ import AlertBlock from "./AlertBlock";
 function ProfilePage() {
   const { user } = useUserStore();
   const navigate = useNavigate();
-  const REPORTS_PER_PAGE = 8;
+  const REPORTS_PER_PAGE = 6;
 
   const [enableNotifications, setEnableNotifications] = useState(
     user.email_notifications_enabled
@@ -72,7 +72,6 @@ function ProfilePage() {
 
         const myReports = await getUserReports();
 
-
         const detailedArray = await Promise.all(
           myReports.map((report) => getReport(report.id))
         );
@@ -108,7 +107,8 @@ function ProfilePage() {
     in_progress: "In Progress",
     suspended: "Suspended",
     resolved: "Resolved",
-    pending_approval: "Pending Approval", 
+    pending_approval: "Pending Approval",
+    rejected: "Rejected",
   };
 
   const getStatusBadge = (status) => {
@@ -119,6 +119,7 @@ function ProfilePage() {
     suspended: "warning",   
     resolved: "success", 
     pending_approval: "info",   
+    rejected: "danger",
   };
 
     return colors[status] || "secondary";
@@ -349,7 +350,7 @@ function ProfilePage() {
             </Card.Body>
 
             {totalPages > 1 && (
-              <div className='d-flex justify-content-center mt-3 mb-3'>
+              <div className='d-flex justify-content-center mt-4 mb-4'>
                 <div className='btn-group'>
                   <Button
                     variant='outline-secondary'
